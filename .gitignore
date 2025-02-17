@@ -1,0 +1,9 @@
+# Ignore .DS_Store (macOS file system)
+.DS_Store
+
+# Ignore virtual environment directory
+venv/
+
+# Ignore .env file (if it contains sensitive information like API keys)
+.env
+

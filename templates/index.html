@@ -1,0 +1,146 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echo AI - Heart Health Chatbot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            color: #fff;
+        }
+
+        h2 {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 2em;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        #messages {
+            width: 100%;
+            max-width: 600px;
+            height: 60%;
+            margin-top: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: transparent;
+            color: white;
+            padding: 10px;
+            margin: 5px 0;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .chatbot-message {
+            align-self: flex-start;
+            background-color: transparent;
+            color: #00f2ff;
+            padding: 10px;
+            margin: 5px 0;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .input-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            background-color: #222;
+            color: #fff;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-right: 10px; 
+            box-sizing: border-box;
+        }
+
+        .send-button {
+            padding: 15px;
+            background-color: #00f2ff50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .send-button:hover {
+            background-color: #00f2ff;
+            color: rgb(0, 0, 0);
+        }
+
+        .send-button:active {
+            transform: scale(0.98);
+        }
+
+    </style>
+</head>
+<body>
+
+    <h2>Echo AI</h2>
+
+    <div id="messages"></div>
+
+    <div class="input-container">
+        <input type="text" id="user_input" placeholder="Ask me anything about heart health..." onkeydown="if(event.key === 'Enter') sendMessage()">
+        <button class="send-button" onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        function sendMessage() {
+            const userInput = document.getElementById('user_input').value;
+            if (userInput.trim() === '') return;
+
+            // Display the user's message
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML += `<div class="user-message">You: ${userInput}</div>`;
+
+            // Send the message to the server
+            fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message: userInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Display the chatbot's response
+                messagesDiv.innerHTML += `<div class="chatbot-message">Echo AI: ${data.response}</div>`;
+                document.getElementById('user_input').value = '';  // Clear input field
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;  // Scroll to the bottom
+            });
+        }
+    </script>
+
+</body>
+</html>
