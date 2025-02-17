@@ -6,4 +6,5 @@ venv/
 
 # Ignore .env file (if it contains sensitive information like API keys)
 .env
+__pycache__/
 
