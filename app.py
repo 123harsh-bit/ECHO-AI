@@ -1,40 +1,46 @@
+import os
+from datetime import timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 import openai
-import os
 from dotenv import load_dotenv
-import re
-from flask_cors import CORS  # Added for CORS support
+from flask_cors import CORS
 
 # ------------------ INITIAL SETUP ------------------
-# Initialize Flask app
-app = Flask(__name__, static_folder='static', template_folder='templates')
 load_dotenv()  # Load environment variables from .env
 
-# Enable CORS for all routes
+# Initialize Flask app
+app = Flask(__name__, static_folder='static', template_folder='templates')
+
+# Configure session
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-fallback-secret-key')  # Always set a secret key
+app.config['SESSION_COOKIE_SECURE'] = True  # Requires HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)  # Session expires after 1 day
+
+# Enable CORS for API routes
 CORS(app, resources={
-    r"/chat": {"origins": "*"},  # Allow all origins for /chat endpoint
-    r"/api/*": {"origins": "*"}  # Allow all origins for any API endpoints
+    r"/chat": {"origins": "*"},
+    r"/api/*": {"origins": "*"}
 })
 
-# Secret Key & OpenAI API Key
-app.secret_key = os.getenv("FLASK_SECRET_KEY")
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Database configuration
+db_url = os.getenv('DATABASE_URL')
+if db_url and db_url.startswith('postgres://'):
+    db_url = db_url.replace('postgres://', 'postgresql://', 1)
 
-# Fix DATABASE_URL for SQLAlchemy
-db_url = os.getenv("DATABASE_URL")
-if db_url and db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql://", 1)
-
-# PostgreSQL Config
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize database
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
+# OpenAI configuration
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
 # ------------------ DATABASE MODELS ------------------
 class Users(db.Model):
@@ -53,10 +59,10 @@ class ChatHistory(db.Model):
     bot_response = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
-# ------------------ HEART KEYWORDS ------------------
+# ------------------ HEALTH KEYWORDS ------------------
 HEART_KEYWORDS = [
     "heart", "cardiac", "blood pressure", "cholesterol", "heart attack", 
-    "stroke", "arrhythmia", "hypertension", "pulse", "artery", "circulation", 
+    "stroke", "arrhythmia", "hypertension", "pulse", "artery", "circulation",
     "ECG", "EKG", "cardiovascular", "angioplasty", "bypass surgery"
 ]
 
@@ -65,130 +71,162 @@ def is_heart_related(user_input):
     user_input = user_input.lower()
     return any(keyword in user_input for keyword in HEART_KEYWORDS)
 
-# ------------------ ROUTES ------------------
+# ------------------ MIDDLEWARE ------------------
+@app.before_request
+def before_request():
+    """Ensure all requests use HTTPS and check session."""
+    # Force HTTPS in production
+    if request.url.startswith('http://') and os.getenv('FLASK_ENV') == 'production':
+        return redirect(request.url.replace('http://', 'https://'), 301
 
-# ---------- Home ----------
+# ------------------ ROUTES ------------------
 @app.route('/')
 def home():
+    """Home route - requires authentication"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('index.html')
+
+@app.route('/check-auth')
+def check_auth():
+    """Endpoint for frontend to check authentication status"""
     if 'user_id' in session:
-        return render_template('index.html')
-    return redirect(url_for('login'))
+        return jsonify({
+            'authenticated': True,
+            'username': session.get('username')
+        })
+    return jsonify({'authenticated': False}), 401
 
-# ---------- Static Files (CSS, JS) ----------
-@app.route('/static/<path:filename>')
-def serve_static(filename):
-    return app.send_static_file(filename)
-
-# ---------- Sign Up ----------
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
+    """User signup route"""
+    if 'user_id' in session:
+        return redirect(url_for('home'))
+
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
 
-        # Check if username exists
+        if not username or not password:
+            return render_template('signup.html', error_message="Username and password are required.")
+
         if Users.query.filter_by(username=username).first():
-            return render_template('signup.html', error_message="⚠️ Username already exists. Please try another.")
+            return render_template('signup.html', error_message="Username already exists.")
 
-        # Hash password and add user
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
         new_user = Users(username=username, password=hashed_password)
-        db.session.add(new_user)
-        db.session.commit()
+        
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            
+            # Automatically log in the new user
+            session.permanent = True
+            session['user_id'] = new_user.id
+            session['username'] = new_user.username
+            
+            return redirect(url_for('home'))
+        except Exception as e:
+            db.session.rollback()
+            return render_template('signup.html', error_message="Registration failed. Please try again.")
 
-        return redirect(url_for('login'))
     return render_template('signup.html')
 
-# ---------- Login ----------
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """User login route"""
+    if 'user_id' in session:
+        return redirect(url_for('home'))
+
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
 
         user = Users.query.filter_by(username=username).first()
 
         if not user:
-            return render_template('login.html', error_message="⚠️ Username does not exist.")
+            return render_template('login.html', error_message="Invalid username or password.")
 
         if not check_password_hash(user.password, password):
-            return render_template('login.html', error_message="⚠️ Invalid password. Please try again.")
+            return render_template('login.html', error_message="Invalid username or password.")
 
+        # Set session variables
+        session.permanent = True
         session['user_id'] = user.id
-        return redirect(url_for('home'))
+        session['username'] = user.username
+        
+        # Use 303 redirect to prevent form resubmission
+        return redirect(url_for('home'), code=303)
 
     return render_template('login.html')
 
-# ---------- Logout ----------
-@app.route('/logout')
+@app.route('/logout', methods=['POST'])
 def logout():
-    session.pop('user_id', None)
-    return redirect(url_for('login'))
+    """Logout route"""
+    session.clear()
+    return jsonify({'success': True}), 200
 
-# ---------- Chat API Endpoint ----------
 @app.route('/chat', methods=['POST'])
 def chat():
+    """Chat API endpoint"""
+    if 'user_id' not in session:
+        return jsonify({
+            'status': 'error',
+            'message': 'Please log in first.',
+            'type': 'text'
+        }), 401
+
+    if not request.is_json:
+        return jsonify({
+            'status': 'error',
+            'message': 'Invalid request format. JSON expected.',
+            'type': 'text'
+        }), 400
+
+    data = request.get_json()
+    user_input = data.get('message', '').strip()
+
+    if not user_input:
+        return jsonify({
+            'status': 'error',
+            'message': 'Empty message received.',
+            'type': 'text'
+        }), 400
+
+    if not is_heart_related(user_input):
+        return jsonify({
+            'status': 'error',
+            'message': 'I can only answer heart health-related questions.',
+            'type': 'text'
+        }), 400
+
+    # Get previous chats for context
+    previous_chats = ChatHistory.query.filter_by(user_id=session['user_id']).order_by(ChatHistory.id.desc()).limit(5).all()
+    conversation_history = [{"role": "system", "content": "You are a helpful heart health expert."}]
+
+    for chat in reversed(previous_chats):  # Oldest first
+        conversation_history.append({"role": "user", "content": chat.user_input})
+        conversation_history.append({"role": "assistant", "content": chat.bot_response})
+
+    conversation_history.append({"role": "user", "content": user_input})
+
     try:
-        # Check if user is logged in
-        if 'user_id' not in session:
-            return jsonify({
-                "status": "error",
-                "message": "Please log in first.",
-                "type": "text"
-            }), 401
-
-        # Validate request data
-        if not request.is_json:
-            return jsonify({
-                "status": "error",
-                "message": "Invalid request format. JSON expected.",
-                "type": "text"
-            }), 400
-
-        data = request.get_json()
-        user_input = data.get('message', '').strip()
-
-        if not user_input:
-            return jsonify({
-                "status": "error",
-                "message": "Empty message received.",
-                "type": "text"
-            }), 400
-
-        # Check if heart-related
-        if not is_heart_related(user_input):
-            return jsonify({
-                "status": "error",
-                "message": "I can only answer heart health-related questions.",
-                "type": "text"
-            }), 400
-
-        # Fetch previous chat history for context
-        previous_chats = ChatHistory.query.filter_by(user_id=session['user_id']).all()
-        conversation_history = [{"role": "system", "content": "You are a heart health expert."}]
-
-        for chat in previous_chats:
-            conversation_history.append({"role": "user", "content": chat.user_input})
-            conversation_history.append({"role": "assistant", "content": chat.bot_response})
-
-        conversation_history.append({"role": "user", "content": user_input})
-
-        # Call OpenAI API
         if not openai.api_key:
             return jsonify({
-                "status": "error",
-                "message": "OpenAI API key is missing or invalid.",
-                "type": "text"
+                'status': 'error',
+                'message': 'OpenAI API key is missing.',
+                'type': 'text'
             }), 500
 
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=conversation_history
+            messages=conversation_history,
+            temperature=0.7
         )
 
         chatbot_response = response['choices'][0]['message']['content']
 
-        # Save chat history
+        # Save to chat history
         new_chat = ChatHistory(
             user_input=user_input,
             bot_response=chatbot_response,
@@ -198,35 +236,28 @@ def chat():
         db.session.commit()
 
         return jsonify({
-            "status": "success",
-            "response": chatbot_response,
-            "type": "text"
+            'status': 'success',
+            'response': chatbot_response,
+            'type': 'text'
         })
-
-    except openai.error.OpenAIError as e:
-        return jsonify({
-            "status": "error",
-            "message": f"OpenAI API error: {str(e)}",
-            "type": "text"
-        }), 500
 
     except Exception as e:
         return jsonify({
-            "status": "error",
-            "message": f"Unexpected error: {str(e)}",
-            "type": "text"
+            'status': 'error',
+            'message': f'Error: {str(e)}',
+            'type': 'text'
         }), 500
 
-# ---------- Chat History ----------
 @app.route('/history')
 def history():
+    """Chat history route"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
-    chats = ChatHistory.query.filter_by(user_id=session['user_id']).all()
+    chats = ChatHistory.query.filter_by(user_id=session['user_id']).order_by(ChatHistory.id.desc()).all()
     return render_template('history.html', chats=chats)
 
 # ------------------ MAIN ------------------
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # For Render compatibility
-    app.run(host="0.0.0.0", port=port, debug=(os.environ.get("FLASK_ENV") == "development"))
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=os.getenv('FLASK_ENV') == 'development')
