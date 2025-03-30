@@ -3,50 +3,308 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo AI - Heart Health Assistant</title>
+    <title>Echo AI - Heart Health Chatbot</title>
     <style>
-        /* [Keep all your existing CSS styles] */
-        .error-message {
-            background-color: #ff4444;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #000;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .header {
+            width: 100%;
+            max-width: 1920px;
+            display: flex;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 10px;
+            color: #00f5f9;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .profile-container {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .profile-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ddd;
+            margin-right: 10px;
+        }
+
+        .profile-name {
             color: white;
-            padding: 10px 15px;
+            font-size: 16px;
+            margin-right: 25px;
+        }
+
+        .profile-details {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px #00f5f9;
+            width: 250px;
+            display: none;
+            flex-direction: column;
+            align-items: flex-start;
+            color: #fff;
+            margin-right: 25px;
+            z-index: 1000;
+        }
+
+        .profile-details p {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .profile-details button {
+            background: #019396;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.3s ease;
+            width: 100%;
+        }
+
+        .profile-details button:hover {
+            background: #00f5f9;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 900px;
+            height: 85vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 50px;
+            font-size: 20px;
+            color: #aaa;
+        }
+
+        .chat-box {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            scrollbar-width: none;
+        }
+
+        .message {
+            padding: 15px;
             border-radius: 10px;
             max-width: 80%;
-            margin: 5px 0;
+            width: fit-content;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: #007bff;
+            color: white;
+            border-radius: 18px 18px 0 18px;
+        }
+
+        .bot-message {
+            align-self: flex-start;
+            background: #222;
+            color: white;
+            border: 1px solid #333;
+            border-radius: 18px 18px 18px 0;
+        }
+
+        .error-message {
+            align-self: flex-start;
+            background: #ff4444;
+            color: white;
+            border-radius: 18px 18px 18px 0;
+        }
+
+        .typing-indicator {
+            align-self: flex-start;
+            color: #aaa;
+            font-style: italic;
+        }
+
+        .typing-indicator::after {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            margin-left: 5px;
+            border-radius: 50%;
+            background-color: #aaa;
+            animation: blink 1.5s infinite ease-in-out;
+        }
+
+        @keyframes blink {
+            0%, 100% { box-shadow: 8px 0 0 0 #aaa, 16px 0 0 0 #aaa; }
+            33% { box-shadow: 8px 0 0 0 transparent, 16px 0 0 0 #aaa; }
+            66% { box-shadow: 8px 0 0 0 #aaa, 16px 0 0 0 transparent; }
+        }
+
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            background: #111;
+            border-top: 1px solid #222;
+            border-radius: 15px;
+        }
+
+        .pre-prompts {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .pre-prompts button {
+            padding: 12px 15px;
+            border: none;
+            background: #222;
+            color: white;
+            cursor: pointer;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: 0.3s ease;
+        }
+
+        .pre-prompts button:hover {
+            background: #007bff;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            border: 1px solid #333;
+            padding: 10px;
+            border-radius: 30px;
+            background: #222;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: white;
+            font-size: 16px;
+        }
+
+        button.send-btn {
+            padding: 12px 18px;
+            background: #007bff;
+            border: none;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 20px;
+            margin-left: 10px;
+            transition: 0.3s ease;
+        }
+
+        button.send-btn:hover {
+            background: #0056b3;
+        }
+
+        .chat-box::-webkit-scrollbar {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 90vh;
+                width: 95%;
+            }
+            
+            .pre-prompts {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .pre-prompts button {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
     <div class="header">
         <div>Echo AI</div>
-        <div class="profile-container" onclick="toggleProfile()">
+        <div class="profile-container" onclick="toggleProfileDetails()">
             <div class="profile-avatar"></div>
-            <div class="profile-name" id="username">Guest</div>
+            <div class="profile-name" id="username-display">User</div>
         </div>
     </div>
 
+    <div class="profile-details" id="profile-details">
+        <p><strong>Name:</strong> <span id="profile-name">User</span></p>
+        <p><strong>Email:</strong> user@example.com</p>
+        <button onclick="logout()">Logout</button>
+    </div>
+
     <div class="chat-container">
-        <div class="welcome-message" id="welcome">
-            <h2>Heart Health Assistant</h2>
-            <p>Ask me anything about heart health</p>
+        <div class="welcome-message" id="welcome-message">
+            <p>AI Heart Health Chatbot</p>
+            <p>"Your AI-powered heart health assistant – monitor, analyze, and stay informed."</p>
         </div>
 
         <div class="chat-box" id="chat-box"></div>
 
+        <div class="pre-prompts">
+            <button onclick="sendPrePrompt('Best exercises for heart health')">🏃 Best Exercises</button>
+            <button onclick="sendPrePrompt('How to maintain healthy blood pressure?')">💓 Blood Pressure</button>
+            <button onclick="sendPrePrompt('Heart-friendly diet tips')">🥗 Diet Tips</button>
+            <button onclick="sendPrePrompt('Symptoms of heart disease')">🫀 Warning Signs</button>
+        </div>
+
         <div class="input-container">
             <div class="input-row">
-                <input type="text" id="user-input" placeholder="Ask about heart health..." 
-                       autocomplete="off" onkeypress="if(event.keyCode==13) sendMessage()">
+                <input type="text" id="user-input" placeholder="Ask me about heart health..." 
+                       autocomplete="off" onkeypress="if(event.key === 'Enter') sendMessage()">
                 <button class="send-btn" onclick="sendMessage()">Send</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Check authentication on load
-        document.addEventListener('DOMContentLoaded', checkAuth);
+        // Check authentication status on page load
+        document.addEventListener('DOMContentLoaded', checkAuthStatus);
 
-        async function checkAuth() {
+        async function checkAuthStatus() {
             try {
                 const response = await fetch('/check-auth', {
                     credentials: 'include'
@@ -59,35 +317,46 @@
                 
                 const data = await response.json();
                 if (data.authenticated) {
-                    document.getElementById('username').textContent = data.username;
+                    document.getElementById('username-display').textContent = data.username;
+                    document.getElementById('profile-name').textContent = data.username;
                 } else {
                     window.location.href = '/login';
                 }
             } catch (error) {
-                console.error('Auth check failed:', error);
+                console.error('Authentication check failed:', error);
                 window.location.href = '/login';
             }
         }
 
+        function toggleProfileDetails() {
+            const profileDetails = document.getElementById('profile-details');
+            profileDetails.style.display = profileDetails.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function sendPrePrompt(message) {
+            document.getElementById('user-input').value = message;
+            sendMessage();
+        }
+
         async function sendMessage() {
-            const input = document.getElementById('user-input');
-            const message = input.value.trim();
+            const userInput = document.getElementById('user-input');
+            const message = userInput.value.trim();
             if (!message) return;
 
             const chatBox = document.getElementById('chat-box');
-            const welcome = document.getElementById('welcome');
-            
-            // Hide welcome message
-            if (welcome.style.display !== 'none') {
-                welcome.style.display = 'none';
+            const welcomeMessage = document.getElementById('welcome-message');
+
+            // Hide welcome message after first input
+            if (welcomeMessage && welcomeMessage.style.display !== 'none') {
+                welcomeMessage.style.display = 'none';
             }
 
             // Add user message
-            addMessage(message, 'user-message');
-            input.value = '';
+            addMessageToChat(message, 'user-message');
+            userInput.value = '';
 
             // Show typing indicator
-            const typing = addMessage('Echo AI is typing...', 'typing-indicator');
+            const typingIndicator = addMessageToChat('Echo AI is typing...', 'typing-indicator');
 
             try {
                 const response = await fetch('/chat', {
@@ -102,32 +371,83 @@
                 const data = await response.json();
                 
                 // Remove typing indicator
-                chatBox.removeChild(typing);
+                chatBox.removeChild(typingIndicator);
+
+                if (!response.ok) {
+                    addMessageToChat(data.message || 'Error getting response', 'error-message');
+                    return;
+                }
 
                 if (data.status === 'error') {
-                    addMessage(data.error, 'error-message');
+                    addMessageToChat(data.message, 'error-message');
                 } else {
-                    addMessage(data.response, 'bot-message');
+                    formatBotResponse(data.response);
                 }
             } catch (error) {
-                chatBox.removeChild(typing);
-                addMessage('Failed to get response', 'error-message');
+                chatBox.removeChild(typingIndicator);
+                addMessageToChat('Failed to connect to server', 'error-message');
                 console.error('Chat error:', error);
             }
         }
 
-        function addMessage(text, className) {
+        function addMessageToChat(text, className) {
             const chatBox = document.getElementById('chat-box');
-            const msg = document.createElement('div');
-            msg.className = `message ${className}`;
-            msg.textContent = text;
-            chatBox.appendChild(msg);
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', className);
+            messageElement.textContent = text;
+            chatBox.appendChild(messageElement);
             chatBox.scrollTop = chatBox.scrollHeight;
-            return msg;
+            return messageElement;
         }
 
-        function toggleProfile() {
-            // [Your existing profile toggle function]
+        function formatBotResponse(response) {
+            const chatBox = document.getElementById('chat-box');
+
+            if (response.includes('|')) {
+                // Format as table if pipe characters are present
+                const rows = response.trim().split('\n');
+                let tableHTML = '<table style="width:100%;border-collapse:collapse;margin:10px 0;color:white;">';
+                
+                rows.forEach((row, index) => {
+                    const cells = row.split('|').filter(cell => cell.trim());
+                    tableHTML += '<tr>';
+                    cells.forEach(cell => {
+                        const tag = index === 0 ? 'th' : 'td';
+                        tableHTML += `<${tag} style="border:1px solid #555;padding:8px;text-align:left;">${cell.trim()}</${tag}>`;
+                    });
+                    tableHTML += '</tr>';
+                });
+                
+                tableHTML += '</table>';
+                
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message', 'bot-message');
+                messageElement.innerHTML = tableHTML;
+                chatBox.appendChild(messageElement);
+            } else {
+                // Regular text response
+                addMessageToChat(response, 'bot-message');
+            }
+            
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function logout() {
+            try {
+                const response = await fetch('/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    window.location.href = '/login';
+                } else {
+                    alert('Logout failed. Please try again.');
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('Logout failed. Please try again.');
+            }
         }
     </script>
 </body>
