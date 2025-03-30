@@ -32,17 +32,19 @@ migrate = Migrate(app, db)  # Enable Flask-Migrate for migrations
 
 # ------------------ DATABASE MODELS ------------------
 
-class Users(db.Model):
+class Users(db.Model):  # Ensure class name matches table name
+    __tablename__ = "users"  # Explicitly define table name (optional but recommended)
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     chats = db.relationship('ChatHistory', backref='user', lazy=True)
 
 class ChatHistory(db.Model):
+    __tablename__ = "chat_history"
     id = db.Column(db.Integer, primary_key=True)
     user_input = db.Column(db.Text, nullable=False)
     bot_response = db.Column(db.Text, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Fix foreign key reference
 
 # ------------------ HEART KEYWORDS ------------------
 
@@ -75,12 +77,12 @@ def signup():
         password = request.form['password']
 
         # Check if username exists
-        if Users.query.filter_by(username=username).first():
+        if Users.query.filter_by(username=username).first():  # Fixed reference to Users
             return render_template('signup.html', error_message="⚠️ Username already exists. Please try another.")
 
         # Hash password and add user
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-        new_user = User(username=username, password=hashed_password)
+        new_user = Users(username=username, password=hashed_password)  # Fixed reference to Users
         db.session.add(new_user)
         db.session.commit()
 
@@ -94,7 +96,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
-        user = Users.query.filter_by(username=username).first()
+        user = Users.query.filter_by(username=username).first()  # Fixed reference to Users
 
         if not user:
             return render_template('login.html', error_message="⚠️ Username does not exist.")
