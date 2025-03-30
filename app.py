@@ -1,9 +1,11 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 import openai
 import os
 from dotenv import load_dotenv
+import re
 
 # ------------------ INITIAL SETUP ------------------
 
@@ -15,12 +17,18 @@ load_dotenv()  # Load environment variables from .env
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+# Fix DATABASE_URL for SQLAlchemy (Render uses "postgres://", but SQLAlchemy needs "postgresql://")
+db_url = os.getenv("DATABASE_URL")
+if db_url and db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
 # PostgreSQL Config
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize database
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)  # Enable Flask-Migrate for migrations
 
 # ------------------ DATABASE MODELS ------------------
 
@@ -39,9 +47,9 @@ class ChatHistory(db.Model):
 # ------------------ HEART KEYWORDS ------------------
 
 HEART_KEYWORDS = [
-    "heart","for","continue","cardiac", "week", "month", "day", "blood pressure", "cholesterol", 
-    "heart attack", "stroke", "arrhythmia", "hypertension", "pulse", "artery", 
-    "coronary", "circulation", "table","ECG", "EKG", "aorta", "cardiovascular", 
+    "heart", "for", "continue", "cardiac", "week", "month", "day", "blood pressure", "cholesterol",
+    "heart attack", "stroke", "arrhythmia", "hypertension", "pulse", "artery",
+    "coronary", "circulation", "table", "ECG", "EKG", "aorta", "cardiovascular",
     "angioplasty", "bypass surgery"
 ]
 
@@ -142,8 +150,11 @@ def chat():
 
         return jsonify({"response": chatbot_response, "type": "text"})
 
+    except openai.error.OpenAIError as e:  # Handle OpenAI API errors
+        return jsonify({"response": f"OpenAI API error: {str(e)}", "type": "text"}), 500
+
     except Exception as e:
-        return jsonify({"response": f"Error: {str(e)}", "type": "text"}), 500
+        return jsonify({"response": f"Unexpected error: {str(e)}", "type": "text"}), 500
 
 # ---------- Chat History ----------
 @app.route('/history')
@@ -155,7 +166,6 @@ def history():
     return render_template('history.html', chats=chats)
 
 # ------------------ MAIN ------------------
+
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()  # Create tables if they don't exist
     app.run(debug=True, host="0.0.0.0", port=5000)
