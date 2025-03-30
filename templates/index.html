@@ -1,278 +1,394 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo AI - Heart Health Chatbot</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Echo AI - Heart Health Chatbot</title>
+<style>
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+font-family: Arial, sans-serif;
+}
 
-        body {
-            background-color: #000;
-            color: #fff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            flex-direction: column;
-        }
+body {
+background-color: #000;
+color: #fff;
+display: flex;
+justify-content: center;
+align-items: center;
+height: 100vh;
+flex-direction: column;
+}
 
-        .header {
-            width: 100%;
-            max-width: 1920px;
-            display: flex;
-            align-items: center;
-            font-size: 24px;
-            font-weight: bold;
-            padding: 10px;
-            color: #00f5f9;
-            justify-content: space-between;
-            position: relative;
-        }
+.header {
+width: 100%;
+max-width: 1920px;
+display: flex;
+align-items: center;
+font-size: 24px;
+font-weight: bold;
+padding: 10px;
+color: #00f5f9;
+justify-content: space-between;
+position: relative;
+}
 
-        /* Profile Section */
-        .profile-container {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            position: relative;
-        }
+/* Profile Section */
+.profile-container {
+display: flex;
+align-items: center;
+cursor: pointer;
+position: relative;
+}
 
-        .profile-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #ddd;
-            margin-right: 10px;
-        }
+.profile-avatar {
+width: 40px;
+height: 40px;
+border-radius: 50%;
+background: #ddd;
+margin-right: 10px;
+}
 
-        .profile-name {
-            color: #fff;
-            font-size: 16px;
-            margin-right: 25px;
-        }
+.profile-name {
+color: hwb(0 100% 0%);
+font-size: 16px;
+margin-right: 25px;
+}
 
-        /* Profile Details Section */
-        .profile-details {
-            position: absolute;
-            top: 50px;
-            right: 10px;
-            background: #111;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px #00f5f9;
-            width: 250px;
-            display: none;
-            flex-direction: column;
-            align-items: flex-start;
-            color: #fff;
-        }
+/* Profile Details Section */
+.profile-details {
+position: absolute;
+top: 100px; /* Adjust to position below the profile */
+right: 0;
+background: #ffffff;
+padding: 20px;
+border-radius: 8px;
+box-shadow: 0 4px 8px #00f5f9;
+width: 250px;
+display: none;
+flex-direction: column;
+align-items: flex-start;
+color: #fff;
+margin-right: 25px;
+}
 
-        .profile-details p {
-            color: #ccc;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
+.profile-details p {
+color: hwb(0 8% 92%);
+margin-bottom: 10px;
+font-size: 14px;
+}
 
-        .profile-details button {
-            background: #019396;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: 0.3s ease;
-        }
+.profile-details button {
+background:#019396;
+color: rgb(255, 255, 255);
+border: none;
+padding: 8px 15px;
+border-radius: 20px;
+cursor: pointer;
+transition: 0.3s ease;
+}
 
-        .profile-details button:hover {
-            background: #00f5f9;
-        }
+.profile-details button:hover {
+background: #00f5f9;
+}
 
-        .chat-container {
-            width: 100%;
-            max-width: 900px;
-            height: 85vh;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
+.chat-container {
+width: 100%;
+max-width: 900px;
+height: 85vh;
+display: flex;
+flex-direction: column;
+position: relative;
+}
 
-        .welcome-message {
-            text-align: center;
-            padding: 50px;
-            font-size: 20px;
-            color: #aaa;
-        }
+.welcome-message {
+text-align: center;
+padding: 50px;
+font-size: 20px;
+color: #aaa;
+}
 
-        .chat-box {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            scrollbar-width: none;
-            width: 100%;
-            max-width: 850px;
-        }
+.chat-box {
+flex-grow: 1;
+overflow-y: auto;
+padding: 20px;
+display: flex;
+flex-direction: column;
+gap: 10px;
+scrollbar-width: none;
+width: 100%;
+max-width: 850px;
+}
 
-        .message {
-            padding: 15px;
-            border-radius: 10px;
-            max-width: 80%;
-            word-wrap: break-word;
-        }
+.message {
+padding: 15px;
+border-radius: 10px;
+max-width: 80%;
+width: fit-content;
+word-wrap: break-word;
+}
 
-        .user-message {
-            align-self: flex-end;
-            background: #007bff;
-            color: white;
-            border-radius: 18px 18px 0px 18px;
-        }
+.user-message {
+align-self: flex-end;
+background: #007bff;
+color: white;
+border-radius: 18px 18px 0px 18px;
+}
 
-        .bot-message {
-            align-self: flex-start;
-            background: #222;
-            color: white;
-            border-radius: 18px 18px 18px 0px;
-        }
+.bot-message {
+align-self: flex-start;
+background: #000000;
+color: white;
+border-radius: 18px 18px 18px 0px;
+}
 
-        .input-container {
-            display: flex;
-            flex-direction: column;
-            padding: 10px;
-            background: #111;
-            border-top: 1px solid #222;
-            border-radius: 15px;
-        }
+/* Typing dots animation */
+.typing-indicator::after {
+content: '';
+display: inline-block;
+width: 4px;
+height: 4px;
+margin-left: 5px;
+border-radius: 50%;
+background-color: #aaa;
+animation: blink 1.5s infinite ease-in-out;
+}
 
-        .input-row {
-            display: flex;
-            align-items: center;
-            border: 1px solid #333;
-            padding: 10px;
-            border-radius: 30px;
-            background: #222;
-        }
+@keyframes blink {
+            0%, 100% { box-shadow: 8px 0 0 0 #aaa, 16px 0 0 0 #aaa; }
+            33% { box-shadow: 8px 0 0 0 transparent, 16px 0 0 0 #aaa; }
+            66% { box-shadow: 8px 0 0 0 #aaa, 16px 0 0 0 transparent; }
+}
 
-        input {
-            flex: 1;
-            padding: 12px;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: white;
-            font-size: 16px;
-            border-radius: 20px;
-        }
+.input-container {
+display: flex;
+flex-direction: column;
+padding: 10px;
+background: #111;
+border-top: 1px solid #222;
+border-radius: 15px;
+}
 
-        .send-btn {
-            padding: 12px 18px;
-            background: #007bff;
-            border: none;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-            border-radius: 20px;
-            margin-left: 10px;
-            transition: 0.3s ease;
-        }
+.pre-prompts {
+display: flex;
+gap: 10px;
+margin-bottom: 10px;
+justify-content: center;
+}
 
-        .send-btn:hover {
-            background: #0056b3;
-        }
-    </style>
+.pre-prompts button {
+padding: 12px 15px;
+border: none;
+background: #222;
+color: white;
+cursor: pointer;
+border-radius: 20px;
+font-size: 14px;
+transition: 0.3s ease;
+}
+
+.pre-prompts button:hover {
+background: #007bff;
+}
+
+.input-row {
+display: flex;
+align-items: center;
+border: 1px solid #333;
+padding: 10px;
+border-radius: 30px;
+background: #222;
+}
+
+input {
+flex: 1;
+padding: 12px;
+background: transparent;
+border: none;
+outline: none;
+color: white;
+font-size: 16px;
+border-radius: 20px;
+}
+
+button.send-btn {
+padding: 12px 18px;
+background: #007bff;
+border: none;
+color: white;
+font-size: 16px;
+cursor: pointer;
+border-radius: 20px;
+margin-left: 10px;
+transition: 0.3s ease;
+}
+
+button.send-btn:hover {
+background: #0056b3;
+}
+
+/* Hide scrollbar */
+.chat-box::-webkit-scrollbar {
+display: none;
+}
+</style>
 </head>
 <body>
 
-    <div class="header">
-        <div>Echo AI</div>
+<div class="header">
+<div>Echo AI</div>
 
-        <!-- User Profile Section -->
-        <div class="profile-container" onclick="toggleProfileDetails()">
-            <div class="profile-avatar"></div>
-            <div class="profile-name">User</div>
-        </div>
-    </div>
+<!-- User Profile Section -->
+<div class="profile-container" onclick="toggleProfileDetails()">
+<div class="profile-avatar"></div>
+<div class="profile-name">User</div>
+</div>
+</div>
 
-    <!-- User Profile Details -->
-    <div class="profile-details" id="profile-details">
-        <p><strong>Name:</strong> User</p>
-        <p><strong>Email:</strong> user@example.com</p>
-        <button onclick="logout()">Logout</button>
-    </div>
+<!-- User Profile Details -->
+<div class="profile-details" id="profile-details">
+    <p><strong>Name:</strong> User</p>
+    <p><strong>Email:</strong> user@example.com</p>
+    <button onclick="logout()">Logout</button> <!-- Profile logout button -->
+</div>
 
-    <div class="chat-container">
-        <div class="welcome-message" id="welcome-message">
-            <p>AI Heart Health Chatbot</p>
-            <p>"Your AI-powered heart health assistant – monitor, analyze, and stay informed."</p>
-        </div>
 
-        <div class="chat-box" id="chat-box"></div>
+<div class="chat-container">
+<div class="welcome-message" id="welcome-message">
+<p>AI Heart Health Chatbot</p>
+<p>"Your AI-powered heart health assistant – monitor, analyze, and stay informed."</p>
+</div>
 
-        <div class="input-container">
-            <div class="input-row">
-                <input type="text" id="user-input" placeholder="Ask me about heart health..." autofocus>
-                <button class="send-btn" onclick="sendMessage()">Send</button>
-            </div>
-        </div>
-    </div>
+<div class="chat-box" id="chat-box">
+</div>
 
-    <script>
-        function toggleProfileDetails() {
-            const profileDetails = document.getElementById("profile-details");
-            profileDetails.style.display = profileDetails.style.display === "none" || profileDetails.style.display === "" ? "block" : "none";
+<div class="pre-prompts">
+<button onclick="sendPrePrompt('Best exercises for heart')">🏃 Best Exercises</button>
+<button onclick="sendPrePrompt('How to maintain healthy blood pressure?')">💓 Blood Pressure</button>
+<button onclick="sendPrePrompt('Heart-friendly diet tips')">🥗 Diet Tips</button>
+</div>
+
+<div class="input-container">
+<div class="input-row">
+<input type="text" id="user-input" placeholder="Ask me about heart health..." autofocus>
+<button class="send-btn" onclick="sendMessage()">Send</button>
+</div>
+</div>
+
+</div>
+
+<script>
+// Toggle Profile Details Visibility
+function toggleProfileDetails() {
+const profileDetails = document.getElementById("profile-details");
+profileDetails.style.display = profileDetails.style.display === "none" || profileDetails.style.display === "" ? "flex" : "none";
+    }
+
+// Pre-Prompt Function
+function sendPrePrompt(message) {
+document.getElementById("user-input").value = message;
+sendMessage();
+    }
+
+// Send Message Function
+function sendMessage() {
+let userInput = document.getElementById("user-input").value;
+if (userInput.trim() === "") return;
+
+let chatBox = document.getElementById("chat-box");
+let welcomeMessage = document.getElementById("welcome-message");
+
+// Hide welcome message after first input
+if (welcomeMessage) {
+welcomeMessage.style.display = "none";
         }
 
-        function sendMessage() {
-            let userInput = document.getElementById("user-input").value;
-            if (userInput.trim() === "") return;
+// Append User Message
+let userMessage = document.createElement("div");
+userMessage.classList.add("message", "user-message");
+userMessage.innerText = userInput;
+chatBox.appendChild(userMessage);
 
-            let chatBox = document.getElementById("chat-box");
-            let welcomeMessage = document.getElementById("welcome-message");
+// Clear input field
+document.getElementById("user-input").value = "";
 
-            if (welcomeMessage) {
-                welcomeMessage.style.display = "none";
-            }
+// Typing Indicator
+let typingIndicator = document.createElement("div");
+typingIndicator.classList.add("typing-indicator");
+typingIndicator.innerText = "Echo AI is typing";
+chatBox.appendChild(typingIndicator);
+typingIndicator.style.display = "block";
 
-            let userMessage = document.createElement("div");
-            userMessage.classList.add("message", "user-message");
-            userMessage.innerText = userInput;
-            chatBox.appendChild(userMessage);
+// Auto-scroll chatbox
+chatBox.scrollTop = chatBox.scrollHeight;
 
-            document.getElementById("user-input").value = "";
+// Send Request to Flask Backend
+fetch("/chat", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({ message: userInput })
+        })
+        .then(response => response.json())
+        .then(data => {
+// Remove Typing Indicator
+chatBox.removeChild(typingIndicator);
 
-            fetch("/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: userInput })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Server error: " + response.status);
-                }
-                return response.json();
-            })
-            .then(data => {
-                let botMessage = document.createElement("div");
-                botMessage.classList.add("message", "bot-message");
-                botMessage.innerText = data.response;
-                chatBox.appendChild(botMessage);
-            })
-            .catch(error => {
-                console.error("Error:", error);
+// Format and Append Bot Response (Supports Tables)
+formatBotResponse(data.response);
+        })
+        .catch(error => {
+chatBox.removeChild(typingIndicator);
+displayMessage("Error: " + error, "bot-message");
+        });
+    }
+
+// Function to Display Bot Messages (Handles Tables)
+function formatBotResponse(response) {
+const chatBox = document.getElementById("chat-box");
+
+if (response.includes('|')) { 
+// Detect Markdown-Style Table
+const rows = response.trim().split('\n');
+let tableHTML = '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
+rows.forEach((row, index) => {
+const cells = row.split('|').filter(cell => cell.trim());
+tableHTML += '<tr>' + cells.map(cell => `<${index === 0 ? 'th' : 'td'} style="border: 1px solid #555; padding: 8px; text-align: left;">${cell.trim()}</${index === 0 ? 'th' : 'td'}>`).join('') + '</tr>';
             });
+
+tableHTML += '</table>';
+
+const botMessage = document.createElement("div");
+botMessage.classList.add("message", "bot-message");
+botMessage.innerHTML = tableHTML;
+chatBox.appendChild(botMessage);
+        } else {
+// Regular Text Message
+displayMessage(response, "bot-message");
         }
 
-        function logout() {
-            window.location.href = "/login";
-        }
-    </script>
+// Auto-scroll after new message
+chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+// Helper Function for Displaying Regular Text Messages
+function displayMessage(text, className) {
+const chatBox = document.getElementById("chat-box");
+const message = document.createElement("div");
+message.classList.add("message", className);
+message.innerText = text;
+chatBox.appendChild(message);
+    }
+
+// Logout Function for Profile Section
+function logout() {
+    // Redirect to login or signup page
+    window.location.href = "/login";  // Replace with actual URL of login/signup page
+}
+
+
+</script>
 
 </body>
 </html>
