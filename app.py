@@ -8,16 +8,15 @@ from dotenv import load_dotenv
 import re
 
 # ------------------ INITIAL SETUP ------------------
-
 # Initialize Flask app
 app = Flask(__name__)
 load_dotenv()  # Load environment variables from .env
 
-# Secret Key & OpenAI Key
+# Secret Key & OpenAI API Key
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Fix DATABASE_URL for SQLAlchemy (Render uses "postgres://", but SQLAlchemy needs "postgresql://")
+# Fix DATABASE_URL for SQLAlchemy
 db_url = os.getenv("DATABASE_URL")
 if db_url and db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
@@ -28,31 +27,30 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize database
 db = SQLAlchemy(app)
-migrate = Migrate(app, db)  # Enable Flask-Migrate for migrations
+migrate = Migrate(app, db)
 
 # ------------------ DATABASE MODELS ------------------
-
-class Users(db.Model):  # Ensure class name matches table name
-    __tablename__ = "users"  # Explicitly define table name (optional but recommended)
+class Users(db.Model):
+    """User model with authentication"""
+    __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     chats = db.relationship('ChatHistory', backref='user', lazy=True)
 
 class ChatHistory(db.Model):
+    """Chat history model for storing chatbot interactions"""
     __tablename__ = "chat_history"
     id = db.Column(db.Integer, primary_key=True)
     user_input = db.Column(db.Text, nullable=False)
     bot_response = db.Column(db.Text, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Fix foreign key reference
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
 # ------------------ HEART KEYWORDS ------------------
-
 HEART_KEYWORDS = [
-    "heart", "for", "continue", "cardiac", "week", "month", "day", "blood pressure", "cholesterol",
-    "heart attack", "stroke", "arrhythmia", "hypertension", "pulse", "artery",
-    "coronary", "circulation", "table", "ECG", "EKG", "aorta", "cardiovascular",
-    "angioplasty", "bypass surgery"
+    "heart", "cardiac", "blood pressure", "cholesterol", "heart attack", 
+    "stroke", "arrhythmia", "hypertension", "pulse", "artery", "circulation", 
+    "ECG", "EKG", "cardiovascular", "angioplasty", "bypass surgery"
 ]
 
 def is_heart_related(user_input):
@@ -77,12 +75,12 @@ def signup():
         password = request.form['password']
 
         # Check if username exists
-        if Users.query.filter_by(username=username).first():  # Fixed reference to Users
+        if Users.query.filter_by(username=username).first():
             return render_template('signup.html', error_message="⚠️ Username already exists. Please try another.")
 
         # Hash password and add user
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-        new_user = Users(username=username, password=hashed_password)  # Fixed reference to Users
+        new_user = Users(username=username, password=hashed_password)
         db.session.add(new_user)
         db.session.commit()
 
@@ -96,7 +94,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
-        user = Users.query.filter_by(username=username).first()  # Fixed reference to Users
+        user = Users.query.filter_by(username=username).first()
 
         if not user:
             return render_template('login.html', error_message="⚠️ Username does not exist.")
@@ -138,6 +136,10 @@ def chat():
     conversation_history.append({"role": "user", "content": user_input})
 
     try:
+        # Ensure OpenAI API key is valid
+        if not openai.api_key:
+            return jsonify({"response": "OpenAI API key is missing or invalid.", "type": "text"}), 500
+
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=conversation_history
@@ -152,7 +154,7 @@ def chat():
 
         return jsonify({"response": chatbot_response, "type": "text"})
 
-    except openai.error.OpenAIError as e:  # Handle OpenAI API errors
+    except openai.error.OpenAIError as e:
         return jsonify({"response": f"OpenAI API error: {str(e)}", "type": "text"}), 500
 
     except Exception as e:
@@ -168,6 +170,5 @@ def history():
     return render_template('history.html', chats=chats)
 
 # ------------------ MAIN ------------------
-
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
