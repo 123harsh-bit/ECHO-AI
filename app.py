@@ -2,7 +2,6 @@ import os
 from datetime import timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 import openai
 from dotenv import load_dotenv
@@ -27,7 +26,7 @@ CORS(app, resources={
     r"/api/*": {"origins": "*"}
 })
 
-# Database configuration
+# Database configuration (simplified - only for user auth)
 db_url = os.getenv('DATABASE_URL')
 if db_url and db_url.startswith('postgres://'):
     db_url = db_url.replace('postgres://', 'postgresql://', 1)
@@ -35,27 +34,18 @@ if db_url and db_url.startswith('postgres://'):
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Initialize database
+# Initialize database (simplified)
 db = SQLAlchemy(app)
-migrate = Migrate(app, db)
 
 # OpenAI configuration
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 # ------------------ DATABASE MODELS ------------------
-class Users(db.Model):
+class User(db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    chats = db.relationship('ChatHistory', backref='user', lazy=True)
-
-class ChatHistory(db.Model):
-    __tablename__ = "chat_history"
-    id = db.Column(db.Integer, primary_key=True)
-    user_input = db.Column(db.Text, nullable=False)
-    bot_response = db.Column(db.Text, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
 # ------------------ HEALTH KEYWORDS ------------------
 HEART_KEYWORDS = [
@@ -103,11 +93,11 @@ def signup():
         if not username or not password:
             return render_template('signup.html', error_message="Username and password are required.")
 
-        if Users.query.filter_by(username=username).first():
+        if User.query.filter_by(username=username).first():
             return render_template('signup.html', error_message="Username already exists.")
 
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-        new_user = Users(username=username, password=hashed_password)
+        new_user = User(username=username, password=hashed_password)
         
         try:
             db.session.add(new_user)
@@ -133,7 +123,7 @@ def login():
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
 
-        user = Users.query.filter_by(username=username).first()
+        user = User.query.filter_by(username=username).first()
 
         if not user:
             return render_template('login.html', error_message="Invalid username or password.")
@@ -187,15 +177,6 @@ def chat():
             'type': 'text'
         }), 400
 
-    previous_chats = ChatHistory.query.filter_by(user_id=session['user_id']).order_by(ChatHistory.id.desc()).limit(5).all()
-    conversation_history = [{"role": "system", "content": "You are a helpful heart health expert."}]
-
-    for chat in reversed(previous_chats):
-        conversation_history.append({"role": "user", "content": chat.user_input})
-        conversation_history.append({"role": "assistant", "content": chat.bot_response})
-
-    conversation_history.append({"role": "user", "content": user_input})
-
     try:
         if not openai.api_key:
             return jsonify({
@@ -204,21 +185,17 @@ def chat():
                 'type': 'text'
             }), 500
 
+        # Simplified chat without history
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=conversation_history,
+            messages=[
+                {"role": "system", "content": "You are a helpful heart health expert."},
+                {"role": "user", "content": user_input}
+            ],
             temperature=0.7
         )
 
         chatbot_response = response['choices'][0]['message']['content']
-
-        new_chat = ChatHistory(
-            user_input=user_input,
-            bot_response=chatbot_response,
-            user_id=session['user_id']
-        )
-        db.session.add(new_chat)
-        db.session.commit()
 
         return jsonify({
             'status': 'success',
@@ -233,14 +210,10 @@ def chat():
             'type': 'text'
         }), 500
 
-@app.route('/history')
-def history():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
-    chats = ChatHistory.query.filter_by(user_id=session['user_id']).order_by(ChatHistory.id.desc()).all()
-    return render_template('history.html', chats=chats)
-
 if __name__ == '__main__':
+    # Create tables if they don't exist
+    with app.app_context():
+        db.create_all()
+    
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=os.getenv('FLASK_ENV') == 'development')
