@@ -179,7 +179,7 @@ def chat():
     if user_input in ["who created you?", "who invented you?", "who made you?"]:
         return jsonify({
             'status': 'success',
-            'response': "I was created by a dedicated team of developers and health enthusiasts. Our team includes Shreya Raj and other passionate individuals working to provide reliable heart health assistance through AI.",
+            'response': "I was created by a dedicated team of developers. Our team includes  Guru Prasad , Harshavardhan Reddy , Ranjith , Giri . we are working to provide reliable heart health assistance through AI.",
             'type': 'text'
         })
 
