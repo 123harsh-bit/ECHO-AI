@@ -6,11 +6,18 @@ import openai
 import os
 from dotenv import load_dotenv
 import re
+from flask_cors import CORS  # Added for CORS support
 
 # ------------------ INITIAL SETUP ------------------
 # Initialize Flask app
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', template_folder='templates')
 load_dotenv()  # Load environment variables from .env
+
+# Enable CORS for all routes
+CORS(app, resources={
+    r"/chat": {"origins": "*"},  # Allow all origins for /chat endpoint
+    r"/api/*": {"origins": "*"}  # Allow all origins for any API endpoints
+})
 
 # Secret Key & OpenAI API Key
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
@@ -67,6 +74,11 @@ def home():
         return render_template('index.html')
     return redirect(url_for('login'))
 
+# ---------- Static Files (CSS, JS) ----------
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    return app.send_static_file(filename)
+
 # ---------- Sign Up ----------
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -113,32 +125,61 @@ def logout():
     session.pop('user_id', None)
     return redirect(url_for('login'))
 
-# ---------- Chat ----------
+# ---------- Chat API Endpoint ----------
 @app.route('/chat', methods=['POST'])
 def chat():
-    if 'user_id' not in session:
-        return jsonify({"response": "Please log in first.", "type": "text"})
-
-    user_input = request.json.get('message', '')
-
-    # Check if heart-related
-    if not is_heart_related(user_input):
-        return jsonify({"response": "I can only answer heart health-related questions.", "type": "text"})
-
-    # Fetch previous chat history for context
-    previous_chats = ChatHistory.query.filter_by(user_id=session['user_id']).all()
-    conversation_history = [{"role": "system", "content": "You are a heart health expert."}]
-
-    for chat in previous_chats:
-        conversation_history.append({"role": "user", "content": chat.user_input})
-        conversation_history.append({"role": "assistant", "content": chat.bot_response})
-
-    conversation_history.append({"role": "user", "content": user_input})
-
     try:
-        # Ensure OpenAI API key is valid
+        # Check if user is logged in
+        if 'user_id' not in session:
+            return jsonify({
+                "status": "error",
+                "message": "Please log in first.",
+                "type": "text"
+            }), 401
+
+        # Validate request data
+        if not request.is_json:
+            return jsonify({
+                "status": "error",
+                "message": "Invalid request format. JSON expected.",
+                "type": "text"
+            }), 400
+
+        data = request.get_json()
+        user_input = data.get('message', '').strip()
+
+        if not user_input:
+            return jsonify({
+                "status": "error",
+                "message": "Empty message received.",
+                "type": "text"
+            }), 400
+
+        # Check if heart-related
+        if not is_heart_related(user_input):
+            return jsonify({
+                "status": "error",
+                "message": "I can only answer heart health-related questions.",
+                "type": "text"
+            }), 400
+
+        # Fetch previous chat history for context
+        previous_chats = ChatHistory.query.filter_by(user_id=session['user_id']).all()
+        conversation_history = [{"role": "system", "content": "You are a heart health expert."}]
+
+        for chat in previous_chats:
+            conversation_history.append({"role": "user", "content": chat.user_input})
+            conversation_history.append({"role": "assistant", "content": chat.bot_response})
+
+        conversation_history.append({"role": "user", "content": user_input})
+
+        # Call OpenAI API
         if not openai.api_key:
-            return jsonify({"response": "OpenAI API key is missing or invalid.", "type": "text"}), 500
+            return jsonify({
+                "status": "error",
+                "message": "OpenAI API key is missing or invalid.",
+                "type": "text"
+            }), 500
 
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -148,17 +189,33 @@ def chat():
         chatbot_response = response['choices'][0]['message']['content']
 
         # Save chat history
-        new_chat = ChatHistory(user_input=user_input, bot_response=chatbot_response, user_id=session['user_id'])
+        new_chat = ChatHistory(
+            user_input=user_input,
+            bot_response=chatbot_response,
+            user_id=session['user_id']
+        )
         db.session.add(new_chat)
         db.session.commit()
 
-        return jsonify({"response": chatbot_response, "type": "text"})
+        return jsonify({
+            "status": "success",
+            "response": chatbot_response,
+            "type": "text"
+        })
 
     except openai.error.OpenAIError as e:
-        return jsonify({"response": f"OpenAI API error: {str(e)}", "type": "text"}), 500
+        return jsonify({
+            "status": "error",
+            "message": f"OpenAI API error: {str(e)}",
+            "type": "text"
+        }), 500
 
     except Exception as e:
-        return jsonify({"response": f"Unexpected error: {str(e)}", "type": "text"}), 500
+        return jsonify({
+            "status": "error",
+            "message": f"Unexpected error: {str(e)}",
+            "type": "text"
+        }), 500
 
 # ---------- Chat History ----------
 @app.route('/history')
@@ -171,4 +228,5 @@ def history():
 
 # ------------------ MAIN ------------------
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    port = int(os.environ.get("PORT", 5000))  # For Render compatibility
+    app.run(host="0.0.0.0", port=port, debug=(os.environ.get("FLASK_ENV") == "development"))
