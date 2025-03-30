@@ -168,7 +168,7 @@ def chat():
         }), 400
 
     # Custom response for "Who are you?"
-    if user_input in ["who are you?", "what is your name?", "who is this?"]:
+    if user_input in ["who are you?", "what is your name?", "who is this?","who are you","what is echo ai"]:
         return jsonify({
             'status': 'success',
             'response': "I am Echo, your heart health assistant. I provide guidance and insights related to heart health to help you stay informed and make better health decisions.",
