@@ -75,7 +75,7 @@ def signup():
         password = request.form['password']
 
         # Check if username exists
-        if User.query.filter_by(username=username).first():
+        if Users.query.filter_by(username=username).first():
             return render_template('signup.html', error_message="⚠️ Username already exists. Please try another.")
 
         # Hash password and add user
@@ -94,7 +94,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
-        user = User.query.filter_by(username=username).first()
+        user = Users.query.filter_by(username=username).first()
 
         if not user:
             return render_template('login.html', error_message="⚠️ Username does not exist.")
