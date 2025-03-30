@@ -125,23 +125,25 @@ def chat():
     if 'user_id' not in session:
         return jsonify({"response": "Please log in first.", "type": "text"}), 401
 
-    user_input = request.json.get('message', '')
+    data = request.get_json()
+    if not data or 'message' not in data:
+        return jsonify({"response": "Invalid input. Please enter a message.", "type": "text"}), 400
 
-    # Check if heart-related
+    user_input = data['message'].strip()
+
     if not is_heart_related(user_input):
         return jsonify({"response": "I can only answer heart health-related questions.", "type": "text"}), 400
 
-    # Fetch last 5 chat history messages for context
-    previous_chats = ChatHistory.query.filter_by(user_id=session['user_id']).order_by(ChatHistory.id.desc()).limit(5).all()
-    conversation_history = [{"role": "system", "content": "You are a heart health expert."}]
-
-    for chat in reversed(previous_chats):  # Reverse order to maintain chat flow
-        conversation_history.append({"role": "user", "content": chat.user_input})
-        conversation_history.append({"role": "assistant", "content": chat.bot_response})
-
-    conversation_history.append({"role": "user", "content": user_input})
-
     try:
+        previous_chats = ChatHistory.query.filter_by(user_id=session['user_id']).order_by(ChatHistory.id.desc()).limit(5).all()
+        conversation_history = [{"role": "system", "content": "You are a heart health expert."}]
+
+        for chat in reversed(previous_chats):  
+            conversation_history.append({"role": "user", "content": chat.user_input})
+            conversation_history.append({"role": "assistant", "content": chat.bot_response})
+
+        conversation_history.append({"role": "user", "content": user_input})
+
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=conversation_history
@@ -154,13 +156,13 @@ def chat():
         db.session.add(new_chat)
         db.session.commit()
 
-        return jsonify({"response": chatbot_response, "type": "text"})
+        return jsonify({"response": chatbot_response, "type": "text"}), 200
 
     except openai.error.OpenAIError as e:
-        return jsonify({"response": f"OpenAI API error: {str(e)}", "type": "text"}), 500
+        return jsonify({"response": f"⚠️ OpenAI API error: {str(e)}", "type": "text"}), 500
 
     except Exception as e:
-        return jsonify({"response": f"Unexpected error: {str(e)}", "type": "text"}), 500
+        return jsonify({"response": f"⚠️ Unexpected error: {str(e)}", "type": "text"}), 500
 
 # ---------- Chat History ----------
 @app.route('/history')
