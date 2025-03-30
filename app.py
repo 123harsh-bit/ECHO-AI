@@ -5,13 +5,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import openai
 import os
 from dotenv import load_dotenv
-import re
 
 # ------------------ INITIAL SETUP ------------------
 
 # Initialize Flask app
 app = Flask(__name__)
-load_dotenv()  # Load environment variables from .env
+
+# Load environment variables from .env
+load_dotenv()
 
 # Secret Key & OpenAI Key
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
@@ -32,8 +33,8 @@ migrate = Migrate(app, db)  # Enable Flask-Migrate for migrations
 
 # ------------------ DATABASE MODELS ------------------
 
-class Users(db.Model):  # Ensure class name matches table name
-    __tablename__ = "users"  # Explicitly define table name (optional but recommended)
+class Users(db.Model):
+    __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
@@ -44,15 +45,14 @@ class ChatHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_input = db.Column(db.Text, nullable=False)
     bot_response = db.Column(db.Text, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Fix foreign key reference
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
 # ------------------ HEART KEYWORDS ------------------
 
 HEART_KEYWORDS = [
-    "heart", "for", "continue", "cardiac", "week", "month", "day", "blood pressure", "cholesterol",
-    "heart attack", "stroke", "arrhythmia", "hypertension", "pulse", "artery",
-    "coronary", "circulation", "table", "ECG", "EKG", "aorta", "cardiovascular",
-    "angioplasty", "bypass surgery"
+    "heart", "cardiac", "blood pressure", "cholesterol", "heart attack",
+    "stroke", "arrhythmia", "hypertension", "pulse", "artery", "ECG", "EKG",
+    "coronary", "circulation", "aorta", "cardiovascular", "angioplasty"
 ]
 
 def is_heart_related(user_input):
@@ -66,7 +66,7 @@ def is_heart_related(user_input):
 @app.route('/')
 def home():
     if 'user_id' in session:
-        return render_template('index.html')
+        return render_template('index.html', username=session.get('username'))
     return redirect(url_for('login'))
 
 # ---------- Sign Up ----------
@@ -77,16 +77,17 @@ def signup():
         password = request.form['password']
 
         # Check if username exists
-        if Users.query.filter_by(username=username).first():  # Fixed reference to Users
+        if Users.query.filter_by(username=username).first():
             return render_template('signup.html', error_message="⚠️ Username already exists. Please try another.")
 
         # Hash password and add user
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-        new_user = Users(username=username, password=hashed_password)  # Fixed reference to Users
+        new_user = Users(username=username, password=hashed_password)
         db.session.add(new_user)
         db.session.commit()
 
         return redirect(url_for('login'))
+
     return render_template('signup.html')
 
 # ---------- Login ----------
@@ -96,7 +97,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
-        user = Users.query.filter_by(username=username).first()  # Fixed reference to Users
+        user = Users.query.filter_by(username=username).first()
 
         if not user:
             return render_template('login.html', error_message="⚠️ Username does not exist.")
@@ -105,6 +106,8 @@ def login():
             return render_template('login.html', error_message="⚠️ Invalid password. Please try again.")
 
         session['user_id'] = user.id
+        session['username'] = user.username  # Store username in session
+
         return redirect(url_for('home'))
 
     return render_template('login.html')
@@ -113,25 +116,26 @@ def login():
 @app.route('/logout')
 def logout():
     session.pop('user_id', None)
+    session.pop('username', None)  # Clear username from session
     return redirect(url_for('login'))
 
 # ---------- Chat ----------
 @app.route('/chat', methods=['POST'])
 def chat():
     if 'user_id' not in session:
-        return jsonify({"response": "Please log in first.", "type": "text"})
+        return jsonify({"response": "Please log in first.", "type": "text"}), 401
 
     user_input = request.json.get('message', '')
 
     # Check if heart-related
     if not is_heart_related(user_input):
-        return jsonify({"response": "I can only answer heart health-related questions.", "type": "text"})
+        return jsonify({"response": "I can only answer heart health-related questions.", "type": "text"}), 400
 
-    # Fetch previous chat history for context
-    previous_chats = ChatHistory.query.filter_by(user_id=session['user_id']).all()
+    # Fetch last 5 chat history messages for context
+    previous_chats = ChatHistory.query.filter_by(user_id=session['user_id']).order_by(ChatHistory.id.desc()).limit(5).all()
     conversation_history = [{"role": "system", "content": "You are a heart health expert."}]
 
-    for chat in previous_chats:
+    for chat in reversed(previous_chats):  # Reverse order to maintain chat flow
         conversation_history.append({"role": "user", "content": chat.user_input})
         conversation_history.append({"role": "assistant", "content": chat.bot_response})
 
@@ -152,7 +156,7 @@ def chat():
 
         return jsonify({"response": chatbot_response, "type": "text"})
 
-    except openai.error.OpenAIError as e:  # Handle OpenAI API errors
+    except openai.error.OpenAIError as e:
         return jsonify({"response": f"OpenAI API error: {str(e)}", "type": "text"}), 500
 
     except Exception as e:
@@ -164,7 +168,7 @@ def history():
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
-    chats = ChatHistory.query.filter_by(user_id=session['user_id']).all()
+    chats = ChatHistory.query.filter_by(user_id=session['user_id']).order_by(ChatHistory.id.desc()).all()
     return render_template('history.html', chats=chats)
 
 # ------------------ MAIN ------------------
