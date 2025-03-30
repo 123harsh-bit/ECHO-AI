@@ -15,13 +15,13 @@ load_dotenv()  # Load environment variables from .env
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
 # Configure session
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-fallback-secret-key')  # Always set a secret key
-app.config['SESSION_COOKIE_SECURE'] = True  # Requires HTTPS
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-fallback-secret-key')
+app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)  # Session expires after 1 day
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
 
-# Enable CORS for API routes
+# Enable CORS
 CORS(app, resources={
     r"/chat": {"origins": "*"},
     r"/api/*": {"origins": "*"}
@@ -44,7 +44,6 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 
 # ------------------ DATABASE MODELS ------------------
 class Users(db.Model):
-    """User model with authentication"""
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
@@ -52,7 +51,6 @@ class Users(db.Model):
     chats = db.relationship('ChatHistory', backref='user', lazy=True)
 
 class ChatHistory(db.Model):
-    """Chat history model for storing chatbot interactions"""
     __tablename__ = "chat_history"
     id = db.Column(db.Integer, primary_key=True)
     user_input = db.Column(db.Text, nullable=False)
@@ -67,29 +65,25 @@ HEART_KEYWORDS = [
 ]
 
 def is_heart_related(user_input):
-    """Check if the user input contains heart-related keywords."""
     user_input = user_input.lower()
     return any(keyword in user_input for keyword in HEART_KEYWORDS)
 
 # ------------------ MIDDLEWARE ------------------
 @app.before_request
 def before_request():
-    """Ensure all requests use HTTPS and check session."""
-    # Force HTTPS in production
+    """Force HTTPS in production"""
     if request.url.startswith('http://') and os.getenv('FLASK_ENV') == 'production':
-        return redirect(request.url.replace('http://', 'https://'), 301
+        return redirect(request.url.replace('http://', 'https://'), 301)
 
 # ------------------ ROUTES ------------------
 @app.route('/')
 def home():
-    """Home route - requires authentication"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     return render_template('index.html')
 
 @app.route('/check-auth')
 def check_auth():
-    """Endpoint for frontend to check authentication status"""
     if 'user_id' in session:
         return jsonify({
             'authenticated': True,
@@ -99,7 +93,6 @@ def check_auth():
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    """User signup route"""
     if 'user_id' in session:
         return redirect(url_for('home'))
 
@@ -120,7 +113,6 @@ def signup():
             db.session.add(new_user)
             db.session.commit()
             
-            # Automatically log in the new user
             session.permanent = True
             session['user_id'] = new_user.id
             session['username'] = new_user.username
@@ -134,7 +126,6 @@ def signup():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """User login route"""
     if 'user_id' in session:
         return redirect(url_for('home'))
 
@@ -150,25 +141,21 @@ def login():
         if not check_password_hash(user.password, password):
             return render_template('login.html', error_message="Invalid username or password.")
 
-        # Set session variables
         session.permanent = True
         session['user_id'] = user.id
         session['username'] = user.username
         
-        # Use 303 redirect to prevent form resubmission
         return redirect(url_for('home'), code=303)
 
     return render_template('login.html')
 
 @app.route('/logout', methods=['POST'])
 def logout():
-    """Logout route"""
     session.clear()
     return jsonify({'success': True}), 200
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    """Chat API endpoint"""
     if 'user_id' not in session:
         return jsonify({
             'status': 'error',
@@ -200,11 +187,10 @@ def chat():
             'type': 'text'
         }), 400
 
-    # Get previous chats for context
     previous_chats = ChatHistory.query.filter_by(user_id=session['user_id']).order_by(ChatHistory.id.desc()).limit(5).all()
     conversation_history = [{"role": "system", "content": "You are a helpful heart health expert."}]
 
-    for chat in reversed(previous_chats):  # Oldest first
+    for chat in reversed(previous_chats):
         conversation_history.append({"role": "user", "content": chat.user_input})
         conversation_history.append({"role": "assistant", "content": chat.bot_response})
 
@@ -226,7 +212,6 @@ def chat():
 
         chatbot_response = response['choices'][0]['message']['content']
 
-        # Save to chat history
         new_chat = ChatHistory(
             user_input=user_input,
             bot_response=chatbot_response,
@@ -250,14 +235,12 @@ def chat():
 
 @app.route('/history')
 def history():
-    """Chat history route"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
     chats = ChatHistory.query.filter_by(user_id=session['user_id']).order_by(ChatHistory.id.desc()).all()
     return render_template('history.html', chats=chats)
 
-# ------------------ MAIN ------------------
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=os.getenv('FLASK_ENV') == 'development')
