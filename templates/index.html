@@ -35,6 +35,7 @@
             position: relative;
         }
 
+        /* Profile Section */
         .profile-container {
             display: flex;
             align-items: center;
@@ -51,14 +52,15 @@
         }
 
         .profile-name {
-            color: white;
+            color: hwb(0 100% 0%);
             font-size: 16px;
             margin-right: 25px;
         }
 
+        /* Profile Details Section */
         .profile-details {
             position: absolute;
-            top: 60px;
+            top: 100px;
             right: 0;
             background: #ffffff;
             padding: 20px;
@@ -74,20 +76,21 @@
         }
 
         .profile-details p {
-            color: #333;
+            color: hwb(0 8% 92%);
             margin-bottom: 10px;
             font-size: 14px;
         }
 
         .profile-details button {
-            background: #019396;
-            color: white;
+            background:#019396;
+            color: rgb(255, 255, 255);
             border: none;
             padding: 8px 15px;
             border-radius: 20px;
             cursor: pointer;
             transition: 0.3s ease;
             width: 100%;
+            margin-top: 10px;
         }
 
         .profile-details button:hover {
@@ -118,6 +121,8 @@
             flex-direction: column;
             gap: 10px;
             scrollbar-width: none;
+            width: 100%;
+            max-width: 850px;
         }
 
         .message {
@@ -132,11 +137,378 @@
             align-self: flex-end;
             background: #007bff;
             color: white;
-            border-radius: 18px 18px 0 18px;
+            border-radius: 18px 18px 0px 18px;
         }
 
         .bot-message {
             align-self: flex-start;
+            background: #000000;
+            color: white;
+            border: 1px solid #333;
+            border-radius: 18px 18px 18px 0px;
+        }
+
+        .error-message {
+            align-self: flex-start;
+            background: #ff4444;
+            color: white;
+            border-radius: 18px 18px 18px 0px;
+            padding: 10px 15px;
+            max-width: 80%;
+        }
+
+        /* Typing dots animation */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            color: #aaa;
+            font-style: italic;
+        }
+
+        .typing-indicator::after {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            margin-left: 5px;
+            border-radius: 50%;
+            background-color: #aaa;
+            animation: blink 1.5s infinite ease-in-out;
+        }
+
+        @keyframes blink {
+            0%, 100% { box-shadow: 8px 0 0 0 #aaa, 16px 0 0 0 #aaa; }
+            33% { box-shadow: 8px 0 0 0 transparent, 16px 0 0 0 #aaa; }
+            66% { box-shadow: 8px 0 0 0 #aaa, 16px 0 0 0 transparent; }
+        }
+
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            background: #111;
+            border-top: 1px solid #222;
+            border-radius: 15px;
+        }
+
+        .pre-prompts {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .pre-prompts button {
+            padding: 12px 15px;
+            border: none;
             background: #222;
             color: white;
-            border: 1px solid #333
+            cursor: pointer;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: 0.3s ease;
+        }
+
+        .pre-prompts button:hover {
+            background: #007bff;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            border: 1px solid #333;
+            padding: 10px;
+            border-radius: 30px;
+            background: #222;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 20px;
+        }
+
+        button.send-btn {
+            padding: 12px 18px;
+            background: #007bff;
+            border: none;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 20px;
+            margin-left: 10px;
+            transition: 0.3s ease;
+        }
+
+        button.send-btn:hover {
+            background: #0056b3;
+        }
+
+        /* Hide scrollbar */
+        .chat-box::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 90vh;
+                width: 95%;
+            }
+            
+            .pre-prompts {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .pre-prompts button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>Echo AI</div>
+        <div class="profile-container" onclick="toggleProfileDetails()">
+            <div class="profile-avatar"></div>
+            <div class="profile-name">User</div>
+        </div>
+    </div>
+
+    <div class="profile-details" id="profile-details">
+        <p><strong>Name:</strong> User</p>
+        <p><strong>Email:</strong> user@example.com</p>
+        <button onclick="logout()">Logout</button>
+    </div>
+
+    <div class="chat-container">
+        <div class="welcome-message" id="welcome-message">
+            <p>AI Heart Health Chatbot</p>
+            <p>"Your AI-powered heart health assistant – monitor, analyze, and stay informed."</p>
+        </div>
+
+        <div class="chat-box" id="chat-box"></div>
+
+        <div class="pre-prompts">
+            <button onclick="sendPrePrompt('Best exercises for heart health')">🏃 Best Exercises</button>
+            <button onclick="sendPrePrompt('How to maintain healthy blood pressure?')">💓 Blood Pressure</button>
+            <button onclick="sendPrePrompt('Heart-friendly diet tips')">🥗 Diet Tips</button>
+            <button onclick="sendPrePrompt('Symptoms of heart disease')">🫀 Warning Signs</button>
+        </div>
+
+        <div class="input-container">
+            <div class="input-row">
+                <input type="text" id="user-input" placeholder="Ask me about heart health..." autofocus
+                    onkeypress="handleKeyPress(event)">
+                <button class="send-btn" onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variable to track if user is logged in
+        let isLoggedIn = false;
+
+        // Check login status when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            checkLoginStatus();
+        });
+
+        // Check if user is logged in
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch('/check-auth', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    isLoggedIn = data.authenticated;
+                    
+                    if (!isLoggedIn) {
+                        window.location.href = '/login';
+                    }
+                } else {
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('Error checking auth status:', error);
+                window.location.href = '/login';
+            }
+        }
+
+        // Toggle Profile Details Visibility
+        function toggleProfileDetails() {
+            const profileDetails = document.getElementById("profile-details");
+            profileDetails.style.display = profileDetails.style.display === "none" || 
+                                         profileDetails.style.display === "" ? "flex" : "none";
+        }
+
+        // Close profile details when clicking outside
+        document.addEventListener('click', (event) => {
+            const profileDetails = document.getElementById("profile-details");
+            const profileContainer = document.querySelector('.profile-container');
+            
+            if (profileDetails.style.display === "flex" && 
+                !profileContainer.contains(event.target) && 
+                !profileDetails.contains(event.target)) {
+                profileDetails.style.display = "none";
+            }
+        });
+
+        // Handle Enter key press
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Pre-Prompt Function
+        function sendPrePrompt(message) {
+            document.getElementById("user-input").value = message;
+            sendMessage();
+        }
+
+        // Send Message Function
+        async function sendMessage() {
+            const userInput = document.getElementById("user-input").value.trim();
+            if (userInput === "") return;
+
+            const chatBox = document.getElementById("chat-box");
+            const welcomeMessage = document.getElementById("welcome-message");
+
+            // Hide welcome message after first input
+            if (welcomeMessage && welcomeMessage.style.display !== "none") {
+                welcomeMessage.style.display = "none";
+            }
+
+            // Append User Message
+            appendMessage(userInput, 'user-message');
+
+            // Clear input field
+            document.getElementById("user-input").value = "";
+
+            // Show typing indicator
+            const typingIndicator = showTypingIndicator();
+
+            try {
+                // Send Request to Flask Backend
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ message: userInput })
+                });
+
+                // Remove typing indicator
+                chatBox.removeChild(typingIndicator);
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Server error');
+                }
+
+                const data = await response.json();
+                
+                if (data.status === "error") {
+                    appendMessage(data.message, 'error-message');
+                } else {
+                    formatBotResponse(data.response);
+                }
+            } catch (error) {
+                chatBox.removeChild(typingIndicator);
+                appendMessage(`Error: ${error.message}`, 'error-message');
+                console.error('Chat error:', error);
+                
+                // If unauthorized, redirect to login
+                if (error.message.includes('Please log in')) {
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                }
+            }
+        }
+
+        // Append message to chat box
+        function appendMessage(text, className) {
+            const chatBox = document.getElementById("chat-box");
+            const message = document.createElement("div");
+            message.classList.add("message", className);
+            message.innerText = text;
+            chatBox.appendChild(message);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Show typing indicator
+        function showTypingIndicator() {
+            const chatBox = document.getElementById("chat-box");
+            const typingIndicator = document.createElement("div");
+            typingIndicator.classList.add("message", "typing-indicator");
+            typingIndicator.innerText = "Echo AI is typing";
+            chatBox.appendChild(typingIndicator);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            return typingIndicator;
+        }
+
+        // Format and display bot response
+        function formatBotResponse(response) {
+            const chatBox = document.getElementById("chat-box");
+
+            if (response.includes('|')) { 
+                // Detect Markdown-Style Table
+                const rows = response.trim().split('\n');
+                let tableHTML = '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
+                
+                rows.forEach((row, index) => {
+                    const cells = row.split('|').filter(cell => cell.trim());
+                    tableHTML += '<tr>' + cells.map(cell => 
+                        `<${index === 0 ? 'th' : 'td'} style="border: 1px solid #555; padding: 8px; text-align: left;">
+                            ${cell.trim()}
+                        </${index === 0 ? 'th' : 'td'}>`).join('') + '</tr>';
+                });
+
+                tableHTML += '</table>';
+
+                const botMessage = document.createElement("div");
+                botMessage.classList.add("message", "bot-message");
+                botMessage.innerHTML = tableHTML;
+                chatBox.appendChild(botMessage);
+            } else {
+                // Regular Text Message
+                appendMessage(response, "bot-message");
+            }
+
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Logout Function
+        async function logout() {
+            try {
+                const response = await fetch('/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    window.location.href = '/login';
+                } else {
+                    alert('Logout failed. Please try again.');
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('Logout failed. Please try again.');
+            }
+        }
+    </script>
+</body>
+</html>
