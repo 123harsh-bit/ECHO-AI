@@ -326,19 +326,12 @@ chatBox.scrollTop = chatBox.scrollHeight;
 
 // Send Request to Flask Backend
 fetch("/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: userInput })
-})
-.then(response => response.json()) // ✅ Expect JSON
-.then(data => {
-    chatBox.removeChild(typingIndicator);
-    formatBotResponse(data.response);
-})
-.catch(error => {
-    chatBox.removeChild(typingIndicator);
-    displayMessage("Error: " + error, "bot-message");
-});
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({ message: userInput })
+        })
+        .then(response => response.json())
+        .then(data => {
 // Remove Typing Indicator
 chatBox.removeChild(typingIndicator);
 
