@@ -9,6 +9,7 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_socketio import SocketIO
 import random
+import requests  # Added for better OpenAI API handling
 
 # ------------------ INITIAL SETUP ------------------
 load_dotenv()
@@ -36,13 +37,27 @@ if db_url and db_url.startswith('postgres://'):
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+    'pool_timeout': 30,
+    'pool_size': 20,
+    'max_overflow': 10
+}
 
 # Initialize database
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-# Initialize SocketIO
-socketio = SocketIO(app, cors_allowed_origins="*")
+# Initialize SocketIO with production-ready settings
+socketio = SocketIO(app,
+                   cors_allowed_origins="*",
+                   async_mode='gevent',
+                   engineio_logger=os.getenv('FLASK_ENV') == 'development',
+                   logger=os.getenv('FLASK_ENV') == 'development',
+                   ping_timeout=60,
+                   ping_interval=25,
+                   max_http_buffer_size=1e8)
 
 # OpenAI configuration
 openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -94,6 +109,11 @@ def before_request():
     if request.url.startswith('http://') and os.getenv('FLASK_ENV') == 'production':
         return redirect(request.url.replace('http://', 'https://'), 301)
 
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    """Ensure database connections are properly closed"""
+    db.session.remove()
+
 # ------------------ HEART RATE API ROUTES ------------------
 @app.route('/api/heart-rate', methods=['POST'])
 def save_heart_rate():
@@ -134,7 +154,8 @@ def save_heart_rate():
         })
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f"Heart rate save error: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
 
 @app.route('/api/heart-rate/history')
 def get_heart_rate_history():
@@ -154,7 +175,8 @@ def get_heart_rate_history():
             'device_type': r.device_type
         } for r in records])
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f"Heart rate history error: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
 
 @app.route('/api/heart-rate/analysis')
 def get_heart_rate_analysis():
@@ -190,7 +212,8 @@ def get_heart_rate_analysis():
             }
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f"Heart rate analysis error: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
 
 # ------------------ SOCKET.IO HANDLERS ------------------
 @socketio.on('connect')
@@ -199,15 +222,15 @@ def handle_connect():
     if 'user_id' in session:
         user_id = str(session['user_id'])
         socketio.server.enter_room(request.sid, user_id)
-        print(f"Client connected to room {user_id}")
+        app.logger.info(f"Client connected to room {user_id}")
 
 @socketio.on('disconnect')
 def handle_disconnect():
     """Handle WebSocket disconnection"""
     if 'user_id' in session:
-        print(f"Client disconnected from room {session['user_id']}")
+        app.logger.info(f"Client disconnected from room {session['user_id']}")
 
-# ------------------ EXISTING ROUTES ------------------
+# ------------------ AUTHENTICATION ROUTES ------------------
 @app.route('/')
 def home():
     if 'user_id' not in session:
@@ -320,92 +343,113 @@ def profile():
                          user=user,
                          heart_rates=heart_rates)
 
+# ------------------ CHATBOT ROUTE ------------------
 @app.route('/chat', methods=['POST'])
 def chat():
-    if 'user_id' not in session:
-        return jsonify({
-            'status': 'error',
-            'message': 'Please log in first.',
-            'type': 'text'
-        }), 401
-
-    if not request.is_json:
-        return jsonify({
-            'status': 'error',
-            'message': 'Invalid request format. JSON expected.',
-            'type': 'text'
-        }), 400
-
-    data = request.get_json()
-    user_input = data.get('message', '').strip().lower()
-
-    if not user_input:
-        return jsonify({
-            'status': 'error',
-            'message': 'Empty message received.',
-            'type': 'text'
-        }), 400
-
-    # Custom responses
-    if user_input in ["who are you?", "what is your name?", "who is this?","who are you","what is echo ai"]:
-        return jsonify({
-            'status': 'success',
-            'response': "I am Echo, your heart health assistant. I provide guidance and insights related to heart health to help you stay informed and make better health decisions.",
-            'type': 'text'
-        })
-
-    if user_input in ["who created you?", "who invented you?", "who made you?"]:
-        return jsonify({
-            'status': 'success',
-            'response': "I was created by a dedicated team of developers. Our team includes Guru Prasad, Harshavardhan Reddy, Ranjith, Giri. We are working to provide reliable heart health assistance through AI.",
-            'type': 'text'
-        })
-
-    if not is_heart_related(user_input):
-        return jsonify({
-            'status': 'error',
-            'message': 'I can only answer heart health-related questions.',
-            'type': 'text'
-        }), 400
-
     try:
-        if not openai.api_key:
+        if 'user_id' not in session:
             return jsonify({
                 'status': 'error',
-                'message': 'OpenAI API key is missing.',
+                'message': 'Please log in first.',
+                'type': 'text'
+            }), 401
+
+        data = request.get_json()
+        user_input = data.get('message', '').strip().lower()
+
+        if not user_input:
+            return jsonify({
+                'status': 'error',
+                'message': 'Empty message received.',
+                'type': 'text'
+            }), 400
+
+        # Custom responses
+        if user_input in ["who are you?", "what is your name?", "who is this?","who are you","what is echo ai"]:
+            return jsonify({
+                'status': 'success',
+                'response': "I am Echo, your heart health assistant. I provide guidance and insights related to heart health to help you stay informed and make better health decisions.",
+                'type': 'text'
+            })
+
+        if user_input in ["who created you?", "who invented you?", "who made you?"]:
+            return jsonify({
+                'status': 'success',
+                'response': "I was created by a dedicated team of developers. Our team includes Guru Prasad, Harshavardhan Reddy, Ranjith, Giri. We are working to provide reliable heart health assistance through AI.",
+                'type': 'text'
+            })
+
+        if not is_heart_related(user_input):
+            return jsonify({
+                'status': 'error',
+                'message': 'I can only answer heart health-related questions.',
+                'type': 'text'
+            }), 400
+
+        # Use requests with timeout for better control
+        try:
+            response = requests.post(
+                'https://api.openai.com/v1/chat/completions',
+                headers={
+                    'Authorization': f'Bearer {openai.api_key}',
+                    'Content-Type': 'application/json'
+                },
+                json={
+                    'model': 'gpt-3.5-turbo',
+                    'messages': [
+                        {"role": "system", "content": "You are a helpful heart health expert."},
+                        {"role": "user", "content": user_input}
+                    ],
+                    'temperature': 0.7
+                },
+                timeout=30  # 30 second timeout
+            )
+            response.raise_for_status()
+            data = response.json()
+            chatbot_response = data['choices'][0]['message']['content']
+
+            return jsonify({
+                'status': 'success',
+                'response': chatbot_response,
+                'type': 'text'
+            })
+
+        except requests.exceptions.Timeout:
+            return jsonify({
+                'status': 'error',
+                'message': 'The request timed out. Please try again.',
+                'type': 'text'
+            }), 504
+        except Exception as e:
+            app.logger.error(f"OpenAI API error: {str(e)}")
+            return jsonify({
+                'status': 'error',
+                'message': 'Error processing your request.',
                 'type': 'text'
             }), 500
 
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful heart health expert."},
-                {"role": "user", "content": user_input}
-            ],
-            temperature=0.7
-        )
-
-        chatbot_response = response['choices'][0]['message']['content']
-
-        return jsonify({
-            'status': 'success',
-            'response': chatbot_response,
-            'type': 'text'
-        })
-
     except Exception as e:
+        app.logger.error(f"Chat endpoint error: {str(e)}")
         return jsonify({
             'status': 'error',
-            'message': f'Error: {str(e)}',
+            'message': 'An unexpected error occurred.',
             'type': 'text'
         }), 500
 
+# ------------------ MAIN APPLICATION ENTRY ------------------
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     
-    # For development, use SocketIO's run method
-    socketio.run(app, 
-                host='0.0.0.0', 
-                port=int(os.environ.get('PORT', 5000)), 
-                debug=os.getenv('FLASK_ENV') == 'development')
+    if os.getenv('FLASK_ENV') == 'development':
+        socketio.run(app, 
+                    host='0.0.0.0', 
+                    port=int(os.environ.get('PORT', 5000)), 
+                    debug=True)
+    else:
+        # In production, this should be run via gunicorn
+        print("Production mode - use gunicorn to run the app")
+        socketio.run(app,
+                    host='0.0.0.0',
+                    port=int(os.environ.get('PORT', 5000)),
+                    debug=False)
