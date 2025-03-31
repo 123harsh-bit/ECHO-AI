@@ -61,3 +61,15 @@ python-socketio==5.10.0
 python-engineio>=4.8.0  # Updated to match socketio requirements
 eventlet==0.35.1  # Recommended async server for Socket.IO
 
+flask
+flask-sqlalchemy
+flask-migrate
+flask-socketio
+flask-cors
+python-dotenv
+openai
+requests
+gunicorn
+gevent
+psycopg2-binary  # For PostgreSQL
+
