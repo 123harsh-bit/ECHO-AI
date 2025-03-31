@@ -245,46 +245,86 @@ def chat():
         data = request.get_json()
         user_input = data.get('message', '').strip()
 
+        # Input validation
         if not user_input:
             return jsonify({'error': 'Empty message'}), 400
-        if contains_recursive_pattern(user_input):
-            return jsonify({'error': 'Invalid request'}), 400
         if len(user_input) > 500:
             return jsonify({'error': 'Message too long'}), 400
 
-        # Custom responses
-        if user_input.lower() in ["who are you?", "what is your name?"]:
-            return jsonify({'response': "I'm your health assistant"})
-            
+        # Custom responses (prevents API calls for common questions)
+        if user_input.lower() in ["who are you?", "what is your name?", "who is this?", "who are you", "what is echo ai"]:
+            return jsonify({
+                'response': "I am Echo, your heart health assistant.",
+                'type': 'text'
+            })
+
+        if user_input.lower() in ["who created you?", "who invented you?", "who made you?"]:
+            return jsonify({
+                'response': "I was created by a team of developers to help with heart health.",
+                'type': 'text'
+            })
+
+        # Content filtering
         if not is_heart_related(user_input):
-            return jsonify({'error': 'Heart-related questions only'}), 400
+            return jsonify({
+                'error': 'I can only answer heart health-related questions.',
+                'type': 'text'
+            }), 400
 
-        response = requests.post(
-            'https://api.openai.com/v1/chat/completions',
-            headers={
-                'Authorization': f'Bearer {openai.api_key}',
-                'Content-Type': 'application/json'
-            },
-            json={
-                'model': 'gpt-3.5-turbo',
-                'messages': [
-                    {"role": "system", "content": "You are a helpful heart health expert."},
-                    {"role": "user", "content": user_input}
-                ],
-                'temperature': 0.7,
-                'max_tokens': 150
-            },
-            timeout=20
-        )
-        response.raise_for_status()
-        data = response.json()
-        return jsonify({'response': data['choices'][0]['message']['content']})
+        # API call with strict limits
+        try:
+            response = requests.post(
+                'https://api.openai.com/v1/chat/completions',
+                headers={
+                    'Authorization': f'Bearer {openai.api_key}',
+                    'Content-Type': 'application/json'
+                },
+                json={
+                    'model': 'gpt-3.5-turbo',
+                    'messages': [
+                        {
+                            "role": "system", 
+                            "content": "You are a helpful heart health expert. Keep responses under 100 words."
+                        },
+                        {"role": "user", "content": user_input}
+                    ],
+                    'temperature': 0.7,
+                    'max_tokens': 100,  # Strict limit
+                    'frequency_penalty': 0.5  # Reduces repetition
+                },
+                timeout=15  # Shorter timeout
+            )
+            response.raise_for_status()
+            data = response.json()
+            
+            # Validate response
+            bot_response = data['choices'][0]['message']['content']
+            if len(bot_response) > 500:  # Safety check
+                raise ValueError("Response too long")
+                
+            return jsonify({
+                'response': bot_response,
+                'type': 'text'
+            })
 
-    except requests.exceptions.Timeout:
-        return jsonify({'error': 'Timeout'}), 504
+        except requests.exceptions.Timeout:
+            return jsonify({
+                'error': 'The request timed out. Please try again.',
+                'type': 'text'
+            }), 504
+        except Exception as e:
+            app.logger.error(f"OpenAI API error: {str(e)}")
+            return jsonify({
+                'error': 'Error processing your request.',
+                'type': 'text'
+            }), 500
+
     except Exception as e:
-        app.logger.error(f"Chat error: {str(e)}")
-        return jsonify({'error': 'Processing error'}), 500
+        app.logger.error(f"Chat endpoint error: {str(e)}")
+        return jsonify({
+            'error': 'An unexpected error occurred.',
+            'type': 'text'
+        }), 500
 
 # ------------------ MAIN APPLICATION ------------------
 if __name__ == '__main__':
