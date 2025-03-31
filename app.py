@@ -104,7 +104,22 @@ def classify_heart_rate(bpm):
 def contains_recursive_pattern(text):
     patterns = ["repeat after me", "say this exactly", "recursion"]
     return any(pattern in text.lower() for pattern in patterns)
+    
+def is_recursive_response(prompt, response):
+    """Check if response might cause recursion"""
+    prompt_words = set(prompt.lower().split())
+    response_words = set(response.lower().split())
+    common_words = prompt_words & response_words
+    return len(common_words) > 5  # If more than 5 words match
 
+def sanitize_input(text):
+    """Clean and validate input"""
+    text = text.strip()
+    if len(text) > 500:
+        raise ValueError("Input too long")
+    if any(cmd in text.lower() for cmd in ["repeat", "loop", "recurs"]):
+        raise ValueError("Recursive pattern detected")
+    return text
 # ------------------ MIDDLEWARE ------------------
 @app.before_request
 def before_request():
@@ -238,41 +253,33 @@ def logout():
 # ------------------ CHAT ROUTE ------------------
 @app.route('/chat', methods=['POST'])
 def chat():
-    try:
-        if 'user_id' not in session:
-            return jsonify({'error': 'Unauthorized'}), 401
-
-        data = request.get_json()
-        user_input = data.get('message', '').strip()
-
-        # Input validation
-        if not user_input:
-            return jsonify({'error': 'Empty message'}), 400
-        if len(user_input) > 500:
-            return jsonify({'error': 'Message too long'}), 400
-
-        # Custom responses (prevents API calls for common questions)
-        if user_input.lower() in ["who are you?", "what is your name?", "who is this?", "who are you", "what is echo ai"]:
-            return jsonify({
-                'response': "I am Echo, your heart health assistant.",
-                'type': 'text'
-            })
-
-        if user_input.lower() in ["who created you?", "who invented you?", "who made you?"]:
-            return jsonify({
-                'response': "I was created by a team of developers to help with heart health.",
-                'type': 'text'
-            })
-
-        # Content filtering
-        if not is_heart_related(user_input):
-            return jsonify({
-                'error': 'I can only answer heart health-related questions.',
-                'type': 'text'
-            }), 400
-
-        # API call with strict limits
+    MAX_ATTEMPTS = 3
+    attempt = 0
+    
+    while attempt < MAX_ATTEMPTS:
         try:
+            if 'user_id' not in session:
+                return jsonify({'error': 'Unauthorized'}), 401
+
+            data = request.get_json()
+            user_input = sanitize_input(data.get('message', ''))
+            
+            # Pre-defined responses
+            predefined = {
+                "who are you": "I'm Echo, your heart health assistant.",
+                "who created you": "I was developed by a medical AI team."
+            }
+            
+            lower_input = user_input.lower()
+            for pattern, response in predefined.items():
+                if pattern in lower_input:
+                    return jsonify({'response': response})
+
+            # Strict content filtering
+            if not is_heart_related(user_input):
+                return jsonify({'error': 'Heart-health questions only'}), 400
+
+            # API call with multiple safeguards
             response = requests.post(
                 'https://api.openai.com/v1/chat/completions',
                 headers={
@@ -283,49 +290,43 @@ def chat():
                     'model': 'gpt-3.5-turbo',
                     'messages': [
                         {
-                            "role": "system", 
-                            "content": "You are a helpful heart health expert. Keep responses under 100 words."
+                            "role": "system",
+                            "content": """You are a cardiac health assistant. Follow these rules:
+                            1. Never repeat the user's exact words
+                            2. Keep responses under 50 words
+                            3. Never create recursive patterns
+                            4. Only discuss heart health"""
                         },
                         {"role": "user", "content": user_input}
                     ],
-                    'temperature': 0.7,
-                    'max_tokens': 100,  # Strict limit
-                    'frequency_penalty': 0.5  # Reduces repetition
+                    'temperature': 0.5,
+                    'max_tokens': 100,
+                    'frequency_penalty': 1.0,
+                    'presence_penalty': 1.0
                 },
-                timeout=15  # Shorter timeout
+                timeout=10
             )
+            
             response.raise_for_status()
             data = response.json()
-            
-            # Validate response
             bot_response = data['choices'][0]['message']['content']
-            if len(bot_response) > 500:  # Safety check
-                raise ValueError("Response too long")
+            
+            # Final safety check
+            if is_recursive_response(user_input, bot_response):
+                raise ValueError("Recursive response detected")
                 
-            return jsonify({
-                'response': bot_response,
-                'type': 'text'
-            })
+            return jsonify({'response': bot_response})
 
-        except requests.exceptions.Timeout:
-            return jsonify({
-                'error': 'The request timed out. Please try again.',
-                'type': 'text'
-            }), 504
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
+        except requests.exceptions.RequestException as e:
+            attempt += 1
+            if attempt == MAX_ATTEMPTS:
+                app.logger.error(f"API request failed: {str(e)}")
+                return jsonify({'error': 'Service unavailable'}), 503
         except Exception as e:
-            app.logger.error(f"OpenAI API error: {str(e)}")
-            return jsonify({
-                'error': 'Error processing your request.',
-                'type': 'text'
-            }), 500
-
-    except Exception as e:
-        app.logger.error(f"Chat endpoint error: {str(e)}")
-        return jsonify({
-            'error': 'An unexpected error occurred.',
-            'type': 'text'
-        }), 500
-
+            app.logger.error(f"Unexpected error: {str(e)}")
+            return jsonify({'error': 'Processing error'}), 500
 # ------------------ MAIN APPLICATION ------------------
 if __name__ == '__main__':
     with app.app_context():
