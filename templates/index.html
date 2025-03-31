@@ -35,7 +35,6 @@
             position: relative;
         }
 
-        /* Profile Section */
         .profile-container {
             display: flex;
             align-items: center;
@@ -58,12 +57,11 @@
         }
 
         .profile-name {
-            color: hwb(0 100% 0%);
+            color: white;
             font-size: 16px;
             margin-right: 25px;
         }
 
-        /* Profile Details Section */
         .profile-details {
             position: absolute;
             top: 100px;
@@ -82,14 +80,14 @@
         }
 
         .profile-details p {
-            color: hwb(0 8% 92%);
+            color: #333;
             margin-bottom: 10px;
             font-size: 14px;
         }
 
         .profile-details button {
-            background:#019396;
-            color: rgb(255, 255, 255);
+            background: #019396;
+            color: white;
             border: none;
             padding: 8px 15px;
             border-radius: 20px;
@@ -163,7 +161,6 @@
             max-width: 80%;
         }
 
-        /* Heart Rate Monitor Styles */
         .heart-rate-panel {
             background: #111;
             border-radius: 10px;
@@ -208,42 +205,6 @@
             color: white;
         }
 
-        .heart-rate-graph {
-            height: 100px;
-            margin-top: 10px;
-            position: relative;
-        }
-
-        .graph-line {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background-color: #333;
-        }
-
-        .graph-point {
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background-color: #00f5f9;
-            transform: translate(-50%, -50%);
-        }
-
-        .heart-rate-history {
-            margin-top: 15px;
-        }
-
-        .history-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #333;
-            font-size: 14px;
-        }
-
         .device-connect-btn {
             background: #007bff;
             color: white;
@@ -260,7 +221,6 @@
             background: #0056b3;
         }
 
-        /* Typing dots animation */
         .typing-indicator {
             display: flex;
             align-items: center;
@@ -353,12 +313,10 @@
             background: #0056b3;
         }
 
-        /* Hide scrollbar */
         .chat-box::-webkit-scrollbar {
             display: none;
         }
 
-        /* Responsive adjustments */
         @media (max-width: 768px) {
             .chat-container {
                 height: 90vh;
@@ -418,10 +376,10 @@
         <div class="chat-box" id="chat-box"></div>
 
         <div class="pre-prompts">
-            <button onclick="sendPrePrompt('Best exercises for heart health')">🏃 Best Exercises</button>
-            <button onclick="sendPrePrompt('How to maintain healthy blood pressure?')">💓 Blood Pressure</button>
-            <button onclick="sendPrePrompt('Heart-friendly diet tips')">🥗 Diet Tips</button>
-            <button onclick="sendPrePrompt('Symptoms of heart disease')">🫀 Warning Signs</button>
+            <button onclick="sendMessage('Best exercises for heart health')">🏃 Best Exercises</button>
+            <button onclick="sendMessage('How to maintain healthy blood pressure?')">💓 Blood Pressure</button>
+            <button onclick="sendMessage('Heart-friendly diet tips')">🥗 Diet Tips</button>
+            <button onclick="sendMessage('Symptoms of heart disease')">🫀 Warning Signs</button>
             <button onclick="showHeartRateAnalysis()">📊 My Heart Analysis</button>
         </div>
 
@@ -437,22 +395,18 @@
     <script>
         // Global variables
         let isLoggedIn = false;
-        let heartRateSocket = null;
         let currentHeartRate = null;
-        let heartRateHistory = [];
         let deviceConnected = false;
+        let heartRateInterval = null;
 
-        // Check login status and load user data when page loads
+        // Initialize when page loads
         document.addEventListener('DOMContentLoaded', async () => {
             await checkLoginStatus();
             await loadUserData();
             await loadHeartRateData();
-            
-            // Initialize WebSocket connection for real-time heart rate
-            initHeartRateWebSocket();
         });
 
-        // Check if user is logged in
+        // Check login status
         async function checkLoginStatus() {
             try {
                 const response = await fetch('/check-auth', {
@@ -463,20 +417,17 @@
                 if (response.ok) {
                     const data = await response.json();
                     isLoggedIn = data.authenticated;
-                    
-                    if (!isLoggedIn) {
-                        window.location.href = '/login';
-                    }
+                    if (!isLoggedIn) window.location.href = '/login';
                 } else {
                     window.location.href = '/login';
                 }
             } catch (error) {
-                console.error('Error checking auth status:', error);
+                console.error('Error checking auth:', error);
                 window.location.href = '/login';
             }
         }
 
-        // Load user data from server
+        // Load user data
         async function loadUserData() {
             try {
                 const response = await fetch('/check-auth', {
@@ -486,20 +437,15 @@
                 
                 if (response.ok) {
                     const data = await response.json();
-                    
-                    // Update UI with user data
                     if (data.authenticated && data.username) {
                         document.getElementById('username-display').textContent = data.username;
                         document.getElementById('profile-username').textContent = data.username;
                         document.getElementById('user-avatar').textContent = data.username.charAt(0).toUpperCase();
-                        
-                        if (data.email) {
-                            document.getElementById('profile-email').textContent = data.email;
-                        }
+                        if (data.email) document.getElementById('profile-email').textContent = data.email;
                     }
                 }
             } catch (error) {
-                console.error('Error loading user data:', error);
+                console.error('Error loading user:', error);
             }
         }
 
@@ -512,163 +458,90 @@
                 });
                 
                 if (response.ok) {
-                    heartRateHistory = await response.json();
-                    updateHeartRateDisplay();
-                    
-                    if (heartRateHistory.length > 0) {
-                        currentHeartRate = heartRateHistory[0];
+                    const data = await response.json();
+                    if (data.length > 0) {
+                        currentHeartRate = data[0];
                         updateCurrentHeartRate(currentHeartRate);
                     }
                 }
             } catch (error) {
-                console.error('Error loading heart rate data:', error);
+                console.error('Error loading heart rate:', error);
             }
         }
 
-        // Initialize WebSocket for real-time heart rate updates
-        function initHeartRateWebSocket() {
-            const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-            const wsUrl = protocol + window.location.host + '/api/heart-rate/ws';
-            
-            heartRateSocket = new WebSocket(wsUrl);
-            
-            heartRateSocket.onopen = () => {
-                console.log('WebSocket connection established');
-            };
-            
-            heartRateSocket.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                if (data.bpm) {
-                    currentHeartRate = data;
-                    updateCurrentHeartRate(data);
-                    
-                    // Add to beginning of history
-                    heartRateHistory.unshift(data);
-                    if (heartRateHistory.length > 20) {
-                        heartRateHistory.pop();
-                    }
-                }
-            };
-            
-            heartRateSocket.onclose = () => {
-                console.log('WebSocket connection closed');
-                // Try to reconnect after 5 seconds
-                setTimeout(initHeartRateWebSocket, 5000);
-            };
-            
-            heartRateSocket.onerror = (error) => {
-                console.error('WebSocket error:', error);
-            };
-        }
-
-        // Update current heart rate display
+        // Update heart rate display
         function updateCurrentHeartRate(data) {
             const bpmElement = document.getElementById('current-bpm');
             const statusElement = document.getElementById('heart-rate-status');
             
             bpmElement.textContent = data.bpm;
-            
-            // Update status display
             statusElement.textContent = data.status;
             statusElement.className = 'heart-rate-status';
             
             switch(data.status) {
-                case 'normal':
-                    statusElement.classList.add('status-normal');
-                    break;
-                case 'elevated':
-                    statusElement.classList.add('status-elevated');
-                    break;
-                case 'critical':
-                    statusElement.classList.add('status-critical');
-                    break;
-                default:
-                    statusElement.classList.add('status-normal');
+                case 'normal': statusElement.classList.add('status-normal'); break;
+                case 'elevated': statusElement.classList.add('status-elevated'); break;
+                case 'critical': statusElement.classList.add('status-critical'); break;
+                default: statusElement.classList.add('status-normal');
             }
         }
 
-        // Update heart rate history display
-        function updateHeartRateDisplay() {
-            // Here you could update a graph or history list if you add those elements
-            console.log('Heart rate history updated:', heartRateHistory);
-        }
-
-        // Connect wearable device
+        // Connect device
         async function connectDevice() {
             try {
-                // In a real app, this would connect to the device's API
-                // For demo purposes, we'll simulate a connection
-                
                 deviceConnected = true;
-                document.querySelector('.device-connect-btn').textContent = 'DEVICE CONNECTED';
-                document.querySelector('.device-connect-btn').style.backgroundColor = '#28a745';
-                
-                // Simulate receiving heart rate data
-                if (heartRateHistory.length === 0) {
-                    simulateHeartRateData();
-                }
+                const btn = document.querySelector('.device-connect-btn');
+                btn.textContent = 'DEVICE CONNECTED';
+                btn.style.backgroundColor = '#28a745';
                 
                 appendMessage("Your wearable device is now connected. I'll monitor your heart rate in real-time.", 'bot-message');
+                
+                // Start simulation if no data exists
+                if (!currentHeartRate) {
+                    simulateHeartRateData();
+                }
             } catch (error) {
-                console.error('Device connection error:', error);
-                appendMessage("Failed to connect device. Please try again.", 'error-message');
+                console.error('Device error:', error);
+                appendMessage("Failed to connect device", 'error-message');
             }
         }
 
-        // Simulate heart rate data for demo purposes
+        // Simulate heart rate data
         function simulateHeartRateData() {
-            const baseBpm = 70 + Math.floor(Math.random() * 20); // Random base between 70-90
-            let lastBpm = baseBpm;
+            if (heartRateInterval) clearInterval(heartRateInterval);
             
-            // Simulate periodic heart rate updates
-            setInterval(() => {
+            let baseBpm = 70 + Math.floor(Math.random() * 20);
+            
+            heartRateInterval = setInterval(() => {
                 if (!deviceConnected) return;
                 
-                // Random variation
-                const variation = Math.floor(Math.random() * 10) - 5; // -5 to +5
-                let newBpm = lastBpm + variation;
+                const variation = Math.floor(Math.random() * 10) - 5;
+                let newBpm = Math.max(50, Math.min(120, baseBpm + variation));
                 
-                // Keep within reasonable bounds
-                newBpm = Math.max(50, Math.min(120, newBpm));
+                const status = newBpm < 60 ? 'low' : 
+                              newBpm <= 100 ? 'normal' : 'elevated';
                 
-                // Classify the heart rate
-                let status;
-                if (newBpm < 60) status = 'low';
-                else if (newBpm <= 100) status = 'normal';
-                else status = 'elevated';
-                
-                // Create new reading
                 const newReading = {
                     bpm: newBpm,
                     status: status,
                     timestamp: new Date().toISOString()
                 };
                 
-                // Update display
                 currentHeartRate = newReading;
                 updateCurrentHeartRate(newReading);
-                
-                // Add to history
-                heartRateHistory.unshift(newReading);
-                if (heartRateHistory.length > 20) {
-                    heartRateHistory.pop();
-                }
-                
-                lastBpm = newBpm;
-            }, 3000); // Update every 3 seconds
+                baseBpm = newBpm;
+            }, 3000);
         }
 
-        // Show heart rate analysis in chat
+        // Show heart rate analysis
         async function showHeartRateAnalysis() {
             const chatBox = document.getElementById('chat-box');
             const welcomeMessage = document.getElementById('welcome-message');
             
-            // Hide welcome message if visible
-            if (welcomeMessage && welcomeMessage.style.display !== "none") {
+            if (welcomeMessage.style.display !== "none") {
                 welcomeMessage.style.display = "none";
             }
             
-            // Show typing indicator
             const typingIndicator = showTypingIndicator();
             
             try {
@@ -677,53 +550,41 @@
                     credentials: 'include'
                 });
                 
-                // Remove typing indicator
                 chatBox.removeChild(typingIndicator);
                 
-                if (!response.ok) {
-                    throw new Error('Failed to get heart rate analysis');
-                }
+                if (!response.ok) throw new Error('Failed to get analysis');
                 
                 const data = await response.json();
+                let analysisMessage = "❤️ Heart Rate Analysis:\n\n";
                 
                 if (data.message && data.message === 'No heart rate data available') {
-                    appendMessage("I don't have any heart rate data for you yet. Please connect a wearable device to get started.", 'bot-message');
-                    return;
-                }
-                
-                // Format the analysis response
-                let analysisMessage = "Here's your heart rate analysis:\n\n";
-                analysisMessage += `📊 Average BPM: ${data.average_bpm}\n`;
-                analysisMessage += `⬇️ Minimum BPM: ${data.min_bpm}\n`;
-                analysisMessage += `⬆️ Maximum BPM: ${data.max_bpm}\n\n`;
-                analysisMessage += `💓 Status Distribution:\n`;
-                analysisMessage += `- Normal: ${data.status_distribution.normal} readings\n`;
-                analysisMessage += `- Elevated: ${data.status_distribution.elevated} readings\n`;
-                analysisMessage += `- Low: ${data.status_distribution.low} readings\n\n`;
-                
-                if (data.status_distribution.elevated > 0) {
-                    analysisMessage += "⚠️ I noticed some elevated readings. You might want to discuss this with your doctor.";
+                    analysisMessage = "No heart rate data yet. Connect a device first.";
                 } else {
-                    analysisMessage += "Your heart rate patterns look good overall!";
+                    analysisMessage += `📊 Average: ${data.average_bpm} BPM\n`;
+                    analysisMessage += `⬆️ Highest: ${data.max_bpm} BPM\n`;
+                    analysisMessage += `⬇️ Lowest: ${data.min_bpm} BPM\n\n`;
+                    analysisMessage += `⏱️ Readings: ${data.record_count} in last 24h\n`;
+                    
+                    if (data.status_distribution.elevated > 0) {
+                        analysisMessage += "\n⚠️ Notice: Some elevated readings detected";
+                    }
                 }
                 
                 appendMessage(analysisMessage, 'bot-message');
-                
             } catch (error) {
                 chatBox.removeChild(typingIndicator);
                 appendMessage(`Error: ${error.message}`, 'error-message');
-                console.error('Heart rate analysis error:', error);
             }
         }
 
-        // Toggle Profile Details Visibility
+        // Toggle profile details
         function toggleProfileDetails() {
             const profileDetails = document.getElementById("profile-details");
             profileDetails.style.display = profileDetails.style.display === "none" || 
                                          profileDetails.style.display === "" ? "flex" : "none";
         }
 
-        // Close profile details when clicking outside
+        // Close profile when clicking outside
         document.addEventListener('click', (event) => {
             const profileDetails = document.getElementById("profile-details");
             const profileContainer = document.querySelector('.profile-container');
@@ -735,53 +596,41 @@
             }
         });
 
-        // Handle Enter key press
+        // Handle Enter key
         function handleKeyPress(event) {
             if (event.key === 'Enter') {
                 sendMessage();
             }
         }
 
-        // Pre-Prompt Function
-        function sendPrePrompt(message) {
-            document.getElementById("user-input").value = message;
-            sendMessage();
-        }
-
-        // Send Message Function
-        async function sendMessage() {
-            const userInput = document.getElementById("user-input").value.trim();
-            if (userInput === "") return;
+        // Send message
+        async function sendMessage(message = null) {
+            const userInput = message || document.getElementById("user-input").value.trim();
+            if (!userInput) return;
 
             const chatBox = document.getElementById("chat-box");
             const welcomeMessage = document.getElementById("welcome-message");
 
-            // Hide welcome message after first input
-            if (welcomeMessage && welcomeMessage.style.display !== "none") {
+            if (welcomeMessage.style.display !== "none") {
                 welcomeMessage.style.display = "none";
             }
 
-            // Append User Message
             appendMessage(userInput, 'user-message');
+            
+            if (!message) {
+                document.getElementById("user-input").value = "";
+            }
 
-            // Clear input field
-            document.getElementById("user-input").value = "";
-
-            // Show typing indicator
             const typingIndicator = showTypingIndicator();
 
             try {
-                // Send Request to Flask Backend
                 const response = await fetch("/chat", {
                     method: "POST",
-                    headers: { 
-                        "Content-Type": "application/json",
-                    },
+                    headers: { "Content-Type": "application/json" },
                     credentials: 'include',
                     body: JSON.stringify({ message: userInput })
                 });
 
-                // Remove typing indicator
                 chatBox.removeChild(typingIndicator);
 
                 if (!response.ok) {
@@ -799,18 +648,14 @@
             } catch (error) {
                 chatBox.removeChild(typingIndicator);
                 appendMessage(`Error: ${error.message}`, 'error-message');
-                console.error('Chat error:', error);
                 
-                // If unauthorized, redirect to login
                 if (error.message.includes('Please log in')) {
-                    setTimeout(() => {
-                        window.location.href = '/login';
-                    }, 2000);
+                    setTimeout(() => window.location.href = '/login', 2000);
                 }
             }
         }
 
-        // Append message to chat box
+        // Append message
         function appendMessage(text, className) {
             const chatBox = document.getElementById("chat-box");
             const message = document.createElement("div");
@@ -831,12 +676,11 @@
             return typingIndicator;
         }
 
-        // Format and display bot response
+        // Format bot response
         function formatBotResponse(response) {
             const chatBox = document.getElementById("chat-box");
 
             if (response.includes('|')) { 
-                // Detect Markdown-Style Table
                 const rows = response.trim().split('\n');
                 let tableHTML = '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
                 
@@ -855,14 +699,13 @@
                 botMessage.innerHTML = tableHTML;
                 chatBox.appendChild(botMessage);
             } else {
-                // Regular Text Message
                 appendMessage(response, "bot-message");
             }
 
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // Logout Function
+        // Logout
         async function logout() {
             try {
                 const response = await fetch('/logout', {
