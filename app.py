@@ -4,6 +4,8 @@ monkey.patch_all()
 
 import os
 import re
+import time
+from threading import Thread
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session as flask_session
 from flask_sqlalchemy import SQLAlchemy
@@ -12,7 +14,7 @@ import openai
 from dotenv import load_dotenv
 from flask_cors import CORS
 from flask_migrate import Migrate
-from flask_socketio import SocketIO, disconnect
+from flask_socketio import SocketIO, emit, join_room, disconnect
 from flask_session import Session
 import requests
 
@@ -85,9 +87,20 @@ class User(db.Model):
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     heart_rates = db.relationship('HeartRate', backref='user', lazy=True)
+    devices = db.relationship('Device', backref='user', lazy=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime)
     is_active = db.Column(db.Boolean, default=True)
+
+class Device(db.Model):
+    __tablename__ = "devices"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    device_type = db.Column(db.String(50))
+    device_id = db.Column(db.String(100))
+    auth_token = db.Column(db.String(500))
+    is_connected = db.Column(db.Boolean, default=False)
+    last_sync = db.Column(db.DateTime)
 
 class HeartRate(db.Model):
     __tablename__ = "heart_rates"
@@ -96,7 +109,7 @@ class HeartRate(db.Model):
     bpm = db.Column(db.Integer, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     status = db.Column(db.String(20))
-    device_type = db.Column(db.String(50))
+    device_id = db.Column(db.Integer, db.ForeignKey('devices.id'))
     confidence = db.Column(db.Float)
 
 # ------------------ UTILITY FUNCTIONS ------------------
@@ -124,6 +137,43 @@ def sanitize_input(text):
     if any(cmd in text.lower() for cmd in ["repeat", "loop", "recurs"]):
         raise ValueError("Recursive pattern detected")
     return text
+
+def start_heart_rate_monitor(user_id, device_id):
+    """Background thread to monitor heart rate"""
+    def monitor():
+        while True:
+            try:
+                device = Device.query.get(device_id)
+                if not device or not device.is_connected:
+                    break
+                
+                # Simulate heart rate data (replace with actual device API call)
+                mock_bpm = 60 + int(time.time()) % 40
+                
+                new_reading = HeartRate(
+                    user_id=user_id,
+                    bpm=mock_bpm,
+                    status=classify_heart_rate(mock_bpm),
+                    device_id=device_id,
+                    confidence=0.95
+                )
+                db.session.add(new_reading)
+                db.session.commit()
+                
+                emit('heart_rate_update', {
+                    'bpm': mock_bpm,
+                    'status': new_reading.status,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'device_connected': True
+                }, room=f'user_{user_id}')
+                
+                time.sleep(5)
+                
+            except Exception as e:
+                app.logger.error(f"Heart rate monitor error: {str(e)}")
+                time.sleep(10)
+    
+    Thread(target=monitor, daemon=True).start()
 
 # ------------------ MIDDLEWARE ------------------
 @app.before_request
@@ -253,12 +303,11 @@ def logout():
         if 'user_id' in flask_session:
             user_id = flask_session['user_id']
             
-            # Disconnect the socket if it exists
             if 'socket_id' in flask_session:
                 try:
                     socketio.server.disconnect(flask_session['socket_id'])
                 except KeyError:
-                    pass  # Socket already disconnected
+                    pass
                 
                 flask_session.pop('socket_id', None)
             
@@ -287,7 +336,7 @@ def get_heart_rate_history():
             'bpm': r.bpm,
             'status': r.status,
             'timestamp': r.timestamp.isoformat(),
-            'device_type': r.device_type
+            'device_type': Device.query.get(r.device_id).device_type if r.device_id else None
         } for r in records])
     except Exception as e:
         app.logger.error(f"Heart rate history error: {str(e)}")
@@ -328,6 +377,65 @@ def get_heart_rate_analysis():
     except Exception as e:
         app.logger.error(f"Heart rate analysis error: {str(e)}")
         return jsonify({'error': 'Server error'}), 500
+
+@app.route('/api/device/connect', methods=['POST'])
+def connect_device():
+    if 'user_id' not in flask_session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    data = request.get_json()
+    device_type = data.get('device_type')
+    device_id = data.get('device_id')
+    
+    if not device_type or not device_id:
+        return jsonify({'error': 'Missing device info'}), 400
+    
+    try:
+        device = Device.query.filter_by(
+            user_id=flask_session['user_id'],
+            device_id=device_id
+        ).first()
+        
+        if not device:
+            device = Device(
+                user_id=flask_session['user_id'],
+                device_type=device_type,
+                device_id=device_id,
+                is_connected=True,
+                last_sync=datetime.utcnow()
+            )
+            db.session.add(device)
+        else:
+            device.is_connected = True
+            device.last_sync = datetime.utcnow()
+        
+        db.session.commit()
+        start_heart_rate_monitor(flask_session['user_id'], device.id)
+        
+        return jsonify({
+            'status': 'connected',
+            'device_id': device.id,
+            'device_type': device.device_type
+        })
+    except Exception as e:
+        app.logger.error(f"Device connection error: {str(e)}")
+        return jsonify({'error': 'Connection failed'}), 500
+
+@app.route('/api/device/status')
+def get_device_status():
+    if 'user_id' not in flask_session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    device = Device.query.filter_by(
+        user_id=flask_session['user_id'],
+        is_connected=True
+    ).first()
+    
+    return jsonify({
+        'device_connected': bool(device),
+        'device_type': device.device_type if device else None,
+        'last_sync': device.last_sync.isoformat() if device else None
+    })
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -423,6 +531,23 @@ def handle_connect():
         
         flask_session['socket_id'] = request.sid
         db.session.commit()
+        
+        device = Device.query.filter_by(
+            user_id=user.id,
+            is_connected=True
+        ).first()
+        
+        latest_hr = HeartRate.query.filter_by(
+            user_id=user.id
+        ).order_by(HeartRate.timestamp.desc()).first()
+        
+        emit('connection_status', {
+            'device_connected': bool(device),
+            'heart_rate': latest_hr.bpm if latest_hr else None,
+            'status': latest_hr.status if latest_hr else None,
+            'timestamp': latest_hr.timestamp.isoformat() if latest_hr else None
+        })
+        
         app.logger.info(f"User {user.username} connected with SID {request.sid}")
         return True
         
@@ -452,7 +577,19 @@ def handle_authentication(data):
         if not user:
             raise ConnectionRefusedError('invalid_user')
             
-        return {'status': 'authenticated', 'user_id': user.id}
+        device = Device.query.filter_by(
+            user_id=user.id,
+            is_connected=True
+        ).first()
+        
+        if device:
+            start_heart_rate_monitor(user.id, device.id)
+            
+        return {
+            'status': 'authenticated', 
+            'user_id': user.id,
+            'device_connected': bool(device)
+        }
     except Exception as e:
         app.logger.error(f"Authentication error: {str(e)}")
         raise ConnectionRefusedError('unauthorized')
@@ -477,6 +614,11 @@ def handle_heart_analysis_request(data):
             'low': len([r for r in records if r.status == 'low'])
         }
         
+        device_connected = Device.query.filter_by(
+            user_id=flask_session['user_id'],
+            is_connected=True
+        ).first() is not None
+        
         return {
             'average_bpm': round(sum(bpms) / len(bpms), 1),
             'max_bpm': max(bpms),
@@ -487,7 +629,8 @@ def handle_heart_analysis_request(data):
                 'bpm': records[0].bpm,
                 'status': records[0].status,
                 'timestamp': records[0].timestamp.isoformat()
-            }
+            },
+            'device_connected': device_connected
         }
     except Exception as e:
         app.logger.error(f"Heart analysis error: {str(e)}")
