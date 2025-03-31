@@ -411,60 +411,89 @@
         });
 
         // Initialize Socket.IO connection with authentication
-        function initSocketIOConnection() {
-            // Connect to Socket.IO server with auth token
-            socket = io({
-                reconnection: true,
-                reconnectionAttempts: 5,
-                reconnectionDelay: 1000,
-                transports: ['websocket', 'polling'],
-                auth: {
-                    token: getAuthToken()
-                }
-            });
-            
-            // Connection event handlers
-            socket.on('connect', () => {
-                console.log('Connected to WebSocket server');
-                appendSystemMessage('Connected to real-time monitoring service', 'bot-message');
-            });
-            
-            socket.on('disconnect', (reason) => {
-                console.log('Disconnected:', reason);
-                appendSystemMessage('Disconnected from real-time service', 'error-message');
-                
-                if (reason === 'io server disconnect') {
-                    // Server forced disconnect (likely due to auth failure)
-                    setTimeout(() => window.location.href = '/login', 2000);
-                }
-            });
-            
-            socket.on('connect_error', (error) => {
-                console.error('Connection error:', error);
-                if (error.message === 'unauthorized') {
-                    appendSystemMessage('Session expired, please log in again', 'error-message');
-                    setTimeout(() => window.location.href = '/login', 2000);
-                }
-            });
-            
-            // Listen for heart rate updates from server
-            socket.on('heart_rate_update', (data) => {
-                console.log('Received heart rate update:', data);
-                currentHeartRate = data;
-                updateCurrentHeartRate(data);
-                
-                // Optionally show notification for critical readings
-                if (data.status === 'critical') {
-                    appendSystemMessage(`⚠️ Critical heart rate detected: ${data.bpm} BPM`, 'error-message');
-                }
-            });
-            
-            // Listen for chat messages from server
-            socket.on('chat_message', (data) => {
-                appendMessage(data.message, 'bot-message');
-            });
+// Replace your initSocketIOConnection function with this:
+function initSocketIOConnection() {
+    // Get auth token from cookies
+    function getAuthToken() {
+        const cookies = document.cookie.split(';');
+        for (const cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'session') {
+                return value;
+            }
         }
+        return null;
+    }
 
+    // Connect with authentication
+    socket = io({
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        randomizationFactor: 0.5,
+        timeout: 20000,
+        transports: ['websocket', 'polling'],
+        auth: {
+            token: getAuthToken()
+        }
+    });
+
+    // Connection handlers
+    socket.on('connect', async () => {
+        console.log('Connected to WebSocket server');
+        appendSystemMessage('Connected to real-time monitoring service', 'bot-message');
+        
+        // Validate session immediately after connection
+        try {
+            const response = await new Promise((resolve, reject) => {
+                socket.emit('validate_session', {}, (response) => {
+                    if (response && response.valid) {
+                        resolve(response);
+                    } else {
+                        reject(new Error('Invalid session'));
+                    }
+                });
+            });
+        } catch (error) {
+            console.error('Session validation failed:', error);
+            socket.disconnect();
+            window.location.href = '/login';
+        }
+    });
+
+    socket.on('disconnect', (reason) => {
+        console.log('Disconnected:', reason);
+        appendSystemMessage('Disconnected from real-time service', 'error-message');
+        
+        if (reason === 'io server disconnect') {
+            // Server forced disconnect (likely due to auth failure)
+            setTimeout(() => window.location.href = '/login', 2000);
+        }
+    });
+
+    socket.on('connect_error', (error) => {
+        console.error('Connection error:', error);
+        if (error.message === 'unauthorized') {
+            appendSystemMessage('Session expired, please log in again', 'error-message');
+            setTimeout(() => window.location.href = '/login', 2000);
+        }
+    });
+
+    // Add exponential backoff for reconnections
+    let reconnectAttempts = 0;
+    socket.on('reconnect_attempt', (attempt) => {
+        reconnectAttempts = attempt;
+        console.log(`Reconnection attempt ${attempt}`);
+    });
+
+    socket.on('reconnect_failed', () => {
+        console.error('Reconnection failed after attempts');
+        appendSystemMessage('Connection lost. Please refresh the page.', 'error-message');
+    });
+
+    // Your existing heart rate and chat message handlers...
+}
         // Get auth token from cookies
         function getAuthToken() {
             const cookies = document.cookie.split(';');
