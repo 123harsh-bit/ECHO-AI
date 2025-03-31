@@ -45,6 +45,7 @@ class User(db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
+    email = db.Column(db.String(150), unique=True, nullable=False)  # Added email field
     password = db.Column(db.String(200), nullable=False)
 
 # ------------------ HEALTH KEYWORDS ------------------
@@ -66,21 +67,6 @@ def before_request():
         return redirect(request.url.replace('http://', 'https://'), 301)
 
 # ------------------ ROUTES ------------------
-@app.route('/')
-def home():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    return render_template('index.html')
-
-@app.route('/check-auth')
-def check_auth():
-    if 'user_id' in session:
-        return jsonify({
-            'authenticated': True,
-            'username': session.get('username')
-        })
-    return jsonify({'authenticated': False}), 401
-
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if 'user_id' in session:
@@ -88,16 +74,26 @@ def signup():
 
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip().lower()  # Get email
         password = request.form.get('password', '').strip()
 
-        if not username or not password:
-            return render_template('signup.html', error_message="Username and password are required.")
+        # Validate all fields
+        if not username or not password or not email:
+            return render_template('signup.html', error_message="Username, email and password are required.")
 
+        # Basic email validation
+        if '@' not in email or '.' not in email.split('@')[-1]:
+            return render_template('signup.html', error_message="Please enter a valid email address.")
+
+        # Check for existing username or email
         if User.query.filter_by(username=username).first():
             return render_template('signup.html', error_message="Username already exists.")
+            
+        if User.query.filter_by(email=email).first():
+            return render_template('signup.html', error_message="Email already registered.")
 
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-        new_user = User(username=username, password=hashed_password)
+        new_user = User(username=username, email=email, password=hashed_password)
 
         try:
             db.session.add(new_user)
@@ -110,23 +106,28 @@ def signup():
             return redirect(url_for('home'))
         except Exception as e:
             db.session.rollback()
+            app.logger.error(f"Registration failed: {str(e)}")  # Log the error
             return render_template('signup.html', error_message="Registration failed. Please try again.")
 
     return render_template('signup.html')
-
+    
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'user_id' in session:
         return redirect(url_for('home'))
 
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
+        identifier = request.form.get('username_or_email', '').strip()
         password = request.form.get('password', '').strip()
 
-        user = User.query.filter_by(username=username).first()
+        # Check if identifier is email or username
+        if '@' in identifier:
+            user = User.query.filter_by(email=identifier).first()
+        else:
+            user = User.query.filter_by(username=identifier).first()
 
         if not user or not check_password_hash(user.password, password):
-            return render_template('login.html', error_message="Invalid username or password.")
+            return render_template('login.html', error_message="Invalid username/email or password.")
 
         session.permanent = True
         session['user_id'] = user.id
@@ -135,11 +136,6 @@ def login():
         return redirect(url_for('home'), code=303)
 
     return render_template('login.html')
-
-@app.route('/logout', methods=['POST'])
-def logout():
-    session.clear()
-    return jsonify({'success': True}), 200
 
 @app.route('/chat', methods=['POST'])
 def chat():
