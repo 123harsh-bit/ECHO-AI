@@ -60,15 +60,18 @@ migrate = Migrate(app, db)
 # Initialize SocketIO with proper async mode
 socketio = SocketIO(
     app,
-    manage_session=False,
+    manage_session=True,
     cors_allowed_origins="*",
     async_mode='gevent',
     logger=os.getenv('FLASK_ENV') == 'development',
     engineio_logger=os.getenv('FLASK_ENV') == 'development',
     ping_timeout=30,
     ping_interval=25,
-    reconnection=True,
-    max_http_buffer_size=1e8  # 100MB
+    max_http_buffer_size=1e8,
+    auth={
+        'auth_headers': ['Authorization'],
+        'auth_cookie': 'session'
+    }
 )
 
 # OpenAI configuration
@@ -250,10 +253,14 @@ def logout():
         if 'user_id' in flask_session:
             user_id = flask_session['user_id']
             
-            # Disconnect all sockets for this user
+            # Disconnect the socket if it exists
             if 'socket_id' in flask_session:
-                socket_id = flask_session['socket_id']
-                socketio.server.disconnect(socket_id)
+                try:
+                    socketio.server.disconnect(flask_session['socket_id'])
+                except KeyError:
+                    pass  # Socket already disconnected
+                
+                flask_session.pop('socket_id', None)
             
             flask_session.clear()
             db.session.commit()
@@ -265,14 +272,69 @@ def logout():
     except Exception as e:
         app.logger.error(f"Logout error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/heart-rate/history')
+def get_heart_rate_history():
+    if 'user_id' not in flask_session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        records = HeartRate.query.filter_by(
+            user_id=flask_session['user_id']
+        ).order_by(HeartRate.timestamp.desc()).limit(20).all()
+        
+        return jsonify([{
+            'bpm': r.bpm,
+            'status': r.status,
+            'timestamp': r.timestamp.isoformat(),
+            'device_type': r.device_type
+        } for r in records])
+    except Exception as e:
+        app.logger.error(f"Heart rate history error: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
+
+@app.route('/api/heart-rate/analysis')
+def get_heart_rate_analysis():
+    if 'user_id' not in flask_session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        records = HeartRate.query.filter_by(
+            user_id=flask_session['user_id']
+        ).order_by(HeartRate.timestamp.desc()).all()
+        
+        if not records:
+            return jsonify({'message': 'No heart rate data available'})
+        
+        bpms = [r.bpm for r in records]
+        status_counts = {
+            'normal': len([r for r in records if r.status == 'normal']),
+            'elevated': len([r for r in records if r.status == 'elevated']),
+            'low': len([r for r in records if r.status == 'low'])
+        }
+        
+        return jsonify({
+            'average_bpm': round(sum(bpms) / len(bpms),
+            'max_bpm': max(bpms),
+            'min_bpm': min(bpms),
+            'record_count': len(records),
+            'status_distribution': status_counts,
+            'latest': {
+                'bpm': records[0].bpm,
+                'status': records[0].status,
+                'timestamp': records[0].timestamp.isoformat()
+            }
+        })
+    except Exception as e:
+        app.logger.error(f"Heart rate analysis error: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
+
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
-        # 1. Authentication Check
         if 'user_id' not in flask_session:
             return jsonify({'error': 'Unauthorized'}), 401
 
-        # 2. Input Validation
         if not request.is_json:
             return jsonify({'error': 'Request must be JSON'}), 400
             
@@ -285,7 +347,6 @@ def chat():
         except ValueError as e:
             return jsonify({'error': str(e)}), 400
 
-        # 3. Predefined Responses
         response_map = {
             'who are you': "I'm Echo, your heart health assistant.",
             'who created you': "Developed by medical AI specialists.",
@@ -298,11 +359,9 @@ def chat():
             if question in lower_input:
                 return jsonify({'response': response})
 
-        # 4. Content Filtering
         if not is_heart_related(user_input):
             return jsonify({'error': 'I only answer heart-health questions'}), 400
 
-        # 5. API Call with requests Session
         with requests.Session() as http_session:
             response = http_session.post(
                 'https://api.openai.com/v1/chat/completions',
@@ -317,7 +376,7 @@ def chat():
                             "role": "system",
                             "content": """You are a cardiac specialist AI. Rules:
                             1. Never repeat the user's exact words
-                            2. Maximum 15 sentence response
+                            2. Maximum 3 sentence response
                             3. Never suggest repeating anything
                             4. Only discuss verified medical information"""
                         },
@@ -331,10 +390,9 @@ def chat():
                 timeout=10
             )
             
-            # 6. Response Validation
             response.raise_for_status()
             data = response.json()
-            bot_response = data['choices'][0]['message']['content'][:400]  # Hard limit
+            bot_response = data['choices'][0]['message']['content'][:400]
             
             if contains_recursive_pattern(bot_response):
                 raise ValueError("Invalid response pattern")
@@ -351,25 +409,6 @@ def chat():
         return jsonify({'error': 'Processing error'}), 500
 
 # ------------------ SOCKET.IO HANDLERS ------------------
-# Update your Socket.IO initialization
-socketio = SocketIO(
-    app,
-    manage_session=False,
-    cors_allowed_origins="*",
-    async_mode='gevent',
-    logger=os.getenv('FLASK_ENV') == 'development',
-    engineio_logger=os.getenv('FLASK_ENV') == 'development',
-    ping_timeout=30,
-    ping_interval=25,
-    max_http_buffer_size=1e8,
-    # Add these new configurations:
-    reconnection=True,
-    reconnection_attempts=5,
-    reconnection_delay=1,
-    reconnection_delay_max=5
-)
-
-# Update your connect handler
 @socketio.on('connect')
 def handle_connect():
     try:
@@ -382,10 +421,8 @@ def handle_connect():
             app.logger.warning(f"Invalid user ID in session: {flask_session['user_id']}")
             return False
         
-        # Store the user_id in the socket's session
         flask_session['socket_id'] = request.sid
         db.session.commit()
-        
         app.logger.info(f"User {user.username} connected with SID {request.sid}")
         return True
         
@@ -393,7 +430,6 @@ def handle_connect():
         app.logger.error(f"Connection error: {str(e)}", exc_info=True)
         return False
 
-# Add a new disconnect handler
 @socketio.on('disconnect')
 def handle_disconnect():
     try:
@@ -406,15 +442,62 @@ def handle_disconnect():
     except Exception as e:
         app.logger.error(f"Disconnection error: {str(e)}")
 
-# Add session validation middleware
-@socketio.on('validate_session')
-def handle_validate_session(data):
+@socketio.on('authenticate')
+def handle_authentication(data):
     try:
         if 'user_id' not in flask_session:
             raise ConnectionRefusedError('unauthorized')
-        return {'valid': True}
+        
+        user = User.query.get(flask_session['user_id'])
+        if not user:
+            raise ConnectionRefusedError('invalid_user')
+            
+        return {'status': 'authenticated', 'user_id': user.id}
     except Exception as e:
+        app.logger.error(f"Authentication error: {str(e)}")
         raise ConnectionRefusedError('unauthorized')
+
+@socketio.on('request_heart_analysis')
+def handle_heart_analysis_request(data):
+    try:
+        if 'user_id' not in flask_session:
+            raise ConnectionRefusedError('unauthorized')
+            
+        records = HeartRate.query.filter_by(
+            user_id=flask_session['user_id']
+        ).order_by(HeartRate.timestamp.desc()).all()
+        
+        if not records:
+            return {'message': 'No heart rate data available'}
+        
+        bpms = [r.bpm for r in records]
+        status_counts = {
+            'normal': len([r for r in records if r.status == 'normal']),
+            'elevated': len([r for r in records if r.status == 'elevated']),
+            'low': len([r for r in records if r.status == 'low'])
+        }
+        
+        return {
+            'average_bpm': round(sum(bpms) / len(bpms)),
+            'max_bpm': max(bpms),
+            'min_bpm': min(bpms),
+            'record_count': len(records),
+            'status_distribution': status_counts,
+            'latest': {
+                'bpm': records[0].bpm,
+                'status': records[0].status,
+                'timestamp': records[0].timestamp.isoformat()
+            }
+        }
+    except Exception as e:
+        app.logger.error(f"Heart analysis error: {str(e)}")
+        return {'error': 'Analysis failed'}
+
+@socketio.on_error_default
+def default_error_handler(e):
+    app.logger.error(f"Socket.IO error: {str(e)}")
+    disconnect()
+
 # ------------------ MAIN APPLICATION ------------------
 if __name__ == '__main__':
     with app.app_context():
