@@ -47,3 +47,34 @@ MarkupSafe==2.1.5
 charset-normalizer==3.3.2
 idna==3.6
 urllib3==2.2.1
+# Core Flask Stack
+Flask==3.0.2
+Flask-Bcrypt==1.0.1
+Flask-Cors==4.0.0
+Flask-Login==0.6.3
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.0.5
+
+# OpenAI and dependencies
+openai==1.12.0
+numpy==1.26.4  # Required by openai
+pandas==2.2.1  # Often needed with numpy
+
+# Database
+SQLAlchemy==2.0.25
+psycopg2-binary==2.9.9
+
+# Production
+gunicorn==21.2.0
+gevent==23.9.1
+greenlet==3.0.3
+
+# Socket.IO
+flask-socketio==5.3.6
+python-socketio==5.10.0
+python-engineio==4.8.0
+eventlet==0.35.1
+
+# Other essentials
+python-dotenv==1.0.0
+requests==2.31.0
