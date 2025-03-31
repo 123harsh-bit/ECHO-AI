@@ -6,6 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import openai
 from dotenv import load_dotenv
 from flask_cors import CORS
+from flask_migrate import Migrate
 
 # ------------------ INITIAL SETUP ------------------
 load_dotenv()  # Load environment variables from .env
@@ -36,6 +37,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize database
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)  # For database migrations
 
 # OpenAI configuration
 openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -45,7 +47,7 @@ class User(db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
-    email = db.Column(db.String(150), unique=True, nullable=False)  # Added email field
+    email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
 
 # ------------------ HEALTH KEYWORDS ------------------
@@ -67,6 +69,21 @@ def before_request():
         return redirect(request.url.replace('http://', 'https://'), 301)
 
 # ------------------ ROUTES ------------------
+@app.route('/')
+def home():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('index.html')
+
+@app.route('/check-auth')
+def check_auth():
+    if 'user_id' in session:
+        return jsonify({
+            'authenticated': True,
+            'username': session.get('username')
+        })
+    return jsonify({'authenticated': False}), 401
+
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if 'user_id' in session:
@@ -74,12 +91,12 @@ def signup():
 
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip().lower()  # Get email
+        email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '').strip()
 
         # Validate all fields
         if not username or not password or not email:
-            return render_template('signup.html', error_message="Username, email and password are required.")
+            return render_template('signup.html', error_message="All fields are required.")
 
         # Basic email validation
         if '@' not in email or '.' not in email.split('@')[-1]:
@@ -92,6 +109,7 @@ def signup():
         if User.query.filter_by(email=email).first():
             return render_template('signup.html', error_message="Email already registered.")
 
+        # Create new user
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
         new_user = User(username=username, email=email, password=hashed_password)
 
@@ -99,6 +117,7 @@ def signup():
             db.session.add(new_user)
             db.session.commit()
 
+            # Set session variables
             session.permanent = True
             session['user_id'] = new_user.id
             session['username'] = new_user.username
@@ -106,11 +125,14 @@ def signup():
             return redirect(url_for('home'))
         except Exception as e:
             db.session.rollback()
-            app.logger.error(f"Registration failed: {str(e)}")  # Log the error
-            return render_template('signup.html', error_message="Registration failed. Please try again.")
+            app.logger.error(f"Registration error: {str(e)}")
+            error_msg = "Registration failed. Please try again."
+            if "unique constraint" in str(e).lower():
+                error_msg = "Username or email already exists."
+            return render_template('signup.html', error_message=error_msg)
 
     return render_template('signup.html')
-    
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'user_id' in session:
@@ -120,15 +142,18 @@ def login():
         identifier = request.form.get('username_or_email', '').strip()
         password = request.form.get('password', '').strip()
 
-        # Check if identifier is email or username
+        # Find user by username or email
+        user = None
         if '@' in identifier:
             user = User.query.filter_by(email=identifier).first()
         else:
             user = User.query.filter_by(username=identifier).first()
 
+        # Validate credentials
         if not user or not check_password_hash(user.password, password):
-            return render_template('login.html', error_message="Invalid username/email or password.")
+            return render_template('login.html', error_message="Invalid credentials.")
 
+        # Set session variables
         session.permanent = True
         session['user_id'] = user.id
         session['username'] = user.username
@@ -136,6 +161,11 @@ def login():
         return redirect(url_for('home'), code=303)
 
     return render_template('login.html')
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    session.clear()
+    return jsonify({'success': True}), 200
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -163,7 +193,7 @@ def chat():
             'type': 'text'
         }), 400
 
-    # Custom response for "Who are you?"
+    # Custom responses
     if user_input in ["who are you?", "what is your name?", "who is this?","who are you","what is echo ai"]:
         return jsonify({
             'status': 'success',
@@ -171,11 +201,10 @@ def chat():
             'type': 'text'
         })
 
-    # Custom response for "Who created you?" or "Who invented you?"
     if user_input in ["who created you?", "who invented you?", "who made you?"]:
         return jsonify({
             'status': 'success',
-            'response': "I was created by a dedicated team of developers. Our team includes  Guru Prasad , Harshavardhan Reddy , Ranjith , Giri . we are working to provide reliable heart health assistance through AI.",
+            'response': "I was created by a dedicated team of developers. Our team includes Guru Prasad, Harshavardhan Reddy, Ranjith, Giri. We are working to provide reliable heart health assistance through AI.",
             'type': 'text'
         })
 
@@ -221,6 +250,5 @@ def chat():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=os.getenv('FLASK_ENV') == 'development')
