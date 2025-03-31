@@ -11,6 +11,7 @@ from flask_migrate import Migrate
 from flask_socketio import SocketIO
 from flask_session import Session
 import requests
+from flask import session as flask_session
 
 class RecursionGuard:
     def __init__(self):
@@ -271,11 +272,10 @@ def logout():
 
 # ------------------ CHAT ROUTE ------------------
 @app.route('/chat', methods=['POST'])
-@recursion_guard
 def chat():
     try:
-        # 1. Authentication Check
-        if 'user_id' not in session:
+        # 1. Authentication Check (using Flask session)
+        if 'user_id' not in flask_session:
             return jsonify({'error': 'Unauthorized'}), 401
 
         # 2. Input Validation
@@ -285,7 +285,7 @@ def chat():
             
         user_input = data['message'].strip()[:500]  # Hard length limit
 
-        # 3. Predefined Responses (avoid API calls for common questions)
+        # 3. Predefined Responses
         response_map = {
             'who are you': "I'm Echo, your heart health assistant.",
             'who created you': "Developed by medical AI specialists.",
@@ -302,14 +302,14 @@ def chat():
         if not is_heart_related(user_input):
             return jsonify({'error': 'I only answer heart-health questions'}), 400
 
-        # 5. API Call with Atomic Operation
-        with requests.Session() as session:
-            response = session.post(
+        # 5. API Call with requests Session (renamed variable)
+        with requests.Session() as http_session:
+            response = http_session.post(
                 'https://api.openai.com/v1/chat/completions',
                 headers={
                     'Authorization': f'Bearer {openai.api_key}',
                     'Content-Type': 'application/json',
-                    'X-Request-ID': str(hash(user_input))  # Unique identifier
+                    'X-Request-ID': str(hash(user_input))
                 },
                 json={
                     'model': 'gpt-3.5-turbo',
@@ -324,7 +324,7 @@ def chat():
                         },
                         {"role": "user", "content": user_input}
                     ],
-                    'temperature': 0.3,  # More deterministic
+                    'temperature': 0.3,
                     'max_tokens': 75,
                     'frequency_penalty': 1.5,
                     'presence_penalty': 1.5
@@ -335,18 +335,13 @@ def chat():
             # 6. Response Validation
             response.raise_for_status()
             data = response.json()
-            bot_response = data['choices'][0]['message']['content'][:400]  # Hard limit
+            bot_response = data['choices'][0]['message']['content'][:400]
             
-            # Final recursion check
             if any(word in bot_response.lower() for word in ["repeat", "recurse", "loop"]):
                 raise ValueError("Invalid response pattern")
                 
             return jsonify({'response': bot_response})
 
-    except RecursionError:
-        return jsonify({'error': 'System busy'}), 429
-    except requests.exceptions.RequestException as e:
-        return jsonify({'error': 'Service unavailable'}), 503
     except Exception as e:
         app.logger.error(f"Chat error: {type(e).__name__}: {str(e)}")
         return jsonify({'error': 'Processing error'}), 500
