@@ -12,7 +12,7 @@ import openai
 from dotenv import load_dotenv
 from flask_cors import CORS
 from flask_migrate import Migrate
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, disconnect
 from flask_session import Session
 import requests
 
@@ -24,7 +24,7 @@ app = Flask(__name__, static_folder='static', template_folder='templates')
 
 # Configure session
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-fallback-secret-key')
-app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_SECURE'] = os.getenv('FLASK_ENV') == 'production'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
@@ -34,7 +34,8 @@ Session(app)
 # Enable CORS
 CORS(app, resources={
     r"/chat": {"origins": "*"},
-    r"/api/*": {"origins": "*"}
+    r"/api/*": {"origins": "*"},
+    r"/socket.io/*": {"origins": "*"}
 })
 
 # Database configuration
@@ -63,7 +64,11 @@ socketio = SocketIO(
     cors_allowed_origins="*",
     async_mode='gevent',
     logger=os.getenv('FLASK_ENV') == 'development',
-    engineio_logger=os.getenv('FLASK_ENV') == 'development'
+    engineio_logger=os.getenv('FLASK_ENV') == 'development',
+    ping_timeout=30,
+    ping_interval=25,
+    reconnection=True,
+    max_http_buffer_size=1e8  # 100MB
 )
 
 # OpenAI configuration
@@ -354,16 +359,34 @@ def chat():
 # ------------------ SOCKET.IO HANDLERS ------------------
 @socketio.on('connect')
 def handle_connect():
-    if 'user_id' not in flask_session:
+    try:
+        if 'user_id' not in flask_session:
+            app.logger.warning("Unauthorized socket connection attempt")
+            return False
+        
+        user_id = str(flask_session['user_id'])
+        socketio.server.enter_room(request.sid, user_id)
+        app.logger.info(f"Client connected: {user_id}")
+        return True
+    except Exception as e:
+        app.logger.error(f"Connection error: {str(e)}")
+        disconnect()
         return False
-    socketio.server.enter_room(request.sid, str(flask_session['user_id']))
-    app.logger.info(f"Client connected: {flask_session['user_id']}")
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    if 'user_id' in flask_session:
-        socketio.server.leave_room(request.sid, str(flask_session['user_id']))
-        app.logger.info(f"Client disconnected: {flask_session['user_id']}")
+    try:
+        if 'user_id' in flask_session:
+            user_id = str(flask_session['user_id'])
+            socketio.server.leave_room(request.sid, user_id)
+            app.logger.info(f"Client disconnected: {user_id}")
+    except Exception as e:
+        app.logger.error(f"Disconnection error: {str(e)}")
+
+@socketio.on_error_default
+def default_error_handler(e):
+    app.logger.error(f"Socket.IO error: {str(e)}")
+    disconnect()
 
 # ------------------ MAIN APPLICATION ------------------
 if __name__ == '__main__':
@@ -373,4 +396,5 @@ if __name__ == '__main__':
     socketio.run(app,
                 host='0.0.0.0',
                 port=int(os.environ.get('PORT', 5000)),
-                debug=os.getenv('FLASK_ENV') == 'development')
+                debug=os.getenv('FLASK_ENV') == 'development',
+                allow_unsafe_werkzeug=True)
