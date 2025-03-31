@@ -9,7 +9,8 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_socketio import SocketIO
 import random
-import requests  # Added for better OpenAI API handling
+import requests
+from flask_session import Session  # Added for session management
 
 # ------------------ INITIAL SETUP ------------------
 load_dotenv()
@@ -23,6 +24,8 @@ app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
+app.config['SESSION_TYPE'] = 'filesystem'  # Server-side session storage
+Session(app)  # Initialize Flask-Session
 
 # Enable CORS
 CORS(app, resources={
@@ -50,14 +53,17 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 # Initialize SocketIO with production-ready settings
-socketio = SocketIO(app,
-                   cors_allowed_origins="*",
-                   async_mode='gevent',
-                   engineio_logger=os.getenv('FLASK_ENV') == 'development',
-                   logger=os.getenv('FLASK_ENV') == 'development',
-                   ping_timeout=60,
-                   ping_interval=25,
-                   max_http_buffer_size=1e8)
+socketio = SocketIO(
+    app,
+    manage_session=False,  # Let Flask handle sessions
+    cors_allowed_origins="*",
+    async_mode='gevent',
+    logger=os.getenv('FLASK_ENV') == 'development',
+    engineio_logger=os.getenv('FLASK_ENV') == 'development',
+    ping_timeout=60,
+    ping_interval=25,
+    max_http_buffer_size=1e8
+)
 
 # OpenAI configuration
 openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -219,16 +225,19 @@ def get_heart_rate_analysis():
 @socketio.on('connect')
 def handle_connect():
     """Handle new WebSocket connection"""
-    if 'user_id' in session:
-        user_id = str(session['user_id'])
-        socketio.server.enter_room(request.sid, user_id)
-        app.logger.info(f"Client connected to room {user_id}")
+    if 'user_id' not in session:
+        return False  # Reject connection
+    user_id = str(session['user_id'])
+    socketio.server.enter_room(request.sid, user_id)
+    app.logger.info(f"Client connected to room {user_id}")
 
 @socketio.on('disconnect')
 def handle_disconnect():
     """Handle WebSocket disconnection"""
     if 'user_id' in session:
-        app.logger.info(f"Client disconnected from room {session['user_id']}")
+        user_id = str(session['user_id'])
+        socketio.server.leave_room(request.sid, user_id)
+        app.logger.info(f"Client disconnected from room {user_id}")
 
 # ------------------ AUTHENTICATION ROUTES ------------------
 @app.route('/')
@@ -386,48 +395,55 @@ def chat():
                 'type': 'text'
             }), 400
 
+        # Add guard against recursive prompts
+        if "recursion" in user_input.lower():
+            return jsonify({
+                'status': 'error',
+                'message': 'Recursive prompt detected.',
+                'type': 'text'
+            }), 400
+
         # Use requests with timeout for better control
-        try:
-            response = requests.post(
-                'https://api.openai.com/v1/chat/completions',
-                headers={
-                    'Authorization': f'Bearer {openai.api_key}',
-                    'Content-Type': 'application/json'
-                },
-                json={
-                    'model': 'gpt-3.5-turbo',
-                    'messages': [
-                        {"role": "system", "content": "You are a helpful heart health expert."},
-                        {"role": "user", "content": user_input}
-                    ],
-                    'temperature': 0.7
-                },
-                timeout=30  # 30 second timeout
-            )
-            response.raise_for_status()
-            data = response.json()
-            chatbot_response = data['choices'][0]['message']['content']
+        response = requests.post(
+            'https://api.openai.com/v1/chat/completions',
+            headers={
+                'Authorization': f'Bearer {openai.api_key}',
+                'Content-Type': 'application/json'
+            },
+            json={
+                'model': 'gpt-3.5-turbo',
+                'messages': [
+                    {"role": "system", "content": "You are a helpful heart health expert."},
+                    {"role": "user", "content": user_input}
+                ],
+                'temperature': 0.7,
+                'max_tokens': 150  # Limit response length
+            },
+            timeout=30  # 30 second timeout
+        )
+        response.raise_for_status()
+        data = response.json()
+        chatbot_response = data['choices'][0]['message']['content']
 
-            return jsonify({
-                'status': 'success',
-                'response': chatbot_response,
-                'type': 'text'
-            })
+        return jsonify({
+            'status': 'success',
+            'response': chatbot_response,
+            'type': 'text'
+        })
 
-        except requests.exceptions.Timeout:
-            return jsonify({
-                'status': 'error',
-                'message': 'The request timed out. Please try again.',
-                'type': 'text'
-            }), 504
-        except Exception as e:
-            app.logger.error(f"OpenAI API error: {str(e)}")
-            return jsonify({
-                'status': 'error',
-                'message': 'Error processing your request.',
-                'type': 'text'
-            }), 500
-
+    except requests.exceptions.Timeout:
+        return jsonify({
+            'status': 'error',
+            'message': 'The request timed out. Please try again.',
+            'type': 'text'
+        }), 504
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"OpenAI API request error: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': 'Error communicating with OpenAI API.',
+            'type': 'text'
+        }), 502
     except Exception as e:
         app.logger.error(f"Chat endpoint error: {str(e)}")
         return jsonify({
