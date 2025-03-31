@@ -163,6 +163,103 @@
             max-width: 80%;
         }
 
+        /* Heart Rate Monitor Styles */
+        .heart-rate-panel {
+            background: #111;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #333;
+        }
+
+        .heart-rate-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .heart-rate-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00f5f9;
+        }
+
+        .heart-rate-status {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-normal {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .status-elevated {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .status-critical {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .heart-rate-graph {
+            height: 100px;
+            margin-top: 10px;
+            position: relative;
+        }
+
+        .graph-line {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #333;
+        }
+
+        .graph-point {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #00f5f9;
+            transform: translate(-50%, -50%);
+        }
+
+        .heart-rate-history {
+            margin-top: 15px;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+            font-size: 14px;
+        }
+
+        .device-connect-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 14px;
+            transition: 0.3s ease;
+        }
+
+        .device-connect-btn:hover {
+            background: #0056b3;
+        }
+
         /* Typing dots animation */
         .typing-indicator {
             display: flex;
@@ -276,6 +373,14 @@
             .pre-prompts button {
                 width: 100%;
             }
+            
+            .heart-rate-panel {
+                padding: 10px;
+            }
+            
+            .heart-rate-value {
+                font-size: 24px;
+            }
         }
     </style>
 </head>
@@ -291,6 +396,16 @@
     <div class="profile-details" id="profile-details">
         <p><strong>Username:</strong> <span id="profile-username">User</span></p>
         <p><strong>Email:</strong> <span id="profile-email">user@example.com</span></p>
+        <div class="heart-rate-panel" id="profile-heart-rate">
+            <div class="heart-rate-header">
+                <div>
+                    <div style="font-size: 12px; color: #aaa;">CURRENT HEART RATE</div>
+                    <div class="heart-rate-value" id="current-bpm">--</div>
+                </div>
+                <div class="heart-rate-status" id="heart-rate-status">--</div>
+            </div>
+            <button class="device-connect-btn" onclick="connectDevice()">CONNECT DEVICE</button>
+        </div>
         <button onclick="logout()">Logout</button>
     </div>
 
@@ -307,6 +422,7 @@
             <button onclick="sendPrePrompt('How to maintain healthy blood pressure?')">💓 Blood Pressure</button>
             <button onclick="sendPrePrompt('Heart-friendly diet tips')">🥗 Diet Tips</button>
             <button onclick="sendPrePrompt('Symptoms of heart disease')">🫀 Warning Signs</button>
+            <button onclick="showHeartRateAnalysis()">📊 My Heart Analysis</button>
         </div>
 
         <div class="input-container">
@@ -319,13 +435,21 @@
     </div>
 
     <script>
-        // Global variable to track if user is logged in
+        // Global variables
         let isLoggedIn = false;
+        let heartRateSocket = null;
+        let currentHeartRate = null;
+        let heartRateHistory = [];
+        let deviceConnected = false;
 
         // Check login status and load user data when page loads
         document.addEventListener('DOMContentLoaded', async () => {
             await checkLoginStatus();
             await loadUserData();
+            await loadHeartRateData();
+            
+            // Initialize WebSocket connection for real-time heart rate
+            initHeartRateWebSocket();
         });
 
         // Check if user is logged in
@@ -376,6 +500,219 @@
                 }
             } catch (error) {
                 console.error('Error loading user data:', error);
+            }
+        }
+
+        // Load heart rate data
+        async function loadHeartRateData() {
+            try {
+                const response = await fetch('/api/heart-rate/history', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    heartRateHistory = await response.json();
+                    updateHeartRateDisplay();
+                    
+                    if (heartRateHistory.length > 0) {
+                        currentHeartRate = heartRateHistory[0];
+                        updateCurrentHeartRate(currentHeartRate);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading heart rate data:', error);
+            }
+        }
+
+        // Initialize WebSocket for real-time heart rate updates
+        function initHeartRateWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+            const wsUrl = protocol + window.location.host + '/api/heart-rate/ws';
+            
+            heartRateSocket = new WebSocket(wsUrl);
+            
+            heartRateSocket.onopen = () => {
+                console.log('WebSocket connection established');
+            };
+            
+            heartRateSocket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.bpm) {
+                    currentHeartRate = data;
+                    updateCurrentHeartRate(data);
+                    
+                    // Add to beginning of history
+                    heartRateHistory.unshift(data);
+                    if (heartRateHistory.length > 20) {
+                        heartRateHistory.pop();
+                    }
+                }
+            };
+            
+            heartRateSocket.onclose = () => {
+                console.log('WebSocket connection closed');
+                // Try to reconnect after 5 seconds
+                setTimeout(initHeartRateWebSocket, 5000);
+            };
+            
+            heartRateSocket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        // Update current heart rate display
+        function updateCurrentHeartRate(data) {
+            const bpmElement = document.getElementById('current-bpm');
+            const statusElement = document.getElementById('heart-rate-status');
+            
+            bpmElement.textContent = data.bpm;
+            
+            // Update status display
+            statusElement.textContent = data.status;
+            statusElement.className = 'heart-rate-status';
+            
+            switch(data.status) {
+                case 'normal':
+                    statusElement.classList.add('status-normal');
+                    break;
+                case 'elevated':
+                    statusElement.classList.add('status-elevated');
+                    break;
+                case 'critical':
+                    statusElement.classList.add('status-critical');
+                    break;
+                default:
+                    statusElement.classList.add('status-normal');
+            }
+        }
+
+        // Update heart rate history display
+        function updateHeartRateDisplay() {
+            // Here you could update a graph or history list if you add those elements
+            console.log('Heart rate history updated:', heartRateHistory);
+        }
+
+        // Connect wearable device
+        async function connectDevice() {
+            try {
+                // In a real app, this would connect to the device's API
+                // For demo purposes, we'll simulate a connection
+                
+                deviceConnected = true;
+                document.querySelector('.device-connect-btn').textContent = 'DEVICE CONNECTED';
+                document.querySelector('.device-connect-btn').style.backgroundColor = '#28a745';
+                
+                // Simulate receiving heart rate data
+                if (heartRateHistory.length === 0) {
+                    simulateHeartRateData();
+                }
+                
+                appendMessage("Your wearable device is now connected. I'll monitor your heart rate in real-time.", 'bot-message');
+            } catch (error) {
+                console.error('Device connection error:', error);
+                appendMessage("Failed to connect device. Please try again.", 'error-message');
+            }
+        }
+
+        // Simulate heart rate data for demo purposes
+        function simulateHeartRateData() {
+            const baseBpm = 70 + Math.floor(Math.random() * 20); // Random base between 70-90
+            let lastBpm = baseBpm;
+            
+            // Simulate periodic heart rate updates
+            setInterval(() => {
+                if (!deviceConnected) return;
+                
+                // Random variation
+                const variation = Math.floor(Math.random() * 10) - 5; // -5 to +5
+                let newBpm = lastBpm + variation;
+                
+                // Keep within reasonable bounds
+                newBpm = Math.max(50, Math.min(120, newBpm));
+                
+                // Classify the heart rate
+                let status;
+                if (newBpm < 60) status = 'low';
+                else if (newBpm <= 100) status = 'normal';
+                else status = 'elevated';
+                
+                // Create new reading
+                const newReading = {
+                    bpm: newBpm,
+                    status: status,
+                    timestamp: new Date().toISOString()
+                };
+                
+                // Update display
+                currentHeartRate = newReading;
+                updateCurrentHeartRate(newReading);
+                
+                // Add to history
+                heartRateHistory.unshift(newReading);
+                if (heartRateHistory.length > 20) {
+                    heartRateHistory.pop();
+                }
+                
+                lastBpm = newBpm;
+            }, 3000); // Update every 3 seconds
+        }
+
+        // Show heart rate analysis in chat
+        async function showHeartRateAnalysis() {
+            const chatBox = document.getElementById('chat-box');
+            const welcomeMessage = document.getElementById('welcome-message');
+            
+            // Hide welcome message if visible
+            if (welcomeMessage && welcomeMessage.style.display !== "none") {
+                welcomeMessage.style.display = "none";
+            }
+            
+            // Show typing indicator
+            const typingIndicator = showTypingIndicator();
+            
+            try {
+                const response = await fetch('/api/heart-rate/analysis', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                // Remove typing indicator
+                chatBox.removeChild(typingIndicator);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to get heart rate analysis');
+                }
+                
+                const data = await response.json();
+                
+                if (data.message && data.message === 'No heart rate data available') {
+                    appendMessage("I don't have any heart rate data for you yet. Please connect a wearable device to get started.", 'bot-message');
+                    return;
+                }
+                
+                // Format the analysis response
+                let analysisMessage = "Here's your heart rate analysis:\n\n";
+                analysisMessage += `📊 Average BPM: ${data.average_bpm}\n`;
+                analysisMessage += `⬇️ Minimum BPM: ${data.min_bpm}\n`;
+                analysisMessage += `⬆️ Maximum BPM: ${data.max_bpm}\n\n`;
+                analysisMessage += `💓 Status Distribution:\n`;
+                analysisMessage += `- Normal: ${data.status_distribution.normal} readings\n`;
+                analysisMessage += `- Elevated: ${data.status_distribution.elevated} readings\n`;
+                analysisMessage += `- Low: ${data.status_distribution.low} readings\n\n`;
+                
+                if (data.status_distribution.elevated > 0) {
+                    analysisMessage += "⚠️ I noticed some elevated readings. You might want to discuss this with your doctor.";
+                } else {
+                    analysisMessage += "Your heart rate patterns look good overall!";
+                }
+                
+                appendMessage(analysisMessage, 'bot-message');
+                
+            } catch (error) {
+                chatBox.removeChild(typingIndicator);
+                appendMessage(`Error: ${error.message}`, 'error-message');
+                console.error('Heart rate analysis error:', error);
             }
         }
 
