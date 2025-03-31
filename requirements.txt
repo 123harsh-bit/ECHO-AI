@@ -57,3 +57,8 @@ urllib3==2.3.0
 flask-socketio==5.3.6
 python-engineio==4.7.0
 python-socketio==5.10.0
+# WebSocket
+python-socketio==5.10.0
+python-engineio>=4.8.0  # Updated to match socketio requirements
+eventlet==0.35.1  # Recommended async server for Socket.IO
+
