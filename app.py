@@ -246,31 +246,25 @@ def login():
 
 @app.route('/logout', methods=['POST'])
 def logout():
-    flask_session.clear()
-    response = jsonify({'success': True})
-    response.delete_cookie('session')
-    return response, 200
-
-@app.route('/api/heart-rate/history')
-def get_heart_rate_history():
-    if 'user_id' not in flask_session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
     try:
-        records = HeartRate.query.filter_by(
-            user_id=flask_session['user_id']
-        ).order_by(HeartRate.timestamp.desc()).limit(20).all()
-        
-        return jsonify([{
-            'bpm': r.bpm,
-            'status': r.status,
-            'timestamp': r.timestamp.isoformat(),
-            'device_type': r.device_type
-        } for r in records])
+        if 'user_id' in flask_session:
+            user_id = flask_session['user_id']
+            
+            # Disconnect all sockets for this user
+            if 'socket_id' in flask_session:
+                socket_id = flask_session['socket_id']
+                socketio.server.disconnect(socket_id)
+            
+            flask_session.clear()
+            db.session.commit()
+            
+            response = jsonify({'success': True})
+            response.delete_cookie('session')
+            return response, 200
+        return jsonify({'success': False}), 400
     except Exception as e:
-        app.logger.error(f"Heart rate history error: {str(e)}")
-        return jsonify({'error': 'Server error'}), 500
-
+        app.logger.error(f"Logout error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
@@ -357,37 +351,70 @@ def chat():
         return jsonify({'error': 'Processing error'}), 500
 
 # ------------------ SOCKET.IO HANDLERS ------------------
+# Update your Socket.IO initialization
+socketio = SocketIO(
+    app,
+    manage_session=False,
+    cors_allowed_origins="*",
+    async_mode='gevent',
+    logger=os.getenv('FLASK_ENV') == 'development',
+    engineio_logger=os.getenv('FLASK_ENV') == 'development',
+    ping_timeout=30,
+    ping_interval=25,
+    max_http_buffer_size=1e8,
+    # Add these new configurations:
+    reconnection=True,
+    reconnection_attempts=5,
+    reconnection_delay=1,
+    reconnection_delay_max=5
+)
+
+# Update your connect handler
 @socketio.on('connect')
 def handle_connect():
     try:
         if 'user_id' not in flask_session:
-            app.logger.warning("Unauthorized socket connection attempt")
+            app.logger.warning(f"Unauthorized connection attempt from {request.remote_addr}")
             return False
         
-        user_id = str(flask_session['user_id'])
-        socketio.server.enter_room(request.sid, user_id)
-        app.logger.info(f"Client connected: {user_id}")
+        user = User.query.get(flask_session['user_id'])
+        if not user:
+            app.logger.warning(f"Invalid user ID in session: {flask_session['user_id']}")
+            return False
+        
+        # Store the user_id in the socket's session
+        flask_session['socket_id'] = request.sid
+        db.session.commit()
+        
+        app.logger.info(f"User {user.username} connected with SID {request.sid}")
         return True
+        
     except Exception as e:
-        app.logger.error(f"Connection error: {str(e)}")
-        disconnect()
+        app.logger.error(f"Connection error: {str(e)}", exc_info=True)
         return False
 
+# Add a new disconnect handler
 @socketio.on('disconnect')
 def handle_disconnect():
     try:
-        if 'user_id' in flask_session:
-            user_id = str(flask_session['user_id'])
-            socketio.server.leave_room(request.sid, user_id)
-            app.logger.info(f"Client disconnected: {user_id}")
+        if 'user_id' in flask_session and 'socket_id' in flask_session:
+            user_id = flask_session['user_id']
+            socket_id = flask_session['socket_id']
+            app.logger.info(f"User {user_id} disconnected (SID: {socket_id})")
+            flask_session.pop('socket_id', None)
+            db.session.commit()
     except Exception as e:
         app.logger.error(f"Disconnection error: {str(e)}")
 
-@socketio.on_error_default
-def default_error_handler(e):
-    app.logger.error(f"Socket.IO error: {str(e)}")
-    disconnect()
-
+# Add session validation middleware
+@socketio.on('validate_session')
+def handle_validate_session(data):
+    try:
+        if 'user_id' not in flask_session:
+            raise ConnectionRefusedError('unauthorized')
+        return {'valid': True}
+    except Exception as e:
+        raise ConnectionRefusedError('unauthorized')
 # ------------------ MAIN APPLICATION ------------------
 if __name__ == '__main__':
     with app.app_context():
