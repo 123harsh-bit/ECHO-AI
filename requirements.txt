@@ -78,3 +78,4 @@ eventlet==0.35.1
 # Other essentials
 python-dotenv==1.0.0
 requests==2.31.0
+flask-session==0.5.0
