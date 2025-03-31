@@ -32,9 +32,9 @@
 <div class="signup-container">
     <h3 class="text-center mb-4">Sign Up</h3>
     <form method="POST" action="/signup">
-        <!-- Username Error Message -->
+        <!-- Error Message -->
         {% if error_message %}
-            <div class="error-msg">{{ error_message }}</div>
+            <div class="alert alert-danger">{{ error_message }}</div>
         {% endif %}
 
         <!-- Username Field -->
@@ -43,10 +43,18 @@
             <input type="text" name="username" class="form-control" id="username" required>
         </div>
 
+        <!-- Email Field -->
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" name="email" class="form-control" id="email" required>
+            <div class="form-text">We'll never share your email with anyone else.</div>
+        </div>
+
         <!-- Password Field -->
         <div class="mb-3">
             <label for="password" class="form-label">Password</label>
             <input type="password" name="password" class="form-control" id="password" required>
+            <div class="form-text">Minimum 8 characters</div>
         </div>
 
         <!-- Submit Button -->
