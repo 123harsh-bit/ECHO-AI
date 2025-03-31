@@ -49,6 +49,12 @@
             border-radius: 50%;
             background: #ddd;
             margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-weight: bold;
+            text-transform: uppercase;
         }
 
         .profile-name {
@@ -277,14 +283,14 @@
     <div class="header">
         <div>Echo AI</div>
         <div class="profile-container" onclick="toggleProfileDetails()">
-            <div class="profile-avatar"></div>
-            <div class="profile-name">User</div>
+            <div class="profile-avatar" id="user-avatar">U</div>
+            <div class="profile-name" id="username-display">User</div>
         </div>
     </div>
 
     <div class="profile-details" id="profile-details">
-        <p><strong>Name:</strong> User</p>
-        <p><strong>Email:</strong> user@example.com</p>
+        <p><strong>Username:</strong> <span id="profile-username">User</span></p>
+        <p><strong>Email:</strong> <span id="profile-email">user@example.com</span></p>
         <button onclick="logout()">Logout</button>
     </div>
 
@@ -316,9 +322,10 @@
         // Global variable to track if user is logged in
         let isLoggedIn = false;
 
-        // Check login status when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            checkLoginStatus();
+        // Check login status and load user data when page loads
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkLoginStatus();
+            await loadUserData();
         });
 
         // Check if user is logged in
@@ -342,6 +349,33 @@
             } catch (error) {
                 console.error('Error checking auth status:', error);
                 window.location.href = '/login';
+            }
+        }
+
+        // Load user data from server
+        async function loadUserData() {
+            try {
+                const response = await fetch('/check-auth', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Update UI with user data
+                    if (data.authenticated && data.username) {
+                        document.getElementById('username-display').textContent = data.username;
+                        document.getElementById('profile-username').textContent = data.username;
+                        document.getElementById('user-avatar').textContent = data.username.charAt(0).toUpperCase();
+                        
+                        if (data.email) {
+                            document.getElementById('profile-email').textContent = data.email;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
             }
         }
 
