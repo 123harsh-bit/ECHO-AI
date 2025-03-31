@@ -12,6 +12,25 @@ from flask_socketio import SocketIO
 from flask_session import Session
 import requests
 
+class RecursionGuard:
+    def __init__(self):
+        self._call_stack = set()
+    
+    def __call__(self, func):
+        def wrapped(*args, **kwargs):
+            key = f"{func.__name__}:{str(args)}:{str(kwargs)}"
+            if key in self._call_stack:
+                raise RecursionError("Recursion detected")
+            self._call_stack.add(key)
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                self._call_stack.remove(key)
+            return result
+        return wrapped
+
+recursion_guard = RecursionGuard()
+
 # ------------------ INITIAL SETUP ------------------
 load_dotenv()
 
@@ -252,81 +271,85 @@ def logout():
 
 # ------------------ CHAT ROUTE ------------------
 @app.route('/chat', methods=['POST'])
+@recursion_guard
 def chat():
-    MAX_ATTEMPTS = 3
-    attempt = 0
-    
-    while attempt < MAX_ATTEMPTS:
-        try:
-            if 'user_id' not in session:
-                return jsonify({'error': 'Unauthorized'}), 401
+    try:
+        # 1. Authentication Check
+        if 'user_id' not in session:
+            return jsonify({'error': 'Unauthorized'}), 401
 
-            data = request.get_json()
-            user_input = sanitize_input(data.get('message', ''))
+        # 2. Input Validation
+        data = request.get_json()
+        if not data or 'message' not in data:
+            return jsonify({'error': 'Invalid request format'}), 400
             
-            # Pre-defined responses
-            predefined = {
-                "who are you": "I'm Echo, your heart health assistant.",
-                "who created you": "I was developed by a medical AI team."
-            }
-            
-            lower_input = user_input.lower()
-            for pattern, response in predefined.items():
-                if pattern in lower_input:
-                    return jsonify({'response': response})
+        user_input = data['message'].strip()[:500]  # Hard length limit
 
-            # Strict content filtering
-            if not is_heart_related(user_input):
-                return jsonify({'error': 'Heart-health questions only'}), 400
+        # 3. Predefined Responses (avoid API calls for common questions)
+        response_map = {
+            'who are you': "I'm Echo, your heart health assistant.",
+            'who created you': "Developed by medical AI specialists.",
+            'what can you do': "I provide heart health information.",
+            'how does this work': "Ask me heart-related questions."
+        }
+        
+        lower_input = user_input.lower()
+        for question, response in response_map.items():
+            if question in lower_input:
+                return jsonify({'response': response})
 
-            # API call with multiple safeguards
-            response = requests.post(
+        # 4. Content Filtering
+        if not is_heart_related(user_input):
+            return jsonify({'error': 'I only answer heart-health questions'}), 400
+
+        # 5. API Call with Atomic Operation
+        with requests.Session() as session:
+            response = session.post(
                 'https://api.openai.com/v1/chat/completions',
                 headers={
                     'Authorization': f'Bearer {openai.api_key}',
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-Request-ID': str(hash(user_input))  # Unique identifier
                 },
                 json={
                     'model': 'gpt-3.5-turbo',
                     'messages': [
                         {
                             "role": "system",
-                            "content": """You are a cardiac health assistant. Follow these rules:
+                            "content": """You are a cardiac specialist AI. Rules:
                             1. Never repeat the user's exact words
-                            2. Keep responses under 50 words
-                            3. Never create recursive patterns
-                            4. Only discuss heart health"""
+                            2. Maximum 3 sentence response
+                            3. Never suggest repeating anything
+                            4. Only discuss verified medical information"""
                         },
                         {"role": "user", "content": user_input}
                     ],
-                    'temperature': 0.5,
-                    'max_tokens': 100,
-                    'frequency_penalty': 1.0,
-                    'presence_penalty': 1.0
+                    'temperature': 0.3,  # More deterministic
+                    'max_tokens': 75,
+                    'frequency_penalty': 1.5,
+                    'presence_penalty': 1.5
                 },
-                timeout=10
+                timeout=8
             )
             
+            # 6. Response Validation
             response.raise_for_status()
             data = response.json()
-            bot_response = data['choices'][0]['message']['content']
+            bot_response = data['choices'][0]['message']['content'][:400]  # Hard limit
             
-            # Final safety check
-            if is_recursive_response(user_input, bot_response):
-                raise ValueError("Recursive response detected")
+            # Final recursion check
+            if any(word in bot_response.lower() for word in ["repeat", "recurse", "loop"]):
+                raise ValueError("Invalid response pattern")
                 
             return jsonify({'response': bot_response})
 
-        except ValueError as e:
-            return jsonify({'error': str(e)}), 400
-        except requests.exceptions.RequestException as e:
-            attempt += 1
-            if attempt == MAX_ATTEMPTS:
-                app.logger.error(f"API request failed: {str(e)}")
-                return jsonify({'error': 'Service unavailable'}), 503
-        except Exception as e:
-            app.logger.error(f"Unexpected error: {str(e)}")
-            return jsonify({'error': 'Processing error'}), 500
+    except RecursionError:
+        return jsonify({'error': 'System busy'}), 429
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': 'Service unavailable'}), 503
+    except Exception as e:
+        app.logger.error(f"Chat error: {type(e).__name__}: {str(e)}")
+        return jsonify({'error': 'Processing error'}), 500
 # ------------------ MAIN APPLICATION ------------------
 if __name__ == '__main__':
     with app.app_context():
