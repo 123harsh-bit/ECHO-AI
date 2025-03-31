@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
@@ -8,9 +9,8 @@ from dotenv import load_dotenv
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_socketio import SocketIO
-import random
+from flask_session import Session
 import requests
-from flask_session import Session  # Added for session management
 
 # ------------------ INITIAL SETUP ------------------
 load_dotenv()
@@ -24,8 +24,8 @@ app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
-app.config['SESSION_TYPE'] = 'filesystem'  # Server-side session storage
-Session(app)  # Initialize Flask-Session
+app.config['SESSION_TYPE'] = 'filesystem'  # or 'redis' in production
+Session(app)
 
 # Enable CORS
 CORS(app, resources={
@@ -52,17 +52,14 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-# Initialize SocketIO with production-ready settings
+# Initialize SocketIO
 socketio = SocketIO(
     app,
-    manage_session=False,  # Let Flask handle sessions
+    manage_session=False,
     cors_allowed_origins="*",
     async_mode='gevent',
     logger=os.getenv('FLASK_ENV') == 'development',
-    engineio_logger=os.getenv('FLASK_ENV') == 'development',
-    ping_timeout=60,
-    ping_interval=25,
-    max_http_buffer_size=1e8
+    engineio_logger=os.getenv('FLASK_ENV') == 'development'
 )
 
 # OpenAI configuration
@@ -78,7 +75,6 @@ class User(db.Model):
     heart_rates = db.relationship('HeartRate', backref='user', lazy=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime)
-    device_token = db.Column(db.String(255))
     is_active = db.Column(db.Boolean, default=True)
 
 class HeartRate(db.Model):
@@ -87,157 +83,37 @@ class HeartRate(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     bpm = db.Column(db.Integer, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    status = db.Column(db.String(20))  # normal/elevated/critical
+    status = db.Column(db.String(20))
     device_type = db.Column(db.String(50))
     confidence = db.Column(db.Float)
 
-# ------------------ HEALTH KEYWORDS ------------------
-HEART_KEYWORDS = [
-    "heart", "cardiac", "blood pressure", "cholesterol", "heart attack",
-    "stroke", "arrhythmia", "hypertension", "pulse", "artery", "circulation",
-    "ECG", "EKG", "cardiovascular", "angioplasty", "bypass surgery"
-]
-
+# ------------------ UTILITY FUNCTIONS ------------------
 def is_heart_related(user_input):
     user_input = user_input.lower()
-    return any(keyword in user_input for keyword in HEART_KEYWORDS)
+    heart_keywords = [
+        "heart", "cardiac", "blood pressure", "cholesterol", 
+        "heart attack", "stroke", "arrhythmia", "hypertension"
+    ]
+    return any(keyword in user_input for keyword in heart_keywords)
 
 def classify_heart_rate(bpm):
-    """Classify heart rate into categories"""
     if bpm < 60: return 'low'
     elif 60 <= bpm <= 100: return 'normal'
     else: return 'elevated'
 
+def contains_recursive_pattern(text):
+    patterns = ["repeat after me", "say this exactly", "recursion"]
+    return any(pattern in text.lower() for pattern in patterns)
+
 # ------------------ MIDDLEWARE ------------------
 @app.before_request
 def before_request():
-    """Force HTTPS in production"""
     if request.url.startswith('http://') and os.getenv('FLASK_ENV') == 'production':
         return redirect(request.url.replace('http://', 'https://'), 301)
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):
-    """Ensure database connections are properly closed"""
     db.session.remove()
-
-# ------------------ HEART RATE API ROUTES ------------------
-@app.route('/api/heart-rate', methods=['POST'])
-def save_heart_rate():
-    """Save new heart rate reading from connected device"""
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    data = request.get_json()
-    if not data or 'bpm' not in data:
-        return jsonify({'error': 'Missing BPM data'}), 400
-    
-    try:
-        new_record = HeartRate(
-            user_id=session['user_id'],
-            bpm=data['bpm'],
-            status=classify_heart_rate(data['bpm']),
-            device_type=data.get('device_type', 'simulated'),
-            confidence=data.get('confidence', 1.0)
-        )
-        db.session.add(new_record)
-        db.session.commit()
-        
-        # Broadcast to WebSocket clients
-        socketio.emit('heart_rate_update', {
-            'bpm': new_record.bpm,
-            'status': new_record.status,
-            'timestamp': new_record.timestamp.isoformat()
-        }, room=str(session['user_id']))
-        
-        return jsonify({
-            'status': 'success',
-            'data': {
-                'id': new_record.id,
-                'bpm': new_record.bpm,
-                'status': new_record.status,
-                'timestamp': new_record.timestamp.isoformat()
-            }
-        })
-    except Exception as e:
-        db.session.rollback()
-        app.logger.error(f"Heart rate save error: {str(e)}")
-        return jsonify({'error': 'Server error'}), 500
-
-@app.route('/api/heart-rate/history')
-def get_heart_rate_history():
-    """Get user's heart rate history (last 20 readings)"""
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    try:
-        records = HeartRate.query.filter_by(
-            user_id=session['user_id']
-        ).order_by(HeartRate.timestamp.desc()).limit(20).all()
-        
-        return jsonify([{
-            'bpm': r.bpm,
-            'status': r.status,
-            'timestamp': r.timestamp.isoformat(),
-            'device_type': r.device_type
-        } for r in records])
-    except Exception as e:
-        app.logger.error(f"Heart rate history error: {str(e)}")
-        return jsonify({'error': 'Server error'}), 500
-
-@app.route('/api/heart-rate/analysis')
-def get_heart_rate_analysis():
-    """Get analysis of user's recent heart rate data"""
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    try:
-        # Get records from last 24 hours
-        records = HeartRate.query.filter(
-            HeartRate.user_id == session['user_id'],
-            HeartRate.timestamp >= datetime.utcnow() - timedelta(hours=24)
-        ).order_by(HeartRate.timestamp.asc()).all()
-        
-        if not records:
-            return jsonify({'message': 'No heart rate data available'})
-        
-        # Basic analysis
-        bpms = [r.bpm for r in records]
-        avg_bpm = round(sum(bpms) / len(bpms))
-        min_bpm = min(bpms)
-        max_bpm = max(bpms)
-        
-        return jsonify({
-            'average_bpm': avg_bpm,
-            'min_bpm': min_bpm,
-            'max_bpm': max_bpm,
-            'record_count': len(records),
-            'status_distribution': {
-                'low': sum(1 for r in records if r.status == 'low'),
-                'normal': sum(1 for r in records if r.status == 'normal'),
-                'elevated': sum(1 for r in records if r.status == 'elevated')
-            }
-        })
-    except Exception as e:
-        app.logger.error(f"Heart rate analysis error: {str(e)}")
-        return jsonify({'error': 'Server error'}), 500
-
-# ------------------ SOCKET.IO HANDLERS ------------------
-@socketio.on('connect')
-def handle_connect():
-    """Handle new WebSocket connection"""
-    if 'user_id' not in session:
-        return False  # Reject connection
-    user_id = str(session['user_id'])
-    socketio.server.enter_room(request.sid, user_id)
-    app.logger.info(f"Client connected to room {user_id}")
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    """Handle WebSocket disconnection"""
-    if 'user_id' in session:
-        user_id = str(session['user_id'])
-        socketio.server.leave_room(request.sid, user_id)
-        app.logger.info(f"Client disconnected from room {user_id}")
 
 # ------------------ AUTHENTICATION ROUTES ------------------
 @app.route('/')
@@ -246,12 +122,20 @@ def home():
         return redirect(url_for('login'))
     
     user = User.query.get(session['user_id'])
+    if not user:
+        session.clear()
+        return redirect(url_for('login'))
+    
     return render_template('index.html', current_user=user.username)
 
 @app.route('/check-auth')
 def check_auth():
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
+        if not user:
+            session.clear()
+            return jsonify({'authenticated': False}), 401
+            
         return jsonify({
             'authenticated': True,
             'username': user.username,
@@ -269,37 +153,46 @@ def signup():
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '').strip()
 
+        errors = []
         if not username or not password or not email:
-            return render_template('signup.html', error_message="All fields are required.")
-
-        if '@' not in email or '.' not in email.split('@')[-1]:
-            return render_template('signup.html', error_message="Please enter a valid email address.")
+            errors.append("All fields are required.")
+        if len(username) < 4:
+            errors.append("Username too short.")
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            errors.append("Invalid email format.")
+        if len(password) < 8:
+            errors.append("Password must be 8+ characters.")
+            
+        if errors:
+            return render_template('signup.html', error_message=" ".join(errors))
 
         if User.query.filter_by(username=username).first():
-            return render_template('signup.html', error_message="Username already exists.")
-            
+            return render_template('signup.html', error_message="Username taken.")
         if User.query.filter_by(email=email).first():
-            return render_template('signup.html', error_message="Email already registered.")
-
-        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-        new_user = User(username=username, email=email, password=hashed_password)
+            return render_template('signup.html', error_message="Email registered.")
 
         try:
+            hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+            new_user = User(
+                username=username,
+                email=email,
+                password=hashed_password,
+                created_at=datetime.utcnow(),
+                last_login=datetime.utcnow()
+            )
             db.session.add(new_user)
             db.session.commit()
 
             session.permanent = True
             session['user_id'] = new_user.id
             session['username'] = new_user.username
+            session['_fresh'] = True
 
             return redirect(url_for('home'))
         except Exception as e:
             db.session.rollback()
-            app.logger.error(f"Registration error: {str(e)}")
-            error_msg = "Registration failed. Please try again."
-            if "unique constraint" in str(e).lower():
-                error_msg = "Username or email already exists."
-            return render_template('signup.html', error_message=error_msg)
+            app.logger.error(f"Signup error: {str(e)}")
+            return render_template('signup.html', error_message="Registration failed")
 
     return render_template('signup.html')
 
@@ -312,22 +205,24 @@ def login():
         identifier = request.form.get('username_or_email', '').strip()
         password = request.form.get('password', '').strip()
 
-        user = None
-        if '@' in identifier:
-            user = User.query.filter_by(email=identifier).first()
-        else:
-            user = User.query.filter_by(username=identifier).first()
+        if not identifier or not password:
+            return render_template('login.html', error_message="Credentials required")
+
+        user = User.query.filter((User.email == identifier) | (User.username == identifier)).first()
 
         if not user or not check_password_hash(user.password, password):
-            return render_template('login.html', error_message="Invalid credentials.")
+            return render_template('login.html', error_message="Invalid credentials")
+        if not user.is_active:
+            return render_template('login.html', error_message="Account disabled")
 
-        # Update last login
         user.last_login = datetime.utcnow()
         db.session.commit()
 
         session.permanent = True
         session['user_id'] = user.id
         session['username'] = user.username
+        session['_fresh'] = True
+        session['_ip'] = request.remote_addr
 
         return redirect(url_for('home'), code=303)
 
@@ -336,74 +231,34 @@ def login():
 @app.route('/logout', methods=['POST'])
 def logout():
     session.clear()
-    return jsonify({'success': True}), 200
+    response = jsonify({'success': True})
+    response.delete_cookie('session')
+    return response, 200
 
-@app.route('/profile')
-def profile():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    user = User.query.get(session['user_id'])
-    heart_rates = HeartRate.query.filter_by(
-        user_id=session['user_id']
-    ).order_by(HeartRate.timestamp.desc()).limit(10).all()
-    
-    return render_template('profile.html', 
-                         user=user,
-                         heart_rates=heart_rates)
-
-# ------------------ CHATBOT ROUTE ------------------
+# ------------------ CHAT ROUTE ------------------
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
         if 'user_id' not in session:
-            return jsonify({
-                'status': 'error',
-                'message': 'Please log in first.',
-                'type': 'text'
-            }), 401
+            return jsonify({'error': 'Unauthorized'}), 401
 
         data = request.get_json()
-        user_input = data.get('message', '').strip().lower()
+        user_input = data.get('message', '').strip()
 
         if not user_input:
-            return jsonify({
-                'status': 'error',
-                'message': 'Empty message received.',
-                'type': 'text'
-            }), 400
+            return jsonify({'error': 'Empty message'}), 400
+        if contains_recursive_pattern(user_input):
+            return jsonify({'error': 'Invalid request'}), 400
+        if len(user_input) > 500:
+            return jsonify({'error': 'Message too long'}), 400
 
         # Custom responses
-        if user_input in ["who are you?", "what is your name?", "who is this?","who are you","what is echo ai"]:
-            return jsonify({
-                'status': 'success',
-                'response': "I am Echo, your heart health assistant. I provide guidance and insights related to heart health to help you stay informed and make better health decisions.",
-                'type': 'text'
-            })
-
-        if user_input in ["who created you?", "who invented you?", "who made you?"]:
-            return jsonify({
-                'status': 'success',
-                'response': "I was created by a dedicated team of developers. Our team includes Guru Prasad, Harshavardhan Reddy, Ranjith, Giri. We are working to provide reliable heart health assistance through AI.",
-                'type': 'text'
-            })
-
+        if user_input.lower() in ["who are you?", "what is your name?"]:
+            return jsonify({'response': "I'm your health assistant"})
+            
         if not is_heart_related(user_input):
-            return jsonify({
-                'status': 'error',
-                'message': 'I can only answer heart health-related questions.',
-                'type': 'text'
-            }), 400
+            return jsonify({'error': 'Heart-related questions only'}), 400
 
-        # Add guard against recursive prompts
-        if "recursion" in user_input.lower():
-            return jsonify({
-                'status': 'error',
-                'message': 'Recursive prompt detected.',
-                'type': 'text'
-            }), 400
-
-        # Use requests with timeout for better control
         response = requests.post(
             'https://api.openai.com/v1/chat/completions',
             headers={
@@ -417,55 +272,26 @@ def chat():
                     {"role": "user", "content": user_input}
                 ],
                 'temperature': 0.7,
-                'max_tokens': 150  # Limit response length
+                'max_tokens': 150
             },
-            timeout=30  # 30 second timeout
+            timeout=20
         )
         response.raise_for_status()
         data = response.json()
-        chatbot_response = data['choices'][0]['message']['content']
-
-        return jsonify({
-            'status': 'success',
-            'response': chatbot_response,
-            'type': 'text'
-        })
+        return jsonify({'response': data['choices'][0]['message']['content']})
 
     except requests.exceptions.Timeout:
-        return jsonify({
-            'status': 'error',
-            'message': 'The request timed out. Please try again.',
-            'type': 'text'
-        }), 504
-    except requests.exceptions.RequestException as e:
-        app.logger.error(f"OpenAI API request error: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'message': 'Error communicating with OpenAI API.',
-            'type': 'text'
-        }), 502
+        return jsonify({'error': 'Timeout'}), 504
     except Exception as e:
-        app.logger.error(f"Chat endpoint error: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'message': 'An unexpected error occurred.',
-            'type': 'text'
-        }), 500
+        app.logger.error(f"Chat error: {str(e)}")
+        return jsonify({'error': 'Processing error'}), 500
 
-# ------------------ MAIN APPLICATION ENTRY ------------------
+# ------------------ MAIN APPLICATION ------------------
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     
-    if os.getenv('FLASK_ENV') == 'development':
-        socketio.run(app, 
-                    host='0.0.0.0', 
-                    port=int(os.environ.get('PORT', 5000)), 
-                    debug=True)
-    else:
-        # In production, this should be run via gunicorn
-        print("Production mode - use gunicorn to run the app")
-        socketio.run(app,
-                    host='0.0.0.0',
-                    port=int(os.environ.get('PORT', 5000)),
-                    debug=False)
+    socketio.run(app,
+                host='0.0.0.0',
+                port=int(os.environ.get('PORT', 5000)),
+                debug=os.getenv('FLASK_ENV') == 'development')
