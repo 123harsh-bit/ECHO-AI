@@ -1,7 +1,11 @@
+# MUST BE AT THE VERY TOP - Fixes gevent monkey patching warning
+from gevent import monkey
+monkey.patch_all()
+
 import os
 import re
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session as flask_session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import openai
@@ -11,26 +15,6 @@ from flask_migrate import Migrate
 from flask_socketio import SocketIO
 from flask_session import Session
 import requests
-from flask import session as flask_session
-
-class RecursionGuard:
-    def __init__(self):
-        self._call_stack = set()
-    
-    def __call__(self, func):
-        def wrapped(*args, **kwargs):
-            key = f"{func.__name__}:{str(args)}:{str(kwargs)}"
-            if key in self._call_stack:
-                raise RecursionError("Recursion detected")
-            self._call_stack.add(key)
-            try:
-                result = func(*args, **kwargs)
-            finally:
-                self._call_stack.remove(key)
-            return result
-        return wrapped
-
-recursion_guard = RecursionGuard()
 
 # ------------------ INITIAL SETUP ------------------
 load_dotenv()
@@ -44,7 +28,7 @@ app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
-app.config['SESSION_TYPE'] = 'filesystem'  # or 'redis' in production
+app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 
 # Enable CORS
@@ -72,7 +56,7 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-# Initialize SocketIO
+# Initialize SocketIO with proper async mode
 socketio = SocketIO(
     app,
     manage_session=False,
@@ -124,22 +108,15 @@ def classify_heart_rate(bpm):
 def contains_recursive_pattern(text):
     patterns = ["repeat after me", "say this exactly", "recursion"]
     return any(pattern in text.lower() for pattern in patterns)
-    
-def is_recursive_response(prompt, response):
-    """Check if response might cause recursion"""
-    prompt_words = set(prompt.lower().split())
-    response_words = set(response.lower().split())
-    common_words = prompt_words & response_words
-    return len(common_words) > 5  # If more than 5 words match
 
 def sanitize_input(text):
-    """Clean and validate input"""
     text = text.strip()
     if len(text) > 500:
         raise ValueError("Input too long")
     if any(cmd in text.lower() for cmd in ["repeat", "loop", "recurs"]):
         raise ValueError("Recursive pattern detected")
     return text
+
 # ------------------ MIDDLEWARE ------------------
 @app.before_request
 def before_request():
@@ -150,27 +127,26 @@ def before_request():
 def shutdown_session(exception=None):
     db.session.remove()
 
-# ------------------ AUTHENTICATION ROUTES ------------------
+# ------------------ ROUTES ------------------
 @app.route('/')
 def home():
-    if 'user_id' not in session:
+    if 'user_id' not in flask_session:
         return redirect(url_for('login'))
     
-    user = User.query.get(session['user_id'])
+    user = User.query.get(flask_session['user_id'])
     if not user:
-        session.clear()
+        flask_session.clear()
         return redirect(url_for('login'))
     
     return render_template('index.html', current_user=user.username)
 
 @app.route('/check-auth')
 def check_auth():
-    if 'user_id' in session:
-        user = User.query.get(session['user_id'])
+    if 'user_id' in flask_session:
+        user = User.query.get(flask_session['user_id'])
         if not user:
-            session.clear()
+            flask_session.clear()
             return jsonify({'authenticated': False}), 401
-            
         return jsonify({
             'authenticated': True,
             'username': user.username,
@@ -180,7 +156,7 @@ def check_auth():
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    if 'user_id' in session:
+    if 'user_id' in flask_session:
         return redirect(url_for('home'))
 
     if request.method == 'POST':
@@ -192,7 +168,7 @@ def signup():
         if not username or not password or not email:
             errors.append("All fields are required.")
         if len(username) < 4:
-            errors.append("Username too short.")
+            errors.append("Username must be 4+ characters.")
         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             errors.append("Invalid email format.")
         if len(password) < 8:
@@ -218,10 +194,10 @@ def signup():
             db.session.add(new_user)
             db.session.commit()
 
-            session.permanent = True
-            session['user_id'] = new_user.id
-            session['username'] = new_user.username
-            session['_fresh'] = True
+            flask_session.permanent = True
+            flask_session['user_id'] = new_user.id
+            flask_session['username'] = new_user.username
+            flask_session['_fresh'] = True
 
             return redirect(url_for('home'))
         except Exception as e:
@@ -233,7 +209,7 @@ def signup():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if 'user_id' in session:
+    if 'user_id' in flask_session:
         return redirect(url_for('home'))
 
     if request.method == 'POST':
@@ -253,11 +229,11 @@ def login():
         user.last_login = datetime.utcnow()
         db.session.commit()
 
-        session.permanent = True
-        session['user_id'] = user.id
-        session['username'] = user.username
-        session['_fresh'] = True
-        session['_ip'] = request.remote_addr
+        flask_session.permanent = True
+        flask_session['user_id'] = user.id
+        flask_session['username'] = user.username
+        flask_session['_fresh'] = True
+        flask_session['_ip'] = request.remote_addr
 
         return redirect(url_for('home'), code=303)
 
@@ -265,25 +241,50 @@ def login():
 
 @app.route('/logout', methods=['POST'])
 def logout():
-    session.clear()
+    flask_session.clear()
     response = jsonify({'success': True})
     response.delete_cookie('session')
     return response, 200
 
-# ------------------ CHAT ROUTE ------------------
+@app.route('/api/heart-rate/history')
+def get_heart_rate_history():
+    if 'user_id' not in flask_session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        records = HeartRate.query.filter_by(
+            user_id=flask_session['user_id']
+        ).order_by(HeartRate.timestamp.desc()).limit(20).all()
+        
+        return jsonify([{
+            'bpm': r.bpm,
+            'status': r.status,
+            'timestamp': r.timestamp.isoformat(),
+            'device_type': r.device_type
+        } for r in records])
+    except Exception as e:
+        app.logger.error(f"Heart rate history error: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
+
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
-        # 1. Authentication Check (using Flask session)
+        # 1. Authentication Check
         if 'user_id' not in flask_session:
             return jsonify({'error': 'Unauthorized'}), 401
 
         # 2. Input Validation
+        if not request.is_json:
+            return jsonify({'error': 'Request must be JSON'}), 400
+            
         data = request.get_json()
         if not data or 'message' not in data:
-            return jsonify({'error': 'Invalid request format'}), 400
+            return jsonify({'error': 'Missing message field'}), 400
             
-        user_input = data['message'].strip()[:500]  # Hard length limit
+        try:
+            user_input = sanitize_input(data['message'])
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
 
         # 3. Predefined Responses
         response_map = {
@@ -302,14 +303,13 @@ def chat():
         if not is_heart_related(user_input):
             return jsonify({'error': 'I only answer heart-health questions'}), 400
 
-        # 5. API Call with requests Session (renamed variable)
+        # 5. API Call with requests Session
         with requests.Session() as http_session:
             response = http_session.post(
                 'https://api.openai.com/v1/chat/completions',
                 headers={
                     'Authorization': f'Bearer {openai.api_key}',
-                    'Content-Type': 'application/json',
-                    'X-Request-ID': str(hash(user_input))
+                    'Content-Type': 'application/json'
                 },
                 json={
                     'model': 'gpt-3.5-turbo',
@@ -325,26 +325,46 @@ def chat():
                         {"role": "user", "content": user_input}
                     ],
                     'temperature': 0.3,
-                    'max_tokens': 75,
-                    'frequency_penalty': 1.5,
-                    'presence_penalty': 1.5
+                    'max_tokens': 100,
+                    'frequency_penalty': 1.0,
+                    'presence_penalty': 1.0
                 },
-                timeout=8
+                timeout=10
             )
             
             # 6. Response Validation
             response.raise_for_status()
             data = response.json()
-            bot_response = data['choices'][0]['message']['content'][:400]
+            bot_response = data['choices'][0]['message']['content'][:400]  # Hard limit
             
-            if any(word in bot_response.lower() for word in ["repeat", "recurse", "loop"]):
+            if contains_recursive_pattern(bot_response):
                 raise ValueError("Invalid response pattern")
                 
             return jsonify({'response': bot_response})
 
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'Request timeout'}), 504
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"API request failed: {str(e)}")
+        return jsonify({'error': 'Service unavailable'}), 503
     except Exception as e:
         app.logger.error(f"Chat error: {type(e).__name__}: {str(e)}")
         return jsonify({'error': 'Processing error'}), 500
+
+# ------------------ SOCKET.IO HANDLERS ------------------
+@socketio.on('connect')
+def handle_connect():
+    if 'user_id' not in flask_session:
+        return False
+    socketio.server.enter_room(request.sid, str(flask_session['user_id']))
+    app.logger.info(f"Client connected: {flask_session['user_id']}")
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    if 'user_id' in flask_session:
+        socketio.server.leave_room(request.sid, str(flask_session['user_id']))
+        app.logger.info(f"Client disconnected: {flask_session['user_id']}")
+
 # ------------------ MAIN APPLICATION ------------------
 if __name__ == '__main__':
     with app.app_context():
