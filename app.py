@@ -108,12 +108,12 @@ class HeartRate(db.Model):
 
 # ------------------ UTILITY FUNCTIONS ------------------
 def is_heart_related(user_input):
-    user_input = user_input.lower()
-    heart_keywords = [
-        "heart", "cardiac", "blood pressure", "cholesterol", 
-        "heart attack", "stroke", "arrhythmia", "hypertension"
-    ]
-    return any(keyword in user_input for keyword in heart_keywords)
+    required_keywords = {
+        'heart', 'cardiac', 'blood pressure', 'cholesterol',
+        'cardiovascular', 'pulse', 'artery', 'vein', 'ecg', 'ekg'
+    }
+    input_words = set(user_input.lower().split())
+    return not required_keywords.isdisjoint(input_words)
 
 def classify_heart_rate(bpm):
     if bpm < 60: return 'low'
