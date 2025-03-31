@@ -66,10 +66,10 @@
             position: absolute;
             top: 100px;
             right: 0;
-            background: #ffffff;
+            background: #111;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 4px 8px #00f5f9;
+            box-shadow: 0 0 15px #00f5f9;
             width: 250px;
             display: none;
             flex-direction: column;
@@ -77,12 +77,17 @@
             color: #fff;
             margin-right: 25px;
             z-index: 1000;
+            border: 1px solid #333;
         }
 
         .profile-details p {
-            color: #333;
+            color: #fff;
             margin-bottom: 10px;
             font-size: 14px;
+        }
+
+        .profile-details strong {
+            color: #00f5f9;
         }
 
         .profile-details button {
@@ -167,6 +172,7 @@
             padding: 15px;
             margin-bottom: 15px;
             border: 1px solid #333;
+            width: 100%;
         }
 
         .heart-rate-header {
@@ -200,7 +206,7 @@
             color: black;
         }
 
-        .status-critical {
+        .status-low {
             background-color: #dc3545;
             color: white;
         }
@@ -215,10 +221,19 @@
             margin-top: 10px;
             font-size: 14px;
             transition: 0.3s ease;
+            width: 100%;
         }
 
         .device-connect-btn:hover {
             background: #0056b3;
+        }
+
+        .device-connected {
+            background: #28a745;
+        }
+
+        .device-disconnected {
+            background: #6c757d;
         }
 
         .typing-indicator {
@@ -317,6 +332,26 @@
             display: none;
         }
 
+        .connection-status {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .connection-connected {
+            background-color: rgba(40, 167, 69, 0.2);
+            border: 1px solid #28a745;
+            color: #28a745;
+        }
+
+        .connection-disconnected {
+            background-color: rgba(108, 117, 125, 0.2);
+            border: 1px solid #6c757d;
+            color: #6c757d;
+        }
+
         @media (max-width: 768px) {
             .chat-container {
                 height: 90vh;
@@ -339,6 +374,11 @@
             .heart-rate-value {
                 font-size: 24px;
             }
+            
+            .profile-details {
+                width: 200px;
+                right: 10px;
+            }
         }
     </style>
     <!-- Add Socket.IO client library -->
@@ -356,7 +396,7 @@
     <div class="profile-details" id="profile-details">
         <p><strong>Username:</strong> <span id="profile-username">User</span></p>
         <p><strong>Email:</strong> <span id="profile-email">user@example.com</span></p>
-        <div class="heart-rate-panel" id="profile-heart-rate">
+        <div class="heart-rate-panel">
             <div class="heart-rate-header">
                 <div>
                     <div style="font-size: 12px; color: #aaa;">CURRENT HEART RATE</div>
@@ -364,7 +404,7 @@
                 </div>
                 <div class="heart-rate-status" id="heart-rate-status">--</div>
             </div>
-            <button class="device-connect-btn" onclick="connectDevice()">CONNECT DEVICE</button>
+            <button class="device-connect-btn" id="device-connect-btn" onclick="toggleDeviceConnection()">CONNECT DEVICE</button>
         </div>
         <button onclick="logout()">Logout</button>
     </div>
@@ -375,7 +415,11 @@
             <p>"Your AI-powered heart health assistant – monitor, analyze, and stay informed."</p>
         </div>
 
-        <div class="chat-box" id="chat-box"></div>
+        <div class="chat-box" id="chat-box">
+            <div class="connection-status connection-disconnected" id="connection-status">
+                No heart rate data yet. Connect a device first.
+            </div>
+        </div>
 
         <div class="pre-prompts">
             <button onclick="sendMessage('Best exercises for heart health')">🏃 Best Exercises</button>
@@ -406,61 +450,29 @@
         document.addEventListener('DOMContentLoaded', async () => {
             await checkLoginStatus();
             await loadUserData();
-            await loadHeartRateData();
             initSocketConnection();
         });
 
         // Initialize Socket.IO connection
         function initSocketConnection() {
-            // Get auth token from cookies
-            function getAuthToken() {
-                const cookies = document.cookie.split(';');
-                for (const cookie of cookies) {
-                    const [name, value] = cookie.trim().split('=');
-                    if (name === 'session') {
-                        return value;
-                    }
-                }
-                return null;
-            }
-
             socket = io({
+                auth: {
+                    token: getCookie('session')
+                },
                 reconnection: true,
                 reconnectionAttempts: 5,
-                reconnectionDelay: 1000,
-                reconnectionDelayMax: 5000,
-                randomizationFactor: 0.5,
-                timeout: 20000,
-                transports: ['websocket', 'polling'],
-                auth: {
-                    token: getAuthToken()
-                }
+                reconnectionDelay: 1000
             });
 
             // Connection handlers
-            socket.on('connect', async () => {
+            socket.on('connect', () => {
                 console.log('Connected to WebSocket server');
-                
-                // Authenticate after connection
-                try {
-                    const authResponse = await new Promise((resolve, reject) => {
-                        socket.emit('authenticate', {}, (response) => {
-                            if (response && response.status === 'authenticated') {
-                                resolve(response);
-                            } else {
-                                reject(new Error('Authentication failed'));
-                            }
-                        });
-                    });
-                } catch (error) {
-                    console.error('Authentication failed:', error);
-                    socket.disconnect();
-                    window.location.href = '/login';
-                }
+                checkDeviceConnection();
             });
 
             socket.on('disconnect', (reason) => {
                 console.log('Disconnected:', reason);
+                updateConnectionStatus(false);
                 if (reason === 'io server disconnect') {
                     appendSystemMessage('Session expired. Please log in again.', 'error-message');
                     setTimeout(() => window.location.href = '/login', 2000);
@@ -475,15 +487,14 @@
                 }
             });
 
-            // Heart rate analysis response handler
-            socket.on('heart_analysis_response', (data) => {
-                formatAnalysisResponse(data);
+            // Handle heart rate updates
+            socket.on('heart_rate_update', (data) => {
+                updateHeartRateDisplay(data);
             });
 
-            // Heart rate update handler
-            socket.on('heart_rate_update', (data) => {
-                currentHeartRate = data;
-                updateCurrentHeartRate(data);
+            // Handle connection status updates
+            socket.on('device_status', (data) => {
+                updateDeviceStatus(data.connected);
             });
         }
 
@@ -530,19 +541,38 @@
             }
         }
 
-        // Load heart rate data
-        async function loadHeartRateData() {
+        // Check device connection status
+        async function checkDeviceConnection() {
             try {
-                const response = await fetch('/api/heart-rate/history', {
+                const response = await fetch('/api/device/status', {
                     method: 'GET',
                     credentials: 'include'
                 });
                 
                 if (response.ok) {
                     const data = await response.json();
-                    if (data.length > 0) {
-                        currentHeartRate = data[0];
-                        updateCurrentHeartRate(currentHeartRate);
+                    updateDeviceStatus(data.device_connected);
+                    if (data.device_connected) {
+                        loadCurrentHeartRate();
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking device status:', error);
+            }
+        }
+
+        // Load current heart rate
+        async function loadCurrentHeartRate() {
+            try {
+                const response = await fetch('/api/heart-rate/current', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.device_connected && data.bpm) {
+                        updateHeartRateDisplay(data);
                     }
                 }
             } catch (error) {
@@ -550,8 +580,73 @@
             }
         }
 
+        // Toggle device connection
+        async function toggleDeviceConnection() {
+            try {
+                if (deviceConnected) {
+                    // Disconnect device
+                    const response = await fetch('/api/device/disconnect', {
+                        method: 'POST',
+                        credentials: 'include'
+                    });
+                    
+                    if (response.ok) {
+                        updateDeviceStatus(false);
+                        appendMessage("Device disconnected", 'bot-message');
+                    }
+                } else {
+                    // Connect device
+                    const response = await fetch('/api/device/connect', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            device_type: 'simulated',
+                            device_id: 'simulated_device_' + Date.now()
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        updateDeviceStatus(true);
+                        appendMessage("Device connected successfully", 'bot-message');
+                    }
+                }
+            } catch (error) {
+                console.error('Device connection error:', error);
+                appendMessage("Failed to toggle device connection", 'error-message');
+            }
+        }
+
+        // Update device status
+        function updateDeviceStatus(connected) {
+            deviceConnected = connected;
+            const connectBtn = document.getElementById('device-connect-btn');
+            const statusDiv = document.getElementById('connection-status');
+            
+            if (connected) {
+                connectBtn.textContent = 'DISCONNECT DEVICE';
+                connectBtn.classList.remove('device-disconnected');
+                connectBtn.classList.add('device-connected');
+                statusDiv.textContent = 'DEVICE CONNECTED';
+                statusDiv.classList.remove('connection-disconnected');
+                statusDiv.classList.add('connection-connected');
+            } else {
+                connectBtn.textContent = 'CONNECT DEVICE';
+                connectBtn.classList.remove('device-connected');
+                connectBtn.classList.add('device-disconnected');
+                statusDiv.textContent = 'No heart rate data yet. Connect a device first.';
+                statusDiv.classList.remove('connection-connected');
+                statusDiv.classList.add('connection-disconnected');
+                document.getElementById('current-bpm').textContent = '--';
+                document.getElementById('heart-rate-status').textContent = '--';
+            }
+        }
+
         // Update heart rate display
-        function updateCurrentHeartRate(data) {
+        function updateHeartRateDisplay(data) {
             const bpmElement = document.getElementById('current-bpm');
             const statusElement = document.getElementById('heart-rate-status');
             
@@ -559,137 +654,39 @@
             statusElement.textContent = data.status;
             statusElement.className = 'heart-rate-status';
             
+            // Update status class
             switch(data.status) {
-                case 'normal': statusElement.classList.add('status-normal'); break;
-                case 'elevated': statusElement.classList.add('status-elevated'); break;
-                case 'critical': statusElement.classList.add('status-critical'); break;
-                default: statusElement.classList.add('status-normal');
+                case 'normal': 
+                    statusElement.classList.add('status-normal'); 
+                    break;
+                case 'elevated': 
+                    statusElement.classList.add('status-elevated'); 
+                    break;
+                case 'low': 
+                    statusElement.classList.add('status-low'); 
+                    break;
+                default: 
+                    statusElement.classList.add('status-normal');
+            }
+            
+            // Update connection status text if needed
+            if (!deviceConnected) {
+                updateDeviceStatus(true);
             }
         }
 
-        // Connect device
-        async function connectDevice() {
-            try {
-                deviceConnected = true;
-                const btn = document.querySelector('.device-connect-btn');
-                btn.textContent = 'DEVICE CONNECTED';
-                btn.style.backgroundColor = '#28a745';
-                
-                appendMessage("Your wearable device is now connected. I'll monitor your heart rate in real-time.", 'bot-message');
-                
-                if (!currentHeartRate) {
-                    simulateHeartRateData();
-                }
-                
-                if (socket && socket.connected) {
-                    socket.emit('device_connected', { 
-                        userId: getAuthToken(),
-                        deviceType: 'simulated' 
-                    });
-                }
-            } catch (error) {
-                console.error('Device error:', error);
-                appendMessage("Failed to connect device", 'error-message');
+        // Update connection status
+        function updateConnectionStatus(connected) {
+            const statusDiv = document.getElementById('connection-status');
+            if (connected) {
+                statusDiv.textContent = 'DEVICE CONNECTED';
+                statusDiv.classList.remove('connection-disconnected');
+                statusDiv.classList.add('connection-connected');
+            } else {
+                statusDiv.textContent = 'Connection lost. Reconnecting...';
+                statusDiv.classList.remove('connection-connected');
+                statusDiv.classList.add('connection-disconnected');
             }
-        }
-
-        // Simulate heart rate data
-        function simulateHeartRateData() {
-            if (heartRateInterval) clearInterval(heartRateInterval);
-            
-            let baseBpm = 70 + Math.floor(Math.random() * 20);
-            
-            heartRateInterval = setInterval(() => {
-                if (!deviceConnected) {
-                    clearInterval(heartRateInterval);
-                    return;
-                }
-                
-                const variation = Math.floor(Math.random() * 10) - 5;
-                let newBpm = Math.max(50, Math.min(120, baseBpm + variation));
-                
-                const status = newBpm < 60 ? 'low' : 
-                              newBpm <= 100 ? 'normal' : 'elevated';
-                
-                const newReading = {
-                    bpm: newBpm,
-                    status: status,
-                    timestamp: new Date().toISOString(),
-                    deviceType: 'simulated'
-                };
-                
-                currentHeartRate = newReading;
-                updateCurrentHeartRate(newReading);
-                
-                if (socket && socket.connected) {
-                    socket.emit('heart_rate_update', newReading);
-                }
-                
-                baseBpm = newBpm;
-            }, 3000);
-        }
-
-        // Show heart rate analysis
-        async function showHeartRateAnalysis() {
-            const chatBox = document.getElementById('chat-box');
-            const welcomeMessage = document.getElementById('welcome-message');
-            
-            if (welcomeMessage.style.display !== "none") {
-                welcomeMessage.style.display = "none";
-            }
-            
-            const typingIndicator = showTypingIndicator();
-            
-            try {
-                if (socket && socket.connected) {
-                    socket.emit('request_heart_analysis', {}, (response) => {
-                        chatBox.removeChild(typingIndicator);
-                        if (response.error) {
-                            appendMessage(response.error, 'error-message');
-                        } else {
-                            formatAnalysisResponse(response);
-                        }
-                    });
-                } else {
-                    const response = await fetch('/api/heart-rate/analysis', {
-                        method: 'GET',
-                        credentials: 'include'
-                    });
-                    
-                    chatBox.removeChild(typingIndicator);
-                    
-                    if (!response.ok) throw new Error('Failed to get analysis');
-                    
-                    const data = await response.json();
-                    formatAnalysisResponse(data);
-                }
-            } catch (error) {
-                chatBox.removeChild(typingIndicator);
-                appendMessage(`Error: ${error.message}`, 'error-message');
-            }
-        }
-
-        // Format analysis response
-        function formatAnalysisResponse(data) {
-            let analysisMessage = "❤️ Heart Rate Analysis:\n\n";
-            
-            if (data.message && data.message === 'No heart rate data available') {
-                analysisMessage = "No heart rate data yet. Connect a device first.";
-                appendMessage(analysisMessage, 'bot-message');
-                return;
-            }
-            
-            analysisMessage += `📊 Average: ${data.average_bpm} BPM\n`;
-            analysisMessage += `⬆️ Highest: ${data.max_bpm} BPM\n`;
-            analysisMessage += `⬇️ Lowest: ${data.min_bpm} BPM\n\n`;
-            analysisMessage += `⏱️ Total Readings: ${data.record_count}\n`;
-            analysisMessage += `💓 Status Distribution:\n`;
-            analysisMessage += `- Normal: ${data.status_distribution.normal || 0}\n`;
-            analysisMessage += `- Elevated: ${data.status_distribution.elevated || 0}\n`;
-            analysisMessage += `- Low: ${data.status_distribution.low || 0}\n\n`;
-            analysisMessage += `🕒 Latest reading: ${data.latest.bpm} BPM (${data.latest.status})`;
-            
-            appendMessage(analysisMessage, 'bot-message');
         }
 
         // Toggle profile details
@@ -738,35 +735,22 @@
             const typingIndicator = showTypingIndicator();
 
             try {
-                if (socket && socket.connected) {
-                    socket.emit('chat_message', {
-                        message: userInput
-                    }, (response) => {
-                        chatBox.removeChild(typingIndicator);
-                        if (response.error) {
-                            appendMessage(response.error, 'error-message');
-                        } else {
-                            formatBotResponse(response.response);
-                        }
-                    });
-                } else {
-                    const response = await fetch("/chat", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        credentials: 'include',
-                        body: JSON.stringify({ message: userInput })
-                    });
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: 'include',
+                    body: JSON.stringify({ message: userInput })
+                });
 
-                    chatBox.removeChild(typingIndicator);
+                chatBox.removeChild(typingIndicator);
 
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error || 'Server error');
-                    }
-
-                    const data = await response.json();
-                    formatBotResponse(data.response);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Server error');
                 }
+
+                const data = await response.json();
+                formatBotResponse(data.response);
             } catch (error) {
                 chatBox.removeChild(typingIndicator);
                 appendMessage(`Error: ${error.message}`, 'error-message');
@@ -775,6 +759,58 @@
                     setTimeout(() => window.location.href = '/login', 2000);
                 }
             }
+        }
+
+        // Show heart rate analysis
+        async function showHeartRateAnalysis() {
+            const chatBox = document.getElementById('chat-box');
+            const welcomeMessage = document.getElementById('welcome-message');
+            
+            if (welcomeMessage.style.display !== "none") {
+                welcomeMessage.style.display = "none";
+            }
+            
+            const typingIndicator = showTypingIndicator();
+            
+            try {
+                const response = await fetch('/api/heart-rate/analysis', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                chatBox.removeChild(typingIndicator);
+                
+                if (!response.ok) throw new Error('Failed to get analysis');
+                
+                const data = await response.json();
+                formatAnalysisResponse(data);
+            } catch (error) {
+                chatBox.removeChild(typingIndicator);
+                appendMessage(`Error: ${error.message}`, 'error-message');
+            }
+        }
+
+        // Format analysis response
+        function formatAnalysisResponse(data) {
+            let analysisMessage = "❤️ Heart Rate Analysis:\n\n";
+            
+            if (data.message && data.message === 'No heart rate data available') {
+                analysisMessage = "No heart rate data yet. Connect a device first.";
+                appendMessage(analysisMessage, 'bot-message');
+                return;
+            }
+            
+            analysisMessage += `📊 Average: ${data.average_bpm} BPM\n`;
+            analysisMessage += `⬆️ Highest: ${data.max_bpm} BPM\n`;
+            analysisMessage += `⬇️ Lowest: ${data.min_bpm} BPM\n\n`;
+            analysisMessage += `⏱️ Total Readings: ${data.record_count}\n`;
+            analysisMessage += `💓 Status Distribution:\n`;
+            analysisMessage += `- Normal: ${data.status_distribution.normal || 0}\n`;
+            analysisMessage += `- Elevated: ${data.status_distribution.elevated || 0}\n`;
+            analysisMessage += `- Low: ${data.status_distribution.low || 0}\n\n`;
+            analysisMessage += `🕒 Latest reading: ${data.latest.bpm} BPM (${data.latest.status})`;
+            
+            appendMessage(analysisMessage, 'bot-message');
         }
 
         // Append message
@@ -827,18 +863,19 @@
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
+        // Append system message
+        function appendSystemMessage(text, className) {
+            const chatBox = document.getElementById("chat-box");
+            const message = document.createElement("div");
+            message.classList.add("message", className);
+            message.innerHTML = `<small>System: ${text}</small>`;
+            chatBox.appendChild(message);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
         // Logout
         async function logout() {
             try {
-                if (deviceConnected) {
-                    deviceConnected = false;
-                    if (heartRateInterval) clearInterval(heartRateInterval);
-                }
-                
-                if (socket) {
-                    socket.disconnect();
-                }
-                
                 const response = await fetch('/logout', {
                     method: 'POST',
                     credentials: 'include'
@@ -855,26 +892,11 @@
             }
         }
 
-        // Get auth token from cookies
-        function getAuthToken() {
-            const cookies = document.cookie.split(';');
-            for (const cookie of cookies) {
-                const [name, value] = cookie.trim().split('=');
-                if (name === 'session') {
-                    return value;
-                }
-            }
-            return null;
-        }
-
-        // Append system message
-        function appendSystemMessage(text, className) {
-            const chatBox = document.getElementById("chat-box");
-            const message = document.createElement("div");
-            message.classList.add("message", className);
-            message.innerHTML = `<small>System: ${text}</small>`;
-            chatBox.appendChild(message);
-            chatBox.scrollTop = chatBox.scrollHeight;
+        // Get cookie value
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
         }
     </script>
 </body>
