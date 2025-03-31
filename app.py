@@ -478,7 +478,7 @@ def handle_heart_analysis_request(data):
         }
         
         return {
-            'average_bpm': round(sum(bpms) / len(bpms),
+            'average_bpm': round(sum(bpms) / len(bpms), 1),
             'max_bpm': max(bpms),
             'min_bpm': min(bpms),
             'record_count': len(records),
