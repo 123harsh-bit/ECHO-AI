@@ -407,16 +407,44 @@
             await checkLoginStatus();
             await loadUserData();
             await loadHeartRateData();
-            initWebSocketConnection(); // Initialize WebSocket connection
+            initSocketIOConnection(); // Initialize Socket.IO connection
         });
 
-        // Initialize WebSocket connection
-        function initWebSocketConnection() {
-            // Connect to Socket.IO server
-            socket = io();
+        // Initialize Socket.IO connection with authentication
+        function initSocketIOConnection() {
+            // Connect to Socket.IO server with auth token
+            socket = io({
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+                transports: ['websocket', 'polling'],
+                auth: {
+                    token: getAuthToken()
+                }
+            });
             
+            // Connection event handlers
             socket.on('connect', () => {
                 console.log('Connected to WebSocket server');
+                appendSystemMessage('Connected to real-time monitoring service', 'bot-message');
+            });
+            
+            socket.on('disconnect', (reason) => {
+                console.log('Disconnected:', reason);
+                appendSystemMessage('Disconnected from real-time service', 'error-message');
+                
+                if (reason === 'io server disconnect') {
+                    // Server forced disconnect (likely due to auth failure)
+                    setTimeout(() => window.location.href = '/login', 2000);
+                }
+            });
+            
+            socket.on('connect_error', (error) => {
+                console.error('Connection error:', error);
+                if (error.message === 'unauthorized') {
+                    appendSystemMessage('Session expired, please log in again', 'error-message');
+                    setTimeout(() => window.location.href = '/login', 2000);
+                }
             });
             
             // Listen for heart rate updates from server
@@ -424,11 +452,39 @@
                 console.log('Received heart rate update:', data);
                 currentHeartRate = data;
                 updateCurrentHeartRate(data);
+                
+                // Optionally show notification for critical readings
+                if (data.status === 'critical') {
+                    appendSystemMessage(`⚠️ Critical heart rate detected: ${data.bpm} BPM`, 'error-message');
+                }
             });
             
-            socket.on('disconnect', () => {
-                console.log('Disconnected from WebSocket server');
+            // Listen for chat messages from server
+            socket.on('chat_message', (data) => {
+                appendMessage(data.message, 'bot-message');
             });
+        }
+
+        // Get auth token from cookies
+        function getAuthToken() {
+            const cookies = document.cookie.split(';');
+            for (const cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'session') {
+                    return value;
+                }
+            }
+            return null;
+        }
+
+        // Append system message to chat
+        function appendSystemMessage(text, className) {
+            const chatBox = document.getElementById("chat-box");
+            const message = document.createElement("div");
+            message.classList.add("message", className);
+            message.innerHTML = `<small>System: ${text}</small>`;
+            chatBox.appendChild(message);
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
         // Check login status
@@ -509,6 +565,11 @@
                 case 'critical': statusElement.classList.add('status-critical'); break;
                 default: statusElement.classList.add('status-normal');
             }
+            
+            // Send to server if connected via WebSocket
+            if (socket && socket.connected && deviceConnected) {
+                socket.emit('heart_rate_update', data);
+            }
         }
 
         // Connect device
@@ -525,6 +586,14 @@
                 if (!currentHeartRate) {
                     simulateHeartRateData();
                 }
+                
+                // Notify server of device connection
+                if (socket && socket.connected) {
+                    socket.emit('device_connected', { 
+                        userId: getAuthToken(),
+                        deviceType: 'simulated' 
+                    });
+                }
             } catch (error) {
                 console.error('Device error:', error);
                 appendMessage("Failed to connect device", 'error-message');
@@ -538,7 +607,10 @@
             let baseBpm = 70 + Math.floor(Math.random() * 20);
             
             heartRateInterval = setInterval(() => {
-                if (!deviceConnected) return;
+                if (!deviceConnected) {
+                    clearInterval(heartRateInterval);
+                    return;
+                }
                 
                 const variation = Math.floor(Math.random() * 10) - 5;
                 let newBpm = Math.max(50, Math.min(120, baseBpm + variation));
@@ -549,13 +621,9 @@
                 const newReading = {
                     bpm: newBpm,
                     status: status,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    deviceType: 'simulated'
                 };
-                
-                // Send to server via WebSocket
-                if (socket && socket.connected) {
-                    socket.emit('heart_rate_update', newReading);
-                }
                 
                 // Update local display
                 currentHeartRate = newReading;
@@ -576,36 +644,53 @@
             const typingIndicator = showTypingIndicator();
             
             try {
-                const response = await fetch('/api/heart-rate/analysis', {
-                    method: 'GET',
-                    credentials: 'include'
-                });
-                
-                chatBox.removeChild(typingIndicator);
-                
-                if (!response.ok) throw new Error('Failed to get analysis');
-                
-                const data = await response.json();
-                let analysisMessage = "❤️ Heart Rate Analysis:\n\n";
-                
-                if (data.message && data.message === 'No heart rate data available') {
-                    analysisMessage = "No heart rate data yet. Connect a device first.";
-                } else {
-                    analysisMessage += `📊 Average: ${data.average_bpm} BPM\n`;
-                    analysisMessage += `⬆️ Highest: ${data.max_bpm} BPM\n`;
-                    analysisMessage += `⬇️ Lowest: ${data.min_bpm} BPM\n\n`;
-                    analysisMessage += `⏱️ Readings: ${data.record_count} in last 24h\n`;
+                // Use WebSocket if available, fallback to HTTP
+                if (socket && socket.connected) {
+                    socket.emit('get_heart_analysis', { userId: getAuthToken() });
                     
-                    if (data.status_distribution.elevated > 0) {
-                        analysisMessage += "\n⚠️ Notice: Some elevated readings detected";
-                    }
+                    // Set up one-time listener for analysis response
+                    socket.once('heart_analysis_response', (data) => {
+                        chatBox.removeChild(typingIndicator);
+                        formatAnalysisResponse(data);
+                    });
+                } else {
+                    // Fallback to HTTP API
+                    const response = await fetch('/api/heart-rate/analysis', {
+                        method: 'GET',
+                        credentials: 'include'
+                    });
+                    
+                    chatBox.removeChild(typingIndicator);
+                    
+                    if (!response.ok) throw new Error('Failed to get analysis');
+                    
+                    const data = await response.json();
+                    formatAnalysisResponse(data);
                 }
-                
-                appendMessage(analysisMessage, 'bot-message');
             } catch (error) {
                 chatBox.removeChild(typingIndicator);
                 appendMessage(`Error: ${error.message}`, 'error-message');
             }
+        }
+
+        // Format analysis response
+        function formatAnalysisResponse(data) {
+            let analysisMessage = "❤️ Heart Rate Analysis:\n\n";
+            
+            if (data.message && data.message === 'No heart rate data available') {
+                analysisMessage = "No heart rate data yet. Connect a device first.";
+            } else {
+                analysisMessage += `📊 Average: ${data.average_bpm} BPM\n`;
+                analysisMessage += `⬆️ Highest: ${data.max_bpm} BPM\n`;
+                analysisMessage += `⬇️ Lowest: ${data.min_bpm} BPM\n\n`;
+                analysisMessage += `⏱️ Readings: ${data.record_count} in last 24h\n`;
+                
+                if (data.status_distribution.elevated > 0) {
+                    analysisMessage += "\n⚠️ Notice: Some elevated readings detected";
+                }
+            }
+            
+            appendMessage(analysisMessage, 'bot-message');
         }
 
         // Toggle profile details
@@ -655,32 +740,46 @@
             const typingIndicator = showTypingIndicator();
 
             try {
-                const response = await fetch("/chat", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: 'include',
-                    body: JSON.stringify({ message: userInput })
-                });
-
-                chatBox.removeChild(typingIndicator);
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Server error');
-                }
-
-                const data = await response.json();
-                
-                if (data.status === "error") {
-                    appendMessage(data.message, 'error-message');
+                // Try WebSocket first if connected
+                if (socket && socket.connected) {
+                    socket.emit('chat_message', {
+                        userId: getAuthToken(),
+                        message: userInput
+                    });
+                    
+                    // Set up one-time listener for response
+                    socket.once('chat_response', (data) => {
+                        chatBox.removeChild(typingIndicator);
+                        if (data.error) {
+                            appendMessage(data.error, 'error-message');
+                        } else {
+                            formatBotResponse(data.response);
+                        }
+                    });
                 } else {
+                    // Fallback to HTTP API
+                    const response = await fetch("/chat", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: 'include',
+                        body: JSON.stringify({ message: userInput })
+                    });
+
+                    chatBox.removeChild(typingIndicator);
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Server error');
+                    }
+
+                    const data = await response.json();
                     formatBotResponse(data.response);
                 }
             } catch (error) {
                 chatBox.removeChild(typingIndicator);
                 appendMessage(`Error: ${error.message}`, 'error-message');
                 
-                if (error.message.includes('Please log in')) {
+                if (error.message.includes('Unauthorized') || error.message.includes('Please log in')) {
                     setTimeout(() => window.location.href = '/login', 2000);
                 }
             }
@@ -739,6 +838,21 @@
         // Logout
         async function logout() {
             try {
+                // Disconnect device first
+                if (deviceConnected) {
+                    deviceConnected = false;
+                    if (heartRateInterval) clearInterval(heartRateInterval);
+                    if (socket && socket.connected) {
+                        socket.emit('device_disconnected', { userId: getAuthToken() });
+                    }
+                }
+                
+                // Disconnect socket
+                if (socket) {
+                    socket.disconnect();
+                }
+                
+                // Send logout request
                 const response = await fetch('/logout', {
                     method: 'POST',
                     credentials: 'include'
