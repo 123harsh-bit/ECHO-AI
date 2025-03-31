@@ -73,14 +73,19 @@ def before_request():
 def home():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template('index.html')
+    
+    # Get current user's username
+    user = User.query.get(session['user_id'])
+    return render_template('index.html', current_user=user.username)
 
 @app.route('/check-auth')
 def check_auth():
     if 'user_id' in session:
+        user = User.query.get(session['user_id'])
         return jsonify({
             'authenticated': True,
-            'username': session.get('username')
+            'username': user.username,
+            'email': user.email
         })
     return jsonify({'authenticated': False}), 401
 
@@ -166,6 +171,14 @@ def login():
 def logout():
     session.clear()
     return jsonify({'success': True}), 200
+
+@app.route('/profile')
+def profile():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    user = User.query.get(session['user_id'])
+    return render_template('profile.html', user=user)
 
 @app.route('/chat', methods=['POST'])
 def chat():
