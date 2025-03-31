@@ -400,120 +400,91 @@
         let currentHeartRate = null;
         let deviceConnected = false;
         let heartRateInterval = null;
-        let socket = null; // Socket.IO connection
+        let socket = null;
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', async () => {
             await checkLoginStatus();
             await loadUserData();
             await loadHeartRateData();
-            initSocketIOConnection(); // Initialize Socket.IO connection
+            initSocketConnection();
         });
 
-        // Initialize Socket.IO connection with authentication
-// Replace your initSocketIOConnection function with this:
-function initSocketIOConnection() {
-    // Get auth token from cookies
-    function getAuthToken() {
-        const cookies = document.cookie.split(';');
-        for (const cookie of cookies) {
-            const [name, value] = cookie.trim().split('=');
-            if (name === 'session') {
-                return value;
-            }
-        }
-        return null;
-    }
-
-    // Connect with authentication
-    socket = io({
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        randomizationFactor: 0.5,
-        timeout: 20000,
-        transports: ['websocket', 'polling'],
-        auth: {
-            token: getAuthToken()
-        }
-    });
-
-    // Connection handlers
-    socket.on('connect', async () => {
-        console.log('Connected to WebSocket server');
-        appendSystemMessage('Connected to real-time monitoring service', 'bot-message');
-        
-        // Validate session immediately after connection
-        try {
-            const response = await new Promise((resolve, reject) => {
-                socket.emit('validate_session', {}, (response) => {
-                    if (response && response.valid) {
-                        resolve(response);
-                    } else {
-                        reject(new Error('Invalid session'));
+        // Initialize Socket.IO connection
+        function initSocketConnection() {
+            // Get auth token from cookies
+            function getAuthToken() {
+                const cookies = document.cookie.split(';');
+                for (const cookie of cookies) {
+                    const [name, value] = cookie.trim().split('=');
+                    if (name === 'session') {
+                        return value;
                     }
-                });
-            });
-        } catch (error) {
-            console.error('Session validation failed:', error);
-            socket.disconnect();
-            window.location.href = '/login';
-        }
-    });
-
-    socket.on('disconnect', (reason) => {
-        console.log('Disconnected:', reason);
-        appendSystemMessage('Disconnected from real-time service', 'error-message');
-        
-        if (reason === 'io server disconnect') {
-            // Server forced disconnect (likely due to auth failure)
-            setTimeout(() => window.location.href = '/login', 2000);
-        }
-    });
-
-    socket.on('connect_error', (error) => {
-        console.error('Connection error:', error);
-        if (error.message === 'unauthorized') {
-            appendSystemMessage('Session expired, please log in again', 'error-message');
-            setTimeout(() => window.location.href = '/login', 2000);
-        }
-    });
-
-    // Add exponential backoff for reconnections
-    let reconnectAttempts = 0;
-    socket.on('reconnect_attempt', (attempt) => {
-        reconnectAttempts = attempt;
-        console.log(`Reconnection attempt ${attempt}`);
-    });
-
-    socket.on('reconnect_failed', () => {
-        console.error('Reconnection failed after attempts');
-        appendSystemMessage('Connection lost. Please refresh the page.', 'error-message');
-    });
-
-    // Your existing heart rate and chat message handlers...
-}
-        // Get auth token from cookies
-        function getAuthToken() {
-            const cookies = document.cookie.split(';');
-            for (const cookie of cookies) {
-                const [name, value] = cookie.trim().split('=');
-                if (name === 'session') {
-                    return value;
                 }
+                return null;
             }
-            return null;
-        }
 
-        // Append system message to chat
-        function appendSystemMessage(text, className) {
-            const chatBox = document.getElementById("chat-box");
-            const message = document.createElement("div");
-            message.classList.add("message", className);
-            message.innerHTML = `<small>System: ${text}</small>`;
-            chatBox.appendChild(message);
-            chatBox.scrollTop = chatBox.scrollHeight;
+            socket = io({
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 5000,
+                randomizationFactor: 0.5,
+                timeout: 20000,
+                transports: ['websocket', 'polling'],
+                auth: {
+                    token: getAuthToken()
+                }
+            });
+
+            // Connection handlers
+            socket.on('connect', async () => {
+                console.log('Connected to WebSocket server');
+                
+                // Authenticate after connection
+                try {
+                    const authResponse = await new Promise((resolve, reject) => {
+                        socket.emit('authenticate', {}, (response) => {
+                            if (response && response.status === 'authenticated') {
+                                resolve(response);
+                            } else {
+                                reject(new Error('Authentication failed'));
+                            }
+                        });
+                    });
+                } catch (error) {
+                    console.error('Authentication failed:', error);
+                    socket.disconnect();
+                    window.location.href = '/login';
+                }
+            });
+
+            socket.on('disconnect', (reason) => {
+                console.log('Disconnected:', reason);
+                if (reason === 'io server disconnect') {
+                    appendSystemMessage('Session expired. Please log in again.', 'error-message');
+                    setTimeout(() => window.location.href = '/login', 2000);
+                }
+            });
+
+            socket.on('connect_error', (error) => {
+                console.error('Connection error:', error);
+                if (error.message === 'unauthorized') {
+                    appendSystemMessage('Please log in to continue', 'error-message');
+                    window.location.href = '/login';
+                }
+            });
+
+            // Heart rate analysis response handler
+            socket.on('heart_analysis_response', (data) => {
+                formatAnalysisResponse(data);
+            });
+
+            // Heart rate update handler
+            socket.on('heart_rate_update', (data) => {
+                currentHeartRate = data;
+                updateCurrentHeartRate(data);
+            });
         }
 
         // Check login status
@@ -594,11 +565,6 @@ function initSocketIOConnection() {
                 case 'critical': statusElement.classList.add('status-critical'); break;
                 default: statusElement.classList.add('status-normal');
             }
-            
-            // Send to server if connected via WebSocket
-            if (socket && socket.connected && deviceConnected) {
-                socket.emit('heart_rate_update', data);
-            }
         }
 
         // Connect device
@@ -611,12 +577,10 @@ function initSocketIOConnection() {
                 
                 appendMessage("Your wearable device is now connected. I'll monitor your heart rate in real-time.", 'bot-message');
                 
-                // Start simulation if no data exists
                 if (!currentHeartRate) {
                     simulateHeartRateData();
                 }
                 
-                // Notify server of device connection
                 if (socket && socket.connected) {
                     socket.emit('device_connected', { 
                         userId: getAuthToken(),
@@ -654,9 +618,13 @@ function initSocketIOConnection() {
                     deviceType: 'simulated'
                 };
                 
-                // Update local display
                 currentHeartRate = newReading;
                 updateCurrentHeartRate(newReading);
+                
+                if (socket && socket.connected) {
+                    socket.emit('heart_rate_update', newReading);
+                }
+                
                 baseBpm = newBpm;
             }, 3000);
         }
@@ -673,17 +641,16 @@ function initSocketIOConnection() {
             const typingIndicator = showTypingIndicator();
             
             try {
-                // Use WebSocket if available, fallback to HTTP
                 if (socket && socket.connected) {
-                    socket.emit('get_heart_analysis', { userId: getAuthToken() });
-                    
-                    // Set up one-time listener for analysis response
-                    socket.once('heart_analysis_response', (data) => {
+                    socket.emit('request_heart_analysis', {}, (response) => {
                         chatBox.removeChild(typingIndicator);
-                        formatAnalysisResponse(data);
+                        if (response.error) {
+                            appendMessage(response.error, 'error-message');
+                        } else {
+                            formatAnalysisResponse(response);
+                        }
                     });
                 } else {
-                    // Fallback to HTTP API
                     const response = await fetch('/api/heart-rate/analysis', {
                         method: 'GET',
                         credentials: 'include'
@@ -708,16 +675,19 @@ function initSocketIOConnection() {
             
             if (data.message && data.message === 'No heart rate data available') {
                 analysisMessage = "No heart rate data yet. Connect a device first.";
-            } else {
-                analysisMessage += `📊 Average: ${data.average_bpm} BPM\n`;
-                analysisMessage += `⬆️ Highest: ${data.max_bpm} BPM\n`;
-                analysisMessage += `⬇️ Lowest: ${data.min_bpm} BPM\n\n`;
-                analysisMessage += `⏱️ Readings: ${data.record_count} in last 24h\n`;
-                
-                if (data.status_distribution.elevated > 0) {
-                    analysisMessage += "\n⚠️ Notice: Some elevated readings detected";
-                }
+                appendMessage(analysisMessage, 'bot-message');
+                return;
             }
+            
+            analysisMessage += `📊 Average: ${data.average_bpm} BPM\n`;
+            analysisMessage += `⬆️ Highest: ${data.max_bpm} BPM\n`;
+            analysisMessage += `⬇️ Lowest: ${data.min_bpm} BPM\n\n`;
+            analysisMessage += `⏱️ Total Readings: ${data.record_count}\n`;
+            analysisMessage += `💓 Status Distribution:\n`;
+            analysisMessage += `- Normal: ${data.status_distribution.normal || 0}\n`;
+            analysisMessage += `- Elevated: ${data.status_distribution.elevated || 0}\n`;
+            analysisMessage += `- Low: ${data.status_distribution.low || 0}\n\n`;
+            analysisMessage += `🕒 Latest reading: ${data.latest.bpm} BPM (${data.latest.status})`;
             
             appendMessage(analysisMessage, 'bot-message');
         }
@@ -725,8 +695,7 @@ function initSocketIOConnection() {
         // Toggle profile details
         function toggleProfileDetails() {
             const profileDetails = document.getElementById("profile-details");
-            profileDetails.style.display = profileDetails.style.display === "none" || 
-                                         profileDetails.style.display === "" ? "flex" : "none";
+            profileDetails.style.display = profileDetails.style.display === "none" ? "flex" : "none";
         }
 
         // Close profile when clicking outside
@@ -769,24 +738,18 @@ function initSocketIOConnection() {
             const typingIndicator = showTypingIndicator();
 
             try {
-                // Try WebSocket first if connected
                 if (socket && socket.connected) {
                     socket.emit('chat_message', {
-                        userId: getAuthToken(),
                         message: userInput
-                    });
-                    
-                    // Set up one-time listener for response
-                    socket.once('chat_response', (data) => {
+                    }, (response) => {
                         chatBox.removeChild(typingIndicator);
-                        if (data.error) {
-                            appendMessage(data.error, 'error-message');
+                        if (response.error) {
+                            appendMessage(response.error, 'error-message');
                         } else {
-                            formatBotResponse(data.response);
+                            formatBotResponse(response.response);
                         }
                     });
                 } else {
-                    // Fallback to HTTP API
                     const response = await fetch("/chat", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -808,7 +771,7 @@ function initSocketIOConnection() {
                 chatBox.removeChild(typingIndicator);
                 appendMessage(`Error: ${error.message}`, 'error-message');
                 
-                if (error.message.includes('Unauthorized') || error.message.includes('Please log in')) {
+                if (error.message.includes('Unauthorized')) {
                     setTimeout(() => window.location.href = '/login', 2000);
                 }
             }
@@ -867,21 +830,15 @@ function initSocketIOConnection() {
         // Logout
         async function logout() {
             try {
-                // Disconnect device first
                 if (deviceConnected) {
                     deviceConnected = false;
                     if (heartRateInterval) clearInterval(heartRateInterval);
-                    if (socket && socket.connected) {
-                        socket.emit('device_disconnected', { userId: getAuthToken() });
-                    }
                 }
                 
-                // Disconnect socket
                 if (socket) {
                     socket.disconnect();
                 }
                 
-                // Send logout request
                 const response = await fetch('/logout', {
                     method: 'POST',
                     credentials: 'include'
@@ -896,6 +853,28 @@ function initSocketIOConnection() {
                 console.error('Logout error:', error);
                 alert('Logout failed. Please try again.');
             }
+        }
+
+        // Get auth token from cookies
+        function getAuthToken() {
+            const cookies = document.cookie.split(';');
+            for (const cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'session') {
+                    return value;
+                }
+            }
+            return null;
+        }
+
+        // Append system message
+        function appendSystemMessage(text, className) {
+            const chatBox = document.getElementById("chat-box");
+            const message = document.createElement("div");
+            message.classList.add("message", className);
+            message.innerHTML = `<small>System: ${text}</small>`;
+            chatBox.appendChild(message);
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
     </script>
 </body>
