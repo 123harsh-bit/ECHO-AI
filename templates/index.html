@@ -337,6 +337,12 @@
         .hr-btn.analyze:hover {
             background: #008744;
         }
+        .hr-btn.fake-hrm {
+  background: #9c27b0; /* Purple to distinguish from real HRM */
+}
+.hr-btn.fake-hrm:hover {
+  background: #7b1fa2;
+}
 
         .manual-hr-input {
     display: flex;
@@ -506,17 +512,20 @@
                     <div class="hr-status" id="hr-status">Not connected</div>
                 </div>
 
-                <div class="hr-actions">
-                    <button id="connect-btn" class="hr-btn">
-                        <span>Connect Smartwatch</span>
-                    </button>
-                    <button id="disconnect-btn" class="hr-btn disconnect">
-                        <span>Disconnect</span>
-                    </button>
-                    <button id="analyze-btn" class="hr-btn analyze" disabled>
-                        <span>Analyze Heart Rate</span>
-                    </button>
-                </div>
+            <div class="hr-actions">
+  <button id="connect-btn" class="hr-btn">
+    <span>Connect Smartwatch</span>
+  </button>
+  <button id="disconnect-btn" class="hr-btn disconnect">
+    <span>Disconnect</span>
+  </button>
+  <button id="analyze-btn" class="hr-btn analyze" disabled>
+    <span>Analyze Heart Rate</span>
+  </button>
+  <button id="fake-hrm-btn" class="hr-btn fake-hrm"> <!-- Changed class for consistency -->
+    <span>Connect Fake HRM</span> <!-- Wrapped in span like others -->
+  </button>
+            </div>
 
                 <div class="manual-hr-input">
     <input type="number" id="manual-hr" placeholder="Enter HR (30-250 BPM)" min="30" max="250">
@@ -822,6 +831,7 @@ async function connectToFakeHRM() {
             // Bluetooth buttons
             document.getElementById('connect-btn').addEventListener('click', () => bluetoothManager.connect());
             document.getElementById('disconnect-btn').addEventListener('click', () => bluetoothManager.handleDisconnect());
+            document.getElementById('fake-hrm-btn').addEventListener('click', connectToFakeHRM);
             
             // Manual HR input
             document.getElementById('submit-hr').addEventListener('click', updateHRManually);
