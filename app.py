@@ -180,6 +180,22 @@ def profile():
     user = User.query.get(session['user_id'])
     return render_template('profile.html', user=user)
 
+@app.route('/api/heart-rate', methods=['POST'])
+def handle_heart_rate():
+    if 'user_id' not in session:
+        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 401
+        
+    data = request.get_json()
+    
+    # Here you can:
+    # 1. Store in database
+    # 2. Perform analysis
+    # 3. Trigger alerts if needed
+    
+    print(f"Heart rate received from user {session['user_id']}: {data['bpm']} bpm at {data['timestamp']}")
+    
+    return jsonify({'status': 'success'})
+
 @app.route('/chat', methods=['POST'])
 def chat():
     if 'user_id' not in session:
