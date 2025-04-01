@@ -1,4 +1,4 @@
-# Core Requirements
+# Core Flask Stack
 Flask==3.0.2
 Flask-SQLAlchemy==3.1.1
 Flask-Migrate==4.0.5
@@ -9,19 +9,24 @@ python-dotenv==1.0.1
 Werkzeug==3.0.1
 
 # Database
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.9  # For PostgreSQL
 SQLAlchemy==2.0.25
+alembic==1.13.1  # Explicitly include for migrations
 
 # AI & APIs
 openai==1.12.0
 requests==2.31.0
 
-# Bluetooth Integration (Linux compatible)
-bleak==0.21.1
-dbus-next==0.2.3
-
 # Async & Networking
-gevent==23.9.1
-greenlet==3.0.1
-eventlet==0.35.1
-pyee==11.0.1
+gevent==23.9.1  # Primary async server
+greenlet==3.0.1  # Required by gevent
+eventlet==0.35.1  # Alternative to gevent
+pyee==11.0.1  # Event emitter
+
+# Production Essentials
+gunicorn==21.2.0  # WSGI server for Render
+whitenoise==6.6.0  # For static files
+
+# Development Only (Not for Render)
+bleak==0.21.1; sys_platform != 'linux'  # Bluetooth (macOS/Windows only)
+dbus-next==0.2.3; sys_platform == 'linux'  # Linux Bluetooth support
