@@ -337,13 +337,7 @@
         .hr-btn.analyze:hover {
             background: #008744;
         }
-        .hr-btn.fake-hrm {
-  background: #9c27b0; /* Purple to distinguish from real HRM */
-}
-.hr-btn.fake-hrm:hover {
-  background: #7b1fa2;
-}
-
+        
         .manual-hr-input {
     display: flex;
     gap: 10px;
@@ -522,9 +516,6 @@
   <button id="analyze-btn" class="hr-btn analyze" disabled>
     <span>Analyze Heart Rate</span>
   </button>
-  <button id="fake-hrm-btn" class="hr-btn fake-hrm"> <!-- Changed class for consistency -->
-    <span>Connect Fake HRM</span> <!-- Wrapped in span like others -->
-  </button>
             </div>
 
                 <div class="manual-hr-input">
@@ -545,7 +536,7 @@
             <div class="bluetooth-limitations">
                 <p><strong>Note:</strong> This feature requires:</p>
                 <ul>
-                    <li>Chrome browser (Windows/Mac/Android)</li>
+                    <li>Chrome browser (Windows/Mac/Android/Ios)</li>
                     <li>Bluetooth-enabled smartwatch</li>
                     <li>Device already paired in system settings</li>
                 </ul>
@@ -805,24 +796,7 @@ async function analyzeHeartRate() {
         console.error('Analysis error:', error);
     }
 }
-async function connectToFakeHRM() {
-  const device = await navigator.bluetooth.requestDevice({
-    filters: [{ services: ['heart_rate'] }],
-    optionalServices: ['generic_access']
-  });
-
-  const server = await device.gatt.connect();
-  const service = await server.getPrimaryService('heart_rate');
-  const characteristic = await service.getCharacteristic('heart_rate_measurement');
-
-  // Subscribe to HR updates
-  characteristic.startNotifications();
-  characteristic.addEventListener('characteristicvaluechanged', (event) => {
-    const hr = event.target.value.getUint8(1); // Extract HR value
-    console.log("Heart Rate:", hr, "BPM");
-    document.getElementById('current-hr').textContent = hr;
-  });
-}        
+   
 
 // Make sure the event listener is properly set up:
 
@@ -831,7 +805,6 @@ async function connectToFakeHRM() {
             // Bluetooth buttons
             document.getElementById('connect-btn').addEventListener('click', () => bluetoothManager.connect());
             document.getElementById('disconnect-btn').addEventListener('click', () => bluetoothManager.handleDisconnect());
-            document.getElementById('fake-hrm-btn').addEventListener('click', connectToFakeHRM);
             
             // Manual HR input
             document.getElementById('submit-hr').addEventListener('click', updateHRManually);
