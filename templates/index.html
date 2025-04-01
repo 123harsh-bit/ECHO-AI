@@ -317,6 +317,33 @@
             border-radius: 8px;
         }
 
+        /* Manual HR Input */
+        .manual-hr-input {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            align-items: center;
+        }
+
+        #manual-hr {
+            width: 80px;
+            padding: 8px;
+            border-radius: 20px;
+            border: 1px solid #333;
+            background: #222;
+            color: white;
+            text-align: center;
+        }
+
+        #submit-hr {
+            padding: 8px 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
         /* Hide scrollbar */
         .chat-box::-webkit-scrollbar {
             display: none;
@@ -363,7 +390,7 @@
 
         <div class="chat-box" id="chat-box"></div>
 
-        <!-- New Bluetooth HR Monitor Section -->
+        <!-- Bluetooth HR Monitor Section -->
         <div class="hr-monitor-section">
             <div class="hr-display">
                 <span>Current HR: <span id="current-hr">--</span> bpm</span>
@@ -374,6 +401,13 @@
             <button id="disconnect-btn" class="bluetooth-btn disconnect">
                 Disconnect
             </button>
+            
+            <!-- Manual HR Input Fallback -->
+            <div class="manual-hr-input">
+                <input type="number" id="manual-hr" placeholder="HR (BPM)" min="30" max="200">
+                <button id="submit-hr" onclick="updateHRManually()">Submit</button>
+            </div>
+            
             <div class="bluetooth-note">(Chrome on Windows/Mac/Android only)</div>
             <div class="bluetooth-limitations">
                 <p><strong>Note:</strong> This feature requires:</p>
@@ -418,10 +452,17 @@
                         throw new Error('Bluetooth not supported in this browser');
                     }
 
-                    // Request Bluetooth device
+                    appendMessage("Searching for ELITE watch...", 'bot-message');
+                    
+                    // Request Bluetooth device with multiple service options
                     this.device = await navigator.bluetooth.requestDevice({
-                        filters: [{ services: ['heart_rate'] }],
-                        optionalServices: ['battery_service']
+                        filters: [{ name: 'ELITE' }],
+                        optionalServices: [
+                            '0000ff00-0000-1000-8000-00805f9b34fb',  // Common custom service
+                            '0000180a-0000-1000-8000-00805f9b34fb',  // Device Information
+                            '0000180f-0000-1000-8000-00805f9b34fb',  // Battery Service
+                            'heart_rate'                              // Standard HR service
+                        ]
                     });
                     
                     // Add disconnect listener
@@ -429,50 +470,93 @@
                         this.handleDisconnect();
                     });
                     
-                    // Connect to GATT server
+                    appendMessage("Connecting to ELITE watch...", 'bot-message');
                     const server = await this.device.gatt.connect();
                     
-                    // Get heart rate service
-                    const service = await server.getPrimaryService('heart_rate');
+                    // Try to get heart rate service from different UUIDs
+                    const servicesToTry = [
+                        '0000ff00-0000-1000-8000-00805f9b34fb',
+                        '0000180d-0000-1000-8000-00805f9b34fb', // Standard HR
+                        '0000180f-0000-1000-8000-00805f9b34fb'
+                    ];
                     
-                    // Get characteristic
-                    this.characteristic = await service.getCharacteristic('heart_rate_measurement');
+                    let serviceFound = false;
                     
-                    // Start notifications
-                    await this.characteristic.startNotifications();
+                    for (const serviceUuid of servicesToTry) {
+                        try {
+                            const service = await server.getPrimaryService(serviceUuid);
+                            appendMessage(`Found service: ${serviceUuid}`, 'bot-message');
+                            
+                            // Get all characteristics
+                            const characteristics = await service.getCharacteristics();
+                            appendMessage(`Found ${characteristics.length} characteristics`, 'bot-message');
+                            
+                            // Look for a characteristic that supports notifications
+                            for (const characteristic of characteristics) {
+                                if (characteristic.properties.notify) {
+                                    this.characteristic = characteristic;
+                                    await this.characteristic.startNotifications();
+                                    this.characteristic.addEventListener(
+                                        'characteristicvaluechanged',
+                                        this.handleHeartRateMeasurement.bind(this)
+                                    );
+                                    serviceFound = true;
+                                    appendMessage("Heart rate monitoring started!", 'bot-message');
+                                    break;
+                                }
+                            }
+                            
+                            if (serviceFound) break;
+                        } catch (err) {
+                            console.log(`Service ${serviceUuid} not found:`, err);
+                        }
+                    }
                     
-                    // Listen for changes
-                    this.characteristic.addEventListener('characteristicvaluechanged', 
-                        this.handleHeartRateMeasurement.bind(this));
+                    if (!serviceFound) {
+                        throw new Error('Could not find heart rate service');
+                    }
                     
-                    appendMessage("Smartwatch connected successfully!", 'bot-message');
                     this.updateUI(true);
                     
                 } catch (error) {
                     appendMessage(`Bluetooth error: ${error.message}`, 'error-message');
+                    appendMessage("Please enter heart rate manually below", 'bot-message');
                     this.handleDisconnect();
                 }
             },
 
             handleHeartRateMeasurement(event) {
-                const value = event.target.value;
-                const flags = value.getUint8(0);
-                let rate = value.getUint8(1);
-                
-                if (flags & 0x1) { // 16-bit format
-                    rate = value.getUint16(1, true);
+                try {
+                    const value = event.target.value;
+                    // Try different parsing methods for different devices
+                    let rate;
+                    
+                    // Try standard HR format first
+                    const flags = value.getUint8(0);
+                    if (flags & 0x1) { // 16-bit format
+                        rate = value.getUint16(1, true);
+                    } else { // 8-bit format
+                        rate = value.getUint8(1);
+                    }
+                    
+                    // If value is unrealistic, try alternative parsing
+                    if (rate < 30 || rate > 250) {
+                        rate = value.getUint8(0); // Some devices put HR in first byte
+                    }
+                    
+                    if (rate >= 30 && rate <= 250) {
+                        this.displayHeartRate(rate);
+                        this.sendToBackend(rate);
+                    }
+                } catch (parseError) {
+                    console.error('Failed to parse HR:', parseError);
                 }
-                
-                this.displayHeartRate(rate);
-                this.sendToBackend(rate);
             },
 
             displayHeartRate(rate) {
-                // Update UI
                 document.getElementById('current-hr').textContent = rate;
-                
-                // Color coding based on heart rate
                 const hrElement = document.getElementById('current-hr');
+                
                 if (rate > 100) {
                     hrElement.style.color = '#ff4444'; // Red for high HR
                 } else if (rate < 60) {
@@ -516,11 +600,37 @@
             }
         };
 
+        // Manual HR input fallback
+        function updateHRManually() {
+            const hrInput = document.getElementById('manual-hr');
+            const hr = parseInt(hrInput.value);
+            
+            if (isNaN(hr) {
+                appendMessage("Please enter a valid number", 'error-message');
+                return;
+            }
+            
+            if (hr < 30 || hr > 250) {
+                appendMessage("Please enter a value between 30-250", 'error-message');
+                return;
+            }
+            
+            bluetoothManager.displayHeartRate(hr);
+            bluetoothManager.sendToBackend(hr);
+            hrInput.value = '';
+            appendMessage("Manual heart rate submitted: " + hr + " BPM", 'bot-message');
+        }
+
         // Initialize Bluetooth UI
         function initBluetoothUI() {
             document.getElementById('connect-btn').addEventListener('click', () => bluetoothManager.connect());
             document.getElementById('disconnect-btn').addEventListener('click', () => bluetoothManager.handleDisconnect());
             bluetoothManager.updateUI(false);
+            
+            // Handle Enter key in manual HR input
+            document.getElementById('manual-hr').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') updateHRManually();
+            });
         }
 
         // Check login status and load user data when page loads
@@ -545,7 +655,6 @@
                     if (!isLoggedIn) {
                         window.location.href = '/login';
                     } else {
-                        // Store user ID for HR data association
                         sessionStorage.setItem('user_id', data.user_id || '');
                     }
                 } else {
@@ -568,7 +677,6 @@
                 if (response.ok) {
                     const data = await response.json();
                     
-                    // Update UI with user data
                     if (data.authenticated && data.username) {
                         document.getElementById('username-display').textContent = data.username;
                         document.getElementById('profile-username').textContent = data.username;
@@ -624,22 +732,16 @@
             const chatBox = document.getElementById("chat-box");
             const welcomeMessage = document.getElementById("welcome-message");
 
-            // Hide welcome message after first input
             if (welcomeMessage && welcomeMessage.style.display !== "none") {
                 welcomeMessage.style.display = "none";
             }
 
-            // Append User Message
             appendMessage(userInput, 'user-message');
-
-            // Clear input field
             document.getElementById("user-input").value = "";
 
-            // Show typing indicator
             const typingIndicator = showTypingIndicator();
 
             try {
-                // Send Request to Flask Backend
                 const response = await fetch("/chat", {
                     method: "POST",
                     headers: { 
@@ -649,7 +751,6 @@
                     body: JSON.stringify({ message: userInput })
                 });
 
-                // Remove typing indicator
                 chatBox.removeChild(typingIndicator);
 
                 if (!response.ok) {
@@ -669,7 +770,6 @@
                 appendMessage(`Error: ${error.message}`, 'error-message');
                 console.error('Chat error:', error);
                 
-                // If unauthorized, redirect to login
                 if (error.message.includes('Please log in')) {
                     setTimeout(() => {
                         window.location.href = '/login';
@@ -704,7 +804,6 @@
             const chatBox = document.getElementById("chat-box");
 
             if (response.includes('|')) { 
-                // Detect Markdown-Style Table
                 const rows = response.trim().split('\n');
                 let tableHTML = '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
                 
@@ -723,7 +822,6 @@
                 botMessage.innerHTML = tableHTML;
                 chatBox.appendChild(botMessage);
             } else {
-                // Regular Text Message
                 appendMessage(response, "bot-message");
             }
 
@@ -733,7 +831,6 @@
         // Logout Function
         async function logout() {
             try {
-                // Disconnect Bluetooth if connected
                 if (bluetoothManager.device && bluetoothManager.device.gatt.connected) {
                     bluetoothManager.handleDisconnect();
                 }
