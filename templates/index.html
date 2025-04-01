@@ -602,46 +602,6 @@
             initEventListeners();
             bluetoothManager.updateUI(false);
         });
-        async connect() {
-  try {
-    this.device = await navigator.bluetooth.requestDevice({
-      filters: [{ name: 'ELITE' }],
-      optionalServices: [
-        '0000FF00-0000-1000-8000-00805f9b34fb', // Common custom service
-        '0000180a-0000-1000-8000-00805f9b34fb', // Device info
-        '0000180f-0000-1000-8000-00805f9b34fb'  // Battery service
-      ]
-    });
-
-    const server = await this.device.gatt.connect();
-    
-    // Try all possible services
-    const servicesToTry = [
-      '0000FF00-0000-1000-8000-00805f9b34fb',
-      '0000FFF0-0000-1000-8000-00805f9b34fb',
-      '0000180d-0000-1000-8000-00805f9b34fb' // Standard HR (last resort)
-    ];
-
-    for (const serviceUuid of servicesToTry) {
-      try {
-        const service = await server.getPrimaryService(serviceUuid);
-        const characteristics = await service.getCharacteristics();
-        
-        // Look for notify-enabled characteristics
-        for (const char of characteristics) {
-          if (char.properties.notify) {
-            this.characteristic = char;
-            await this.characteristic.startNotifications();
-            // Add event listener...
-            break;
-          }
-        }
-      } catch(e) { /* Service not found */ }
-    }
-  } catch(error) {
-    console.error("Connection failed:", error);
-  }
-        }
 
         // Check if user is logged in
         async function checkLoginStatus() {
