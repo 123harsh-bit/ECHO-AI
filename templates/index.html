@@ -339,31 +339,45 @@
         }
 
         .manual-hr-input {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-            align-items: center;
-        }
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    align-items: center;
+    width: 100%;
+}
 
-        #manual-hr {
-            width: 100%;
-            padding: 10px;
-            border-radius: 20px;
-            border: 1px solid #333;
-            background: #222;
-            color: white;
-            text-align: center;
-        }
+#manual-hr {
+    flex-grow: 1;
+    padding: 12px;
+    border-radius: 20px;
+    border: 1px solid #333;
+    background: #222;
+    color: white;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.3s;
+}
 
-        #submit-hr {
-            padding: 10px 15px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            width: 100%;
-        }
+#manual-hr:focus {
+    border-color: #00f5f9;
+    box-shadow: 0 0 0 2px rgba(0, 245, 249, 0.2);
+}
+
+#submit-hr {
+    padding: 12px 20px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s;
+    white-space: nowrap;
+}
+
+#submit-hr:hover {
+    background: #0056b3;
+}
 
         .bluetooth-note {
             font-size: 12px;
@@ -505,8 +519,8 @@
                 </div>
 
                 <div class="manual-hr-input">
-                    <input type="number" id="manual-hr" placeholder="Enter HR (BPM)" min="30" max="200">
-                    <button id="submit-hr">Submit</button>
+    <input type="number" id="manual-hr" placeholder="Enter HR (30-250 BPM)" min="30" max="250">
+    <button id="submit-hr">Submit</button>
                 </div>
 
                 <div class="bluetooth-note">(Chrome on Windows/Mac/Android only)</div>
