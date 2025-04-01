@@ -256,6 +256,67 @@
             background: #0056b3;
         }
 
+        /* Bluetooth HR Monitor Section */
+        .hr-monitor-section {
+            background: #111;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+
+        .hr-display {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #00f5f9;
+        }
+
+        #current-hr {
+            font-weight: bold;
+            color: #ff4444;
+        }
+
+        .bluetooth-btn {
+            background: #0082fc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+            transition: 0.3s ease;
+        }
+
+        .bluetooth-btn:hover {
+            background: #0066c4;
+        }
+
+        .bluetooth-btn.disconnect {
+            background: #666;
+        }
+
+        .bluetooth-btn.disconnect:hover {
+            background: #444;
+        }
+
+        .bluetooth-note {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 10px;
+        }
+
+        .bluetooth-limitations {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 10px;
+            text-align: left;
+            padding: 10px;
+            background: #222;
+            border-radius: 8px;
+        }
+
         /* Hide scrollbar */
         .chat-box::-webkit-scrollbar {
             display: none;
@@ -302,6 +363,28 @@
 
         <div class="chat-box" id="chat-box"></div>
 
+        <!-- New Bluetooth HR Monitor Section -->
+        <div class="hr-monitor-section">
+            <div class="hr-display">
+                <span>Current HR: <span id="current-hr">--</span> bpm</span>
+            </div>
+            <button id="connect-btn" class="bluetooth-btn">
+                Connect Smartwatch
+            </button>
+            <button id="disconnect-btn" class="bluetooth-btn disconnect">
+                Disconnect
+            </button>
+            <div class="bluetooth-note">(Chrome on Windows/Mac/Android only)</div>
+            <div class="bluetooth-limitations">
+                <p><strong>Note:</strong> This feature requires:</p>
+                <ul>
+                    <li>Chrome browser (Windows/Mac/Android)</li>
+                    <li>Bluetooth-enabled smartwatch</li>
+                    <li>Device already paired in system settings</li>
+                </ul>
+            </div>
+        </div>
+
         <div class="pre-prompts">
             <button onclick="sendPrePrompt('Best exercises for heart health')">🏃 Best Exercises</button>
             <button onclick="sendPrePrompt('How to maintain healthy blood pressure?')">💓 Blood Pressure</button>
@@ -322,10 +405,129 @@
         // Global variable to track if user is logged in
         let isLoggedIn = false;
 
+        // Bluetooth connection manager
+        const bluetoothManager = {
+            device: null,
+            characteristic: null,
+            hrUpdateInterval: null,
+
+            async connect() {
+                try {
+                    // Check if Bluetooth is supported
+                    if (!navigator.bluetooth) {
+                        throw new Error('Bluetooth not supported in this browser');
+                    }
+
+                    // Request Bluetooth device
+                    this.device = await navigator.bluetooth.requestDevice({
+                        filters: [{ services: ['heart_rate'] }],
+                        optionalServices: ['battery_service']
+                    });
+                    
+                    // Add disconnect listener
+                    this.device.addEventListener('gattserverdisconnected', () => {
+                        this.handleDisconnect();
+                    });
+                    
+                    // Connect to GATT server
+                    const server = await this.device.gatt.connect();
+                    
+                    // Get heart rate service
+                    const service = await server.getPrimaryService('heart_rate');
+                    
+                    // Get characteristic
+                    this.characteristic = await service.getCharacteristic('heart_rate_measurement');
+                    
+                    // Start notifications
+                    await this.characteristic.startNotifications();
+                    
+                    // Listen for changes
+                    this.characteristic.addEventListener('characteristicvaluechanged', 
+                        this.handleHeartRateMeasurement.bind(this));
+                    
+                    appendMessage("Smartwatch connected successfully!", 'bot-message');
+                    this.updateUI(true);
+                    
+                } catch (error) {
+                    appendMessage(`Bluetooth error: ${error.message}`, 'error-message');
+                    this.handleDisconnect();
+                }
+            },
+
+            handleHeartRateMeasurement(event) {
+                const value = event.target.value;
+                const flags = value.getUint8(0);
+                let rate = value.getUint8(1);
+                
+                if (flags & 0x1) { // 16-bit format
+                    rate = value.getUint16(1, true);
+                }
+                
+                this.displayHeartRate(rate);
+                this.sendToBackend(rate);
+            },
+
+            displayHeartRate(rate) {
+                // Update UI
+                document.getElementById('current-hr').textContent = rate;
+                
+                // Color coding based on heart rate
+                const hrElement = document.getElementById('current-hr');
+                if (rate > 100) {
+                    hrElement.style.color = '#ff4444'; // Red for high HR
+                } else if (rate < 60) {
+                    hrElement.style.color = '#ffff00'; // Yellow for low HR
+                } else {
+                    hrElement.style.color = '#00ff00'; // Green for normal HR
+                }
+            },
+
+            async sendToBackend(rate) {
+                try {
+                    await fetch('/api/heart-rate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ 
+                            bpm: rate, 
+                            timestamp: new Date().toISOString(),
+                            user_id: sessionStorage.getItem('user_id')
+                        })
+                    });
+                } catch (error) {
+                    console.error('Failed to send to backend:', error);
+                }
+            },
+
+            handleDisconnect() {
+                if (this.device && this.device.gatt.connected) {
+                    this.device.gatt.disconnect();
+                }
+                this.device = null;
+                this.characteristic = null;
+                this.updateUI(false);
+                document.getElementById('current-hr').textContent = '--';
+                document.getElementById('current-hr').style.color = '#ff4444';
+            },
+
+            updateUI(connected) {
+                document.getElementById('connect-btn').style.display = connected ? 'none' : 'inline-block';
+                document.getElementById('disconnect-btn').style.display = connected ? 'inline-block' : 'none';
+            }
+        };
+
+        // Initialize Bluetooth UI
+        function initBluetoothUI() {
+            document.getElementById('connect-btn').addEventListener('click', () => bluetoothManager.connect());
+            document.getElementById('disconnect-btn').addEventListener('click', () => bluetoothManager.handleDisconnect());
+            bluetoothManager.updateUI(false);
+        }
+
         // Check login status and load user data when page loads
         document.addEventListener('DOMContentLoaded', async () => {
             await checkLoginStatus();
             await loadUserData();
+            initBluetoothUI();
         });
 
         // Check if user is logged in
@@ -342,6 +544,9 @@
                     
                     if (!isLoggedIn) {
                         window.location.href = '/login';
+                    } else {
+                        // Store user ID for HR data association
+                        sessionStorage.setItem('user_id', data.user_id || '');
                     }
                 } else {
                     window.location.href = '/login';
@@ -528,6 +733,11 @@
         // Logout Function
         async function logout() {
             try {
+                // Disconnect Bluetooth if connected
+                if (bluetoothManager.device && bluetoothManager.device.gatt.connected) {
+                    bluetoothManager.handleDisconnect();
+                }
+
                 const response = await fetch('/logout', {
                     method: 'POST',
                     credentials: 'include'
@@ -546,4 +756,3 @@
     </script>
 </body>
 </html>
-
