@@ -52,7 +52,7 @@ class User(db.Model):
 
 # ------------------ HEALTH KEYWORDS ------------------
 HEART_KEYWORDS = [
-    "heart", "cardiac", "blood pressure", "cholesterol", "heart attack",
+    "heart", "cardiac", "blood pressure", "72","cholesterol", "heart attack",
     "stroke", "arrhythmia", "hypertension", "pulse", "artery", "circulation",
     "ECG", "EKG", "cardiovascular", "angioplasty", "bypass surgery"
 ]
