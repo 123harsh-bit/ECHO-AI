@@ -35,7 +35,6 @@
             position: relative;
         }
 
-        /* Profile Section */
         .profile-container {
             display: flex;
             align-items: center;
@@ -63,7 +62,6 @@
             margin-right: 25px;
         }
 
-        /* Profile Details Section */
         .profile-details {
             position: absolute;
             top: 100px;
@@ -163,7 +161,6 @@
             max-width: 80%;
         }
 
-        /* Typing dots animation */
         .typing-indicator {
             display: flex;
             align-items: center;
@@ -256,7 +253,6 @@
             background: #0056b3;
         }
 
-        /* Bluetooth HR Monitor Section */
         .hr-monitor-section {
             background: #111;
             padding: 15px;
@@ -317,7 +313,6 @@
             border-radius: 8px;
         }
 
-        /* Manual HR Input */
         .manual-hr-input {
             display: flex;
             gap: 10px;
@@ -344,12 +339,10 @@
             cursor: pointer;
         }
 
-        /* Hide scrollbar */
         .chat-box::-webkit-scrollbar {
             display: none;
         }
 
-        /* Responsive adjustments */
         @media (max-width: 768px) {
             .chat-container {
                 height: 90vh;
@@ -370,7 +363,7 @@
 <body>
     <div class="header">
         <div>Echo AI</div>
-        <div class="profile-container" onclick="toggleProfileDetails()">
+        <div class="profile-container" id="profile-container">
             <div class="profile-avatar" id="user-avatar">U</div>
             <div class="profile-name" id="username-display">User</div>
         </div>
@@ -379,7 +372,7 @@
     <div class="profile-details" id="profile-details">
         <p><strong>Username:</strong> <span id="profile-username">User</span></p>
         <p><strong>Email:</strong> <span id="profile-email">user@example.com</span></p>
-        <button onclick="logout()">Logout</button>
+        <button id="logout-btn">Logout</button>
     </div>
 
     <div class="chat-container">
@@ -390,7 +383,6 @@
 
         <div class="chat-box" id="chat-box"></div>
 
-        <!-- Bluetooth HR Monitor Section -->
         <div class="hr-monitor-section">
             <div class="hr-display">
                 <span>Current HR: <span id="current-hr">--</span> bpm</span>
@@ -402,10 +394,9 @@
                 Disconnect
             </button>
             
-            <!-- Manual HR Input Fallback -->
             <div class="manual-hr-input">
                 <input type="number" id="manual-hr" placeholder="HR (BPM)" min="30" max="200">
-                <button id="submit-hr" onclick="updateHRManually()">Submit</button>
+                <button id="submit-hr">Submit</button>
             </div>
             
             <div class="bluetooth-note">(Chrome on Windows/Mac/Android only)</div>
@@ -420,17 +411,16 @@
         </div>
 
         <div class="pre-prompts">
-            <button onclick="sendPrePrompt('Best exercises for heart health')">🏃 Best Exercises</button>
-            <button onclick="sendPrePrompt('How to maintain healthy blood pressure?')">💓 Blood Pressure</button>
-            <button onclick="sendPrePrompt('Heart-friendly diet tips')">🥗 Diet Tips</button>
-            <button onclick="sendPrePrompt('Symptoms of heart disease')">🫀 Warning Signs</button>
+            <button class="pre-prompt-btn" data-prompt="Best exercises for heart health">🏃 Best Exercises</button>
+            <button class="pre-prompt-btn" data-prompt="How to maintain healthy blood pressure?">💓 Blood Pressure</button>
+            <button class="pre-prompt-btn" data-prompt="Heart-friendly diet tips">🥗 Diet Tips</button>
+            <button class="pre-prompt-btn" data-prompt="Symptoms of heart disease">🫀 Warning Signs</button>
         </div>
 
         <div class="input-container">
             <div class="input-row">
-                <input type="text" id="user-input" placeholder="Ask me about heart health..." autofocus
-                    onkeypress="handleKeyPress(event)">
-                <button class="send-btn" onclick="sendMessage()">Send</button>
+                <input type="text" id="user-input" placeholder="Ask me about heart health..." autofocus>
+                <button class="send-btn" id="send-btn">Send</button>
             </div>
         </div>
     </div>
@@ -443,7 +433,6 @@
         const bluetoothManager = {
             device: null,
             characteristic: null,
-            hrUpdateInterval: null,
 
             async connect() {
                 try {
@@ -452,17 +441,12 @@
                         throw new Error('Bluetooth not supported in this browser');
                     }
 
-                    appendMessage("Searching for ELITE watch...", 'bot-message');
+                    appendMessage("Searching for devices...", 'bot-message');
                     
-                    // Request Bluetooth device with multiple service options
+                    // Request Bluetooth device
                     this.device = await navigator.bluetooth.requestDevice({
-                        filters: [{ name: 'ELITE' }],
-                        optionalServices: [
-                            '0000ff00-0000-1000-8000-00805f9b34fb',  // Common custom service
-                            '0000180a-0000-1000-8000-00805f9b34fb',  // Device Information
-                            '0000180f-0000-1000-8000-00805f9b34fb',  // Battery Service
-                            'heart_rate'                              // Standard HR service
-                        ]
+                        acceptAllDevices: true,
+                        optionalServices: ['heart_rate']
                     });
                     
                     // Add disconnect listener
@@ -470,57 +454,26 @@
                         this.handleDisconnect();
                     });
                     
-                    appendMessage("Connecting to ELITE watch...", 'bot-message');
+                    appendMessage(`Found device: ${this.device.name || 'Unknown'}`, 'bot-message');
+                    appendMessage("Connecting...", 'bot-message');
+                    
                     const server = await this.device.gatt.connect();
+                    const service = await server.getPrimaryService('heart_rate');
+                    this.characteristic = await service.getCharacteristic('heart_rate_measurement');
                     
-                    // Try to get heart rate service from different UUIDs
-                    const servicesToTry = [
-                        '0000ff00-0000-1000-8000-00805f9b34fb',
-                        '0000180d-0000-1000-8000-00805f9b34fb', // Standard HR
-                        '0000180f-0000-1000-8000-00805f9b34fb'
-                    ];
+                    await this.characteristic.startNotifications();
+                    this.characteristic.addEventListener(
+                        'characteristicvaluechanged',
+                        this.handleHeartRateMeasurement.bind(this)
+                    );
                     
-                    let serviceFound = false;
-                    
-                    for (const serviceUuid of servicesToTry) {
-                        try {
-                            const service = await server.getPrimaryService(serviceUuid);
-                            appendMessage(`Found service: ${serviceUuid}`, 'bot-message');
-                            
-                            // Get all characteristics
-                            const characteristics = await service.getCharacteristics();
-                            appendMessage(`Found ${characteristics.length} characteristics`, 'bot-message');
-                            
-                            // Look for a characteristic that supports notifications
-                            for (const characteristic of characteristics) {
-                                if (characteristic.properties.notify) {
-                                    this.characteristic = characteristic;
-                                    await this.characteristic.startNotifications();
-                                    this.characteristic.addEventListener(
-                                        'characteristicvaluechanged',
-                                        this.handleHeartRateMeasurement.bind(this)
-                                    );
-                                    serviceFound = true;
-                                    appendMessage("Heart rate monitoring started!", 'bot-message');
-                                    break;
-                                }
-                            }
-                            
-                            if (serviceFound) break;
-                        } catch (err) {
-                            console.log(`Service ${serviceUuid} not found:`, err);
-                        }
-                    }
-                    
-                    if (!serviceFound) {
-                        throw new Error('Could not find heart rate service');
-                    }
-                    
+                    appendMessage("Connected successfully!", 'bot-message');
                     this.updateUI(true);
                     
                 } catch (error) {
-                    appendMessage(`Bluetooth error: ${error.message}`, 'error-message');
-                    appendMessage("Please enter heart rate manually below", 'bot-message');
+                    console.error('Connection error:', error);
+                    appendMessage(`Error: ${error.message}`, 'error-message');
+                    appendMessage("Please enter heart rate manually", 'bot-message');
                     this.handleDisconnect();
                 }
             },
@@ -528,41 +481,30 @@
             handleHeartRateMeasurement(event) {
                 try {
                     const value = event.target.value;
-                    // Try different parsing methods for different devices
-                    let rate;
-                    
-                    // Try standard HR format first
                     const flags = value.getUint8(0);
+                    let rate = value.getUint8(1);
+                    
                     if (flags & 0x1) { // 16-bit format
                         rate = value.getUint16(1, true);
-                    } else { // 8-bit format
-                        rate = value.getUint8(1);
                     }
                     
-                    // If value is unrealistic, try alternative parsing
-                    if (rate < 30 || rate > 250) {
-                        rate = value.getUint8(0); // Some devices put HR in first byte
-                    }
-                    
-                    if (rate >= 30 && rate <= 250) {
-                        this.displayHeartRate(rate);
-                        this.sendToBackend(rate);
-                    }
-                } catch (parseError) {
-                    console.error('Failed to parse HR:', parseError);
+                    this.displayHeartRate(rate);
+                    this.sendToBackend(rate);
+                } catch (error) {
+                    console.error('Failed to parse HR:', error);
                 }
             },
 
             displayHeartRate(rate) {
-                document.getElementById('current-hr').textContent = rate;
                 const hrElement = document.getElementById('current-hr');
+                hrElement.textContent = rate;
                 
                 if (rate > 100) {
-                    hrElement.style.color = '#ff4444'; // Red for high HR
+                    hrElement.style.color = '#ff4444';
                 } else if (rate < 60) {
-                    hrElement.style.color = '#ffff00'; // Yellow for low HR
+                    hrElement.style.color = '#ffff00';
                 } else {
-                    hrElement.style.color = '#00ff00'; // Green for normal HR
+                    hrElement.style.color = '#00ff00';
                 }
             },
 
@@ -571,11 +513,9 @@
                     await fetch('/api/heart-rate', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
                         body: JSON.stringify({ 
                             bpm: rate, 
-                            timestamp: new Date().toISOString(),
-                            user_id: sessionStorage.getItem('user_id')
+                            timestamp: new Date().toISOString()
                         })
                     });
                 } catch (error) {
@@ -605,7 +545,7 @@
             const hrInput = document.getElementById('manual-hr');
             const hr = parseInt(hrInput.value);
             
-            if (isNaN(hr) {
+            if (isNaN(hr)) {
                 appendMessage("Please enter a valid number", 'error-message');
                 return;
             }
@@ -618,26 +558,49 @@
             bluetoothManager.displayHeartRate(hr);
             bluetoothManager.sendToBackend(hr);
             hrInput.value = '';
-            appendMessage("Manual heart rate submitted: " + hr + " BPM", 'bot-message');
+            appendMessage(`Manual HR submitted: ${hr} BPM`, 'bot-message');
         }
 
-        // Initialize Bluetooth UI
-        function initBluetoothUI() {
+        // Initialize all event listeners
+        function initEventListeners() {
+            // Bluetooth buttons
             document.getElementById('connect-btn').addEventListener('click', () => bluetoothManager.connect());
             document.getElementById('disconnect-btn').addEventListener('click', () => bluetoothManager.handleDisconnect());
-            bluetoothManager.updateUI(false);
             
-            // Handle Enter key in manual HR input
+            // Manual HR input
+            document.getElementById('submit-hr').addEventListener('click', updateHRManually);
             document.getElementById('manual-hr').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') updateHRManually();
             });
+            
+            // Pre-prompt buttons
+            document.querySelectorAll('.pre-prompt-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const message = e.target.dataset.prompt;
+                    document.getElementById('user-input').value = message;
+                    sendMessage();
+                });
+            });
+            
+            // Chat input
+            document.getElementById('user-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+            document.getElementById('send-btn').addEventListener('click', sendMessage);
+            
+            // Profile toggle
+            document.getElementById('profile-container').addEventListener('click', toggleProfileDetails);
+            
+            // Logout button
+            document.getElementById('logout-btn').addEventListener('click', logout);
         }
 
         // Check login status and load user data when page loads
         document.addEventListener('DOMContentLoaded', async () => {
             await checkLoginStatus();
             await loadUserData();
-            initBluetoothUI();
+            initEventListeners();
+            bluetoothManager.updateUI(false);
         });
 
         // Check if user is logged in
@@ -702,7 +665,7 @@
         // Close profile details when clicking outside
         document.addEventListener('click', (event) => {
             const profileDetails = document.getElementById("profile-details");
-            const profileContainer = document.querySelector('.profile-container');
+            const profileContainer = document.getElementById('profile-container');
             
             if (profileDetails.style.display === "flex" && 
                 !profileContainer.contains(event.target) && 
@@ -710,19 +673,6 @@
                 profileDetails.style.display = "none";
             }
         });
-
-        // Handle Enter key press
-        function handleKeyPress(event) {
-            if (event.key === 'Enter') {
-                sendMessage();
-            }
-        }
-
-        // Pre-Prompt Function
-        function sendPrePrompt(message) {
-            document.getElementById("user-input").value = message;
-            sendMessage();
-        }
 
         // Send Message Function
         async function sendMessage() {
