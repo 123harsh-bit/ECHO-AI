@@ -352,6 +352,31 @@
             color: #6c757d;
         }
 
+        .device-options {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background: #222;
+            border-radius: 8px;
+        }
+
+        .device-option {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .device-option:hover {
+            background: #333;
+        }
+
+        .device-icon {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+
         @media (max-width: 768px) {
             .chat-container {
                 height: 90vh;
@@ -404,7 +429,17 @@
                 </div>
                 <div class="heart-rate-status" id="heart-rate-status">--</div>
             </div>
-            <button class="device-connect-btn" id="device-connect-btn" onclick="toggleDeviceConnection()">CONNECT DEVICE</button>
+            <button class="device-connect-btn" id="device-connect-btn" onclick="showDeviceOptions()">CONNECT DEVICE</button>
+            <div class="device-options" id="device-options">
+                <div class="device-option" onclick="connectBluetoothDevice()">
+                    <span class="device-icon">⌚</span>
+                    <span>Smartwatch (Bluetooth)</span>
+                </div>
+                <div class="device-option" onclick="connectSimulatedDevice()">
+                    <span class="device-icon">💻</span>
+                    <span>Simulated Device</span>
+                </div>
+            </div>
         </div>
         <button onclick="logout()">Logout</button>
     </div>
@@ -427,6 +462,7 @@
             <button onclick="sendMessage('Heart-friendly diet tips')">🥗 Diet Tips</button>
             <button onclick="sendMessage('Symptoms of heart disease')">🫀 Warning Signs</button>
             <button onclick="showHeartRateAnalysis()">📊 My Heart Analysis</button>
+            <button onclick="sendMessage('What is my current heart rate?')">❤️ Current Heart Rate</button>
         </div>
 
         <div class="input-container">
@@ -445,6 +481,7 @@
         let deviceConnected = false;
         let heartRateInterval = null;
         let socket = null;
+        let bluetoothDevice = null;
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', async () => {
@@ -490,6 +527,7 @@
             // Handle heart rate updates
             socket.on('heart_rate_update', (data) => {
                 updateHeartRateDisplay(data);
+                currentHeartRate = data.bpm;
             });
 
             // Handle connection status updates
@@ -564,15 +602,15 @@
         // Load current heart rate
         async function loadCurrentHeartRate() {
             try {
-                const response = await fetch('/api/heart-rate/current', {
+                const response = await fetch('/api/heart-rate/history', {
                     method: 'GET',
                     credentials: 'include'
                 });
                 
                 if (response.ok) {
                     const data = await response.json();
-                    if (data.device_connected && data.bpm) {
-                        updateHeartRateDisplay(data);
+                    if (data.length > 0) {
+                        updateHeartRateDisplay(data[0]);
                     }
                 }
             } catch (error) {
@@ -580,43 +618,102 @@
             }
         }
 
-        // Toggle device connection
-        async function toggleDeviceConnection() {
+        // Show device connection options
+        function showDeviceOptions() {
+            const options = document.getElementById('device-options');
+            options.style.display = options.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // Connect Bluetooth device
+        async function connectBluetoothDevice() {
             try {
-                if (deviceConnected) {
-                    // Disconnect device
-                    const response = await fetch('/api/device/disconnect', {
-                        method: 'POST',
-                        credentials: 'include'
-                    });
-                    
-                    if (response.ok) {
-                        updateDeviceStatus(false);
-                        appendMessage("Device disconnected", 'bot-message');
-                    }
+                if (!navigator.bluetooth) {
+                    throw new Error('Bluetooth not supported in this browser');
+                }
+
+                appendMessage("Searching for Bluetooth devices...", 'bot-message');
+                
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: ['heart_rate'] }],
+                    optionalServices: ['generic_access']
+                });
+
+                bluetoothDevice = device;
+                appendMessage(`Found device: ${device.name}`, 'bot-message');
+
+                const response = await fetch('/api/device/connect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        device_type: 'Smartwatch',
+                        device_id: device.id
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    updateDeviceStatus(true);
+                    appendMessage(`${device.name} connected successfully`, 'bot-message');
+                    document.getElementById('device-options').style.display = 'none';
                 } else {
-                    // Connect device
-                    const response = await fetch('/api/device/connect', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        credentials: 'include',
-                        body: JSON.stringify({
-                            device_type: 'simulated',
-                            device_id: 'simulated_device_' + Date.now()
-                        })
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        updateDeviceStatus(true);
-                        appendMessage("Device connected successfully", 'bot-message');
-                    }
+                    throw new Error('Failed to connect device');
+                }
+            } catch (error) {
+                console.error('Bluetooth connection error:', error);
+                appendMessage(`Bluetooth error: ${error.message}`, 'error-message');
+            }
+        }
+
+        // Connect simulated device
+        async function connectSimulatedDevice() {
+            try {
+                const response = await fetch('/api/device/connect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        device_type: 'simulated',
+                        device_id: 'simulated_device_' + Date.now()
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateDeviceStatus(true);
+                    appendMessage("Simulated device connected", 'bot-message');
+                    document.getElementById('device-options').style.display = 'none';
+                } else {
+                    throw new Error('Failed to connect device');
                 }
             } catch (error) {
                 console.error('Device connection error:', error);
-                appendMessage("Failed to toggle device connection", 'error-message');
+                appendMessage(`Connection error: ${error.message}`, 'error-message');
+            }
+        }
+
+        // Disconnect device
+        async function disconnectDevice() {
+            try {
+                const response = await fetch('/api/device/disconnect', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    updateDeviceStatus(false);
+                    appendMessage("Device disconnected", 'bot-message');
+                    if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+                        await bluetoothDevice.gatt.disconnect();
+                    }
+                }
+            } catch (error) {
+                console.error('Device disconnection error:', error);
+                appendMessage("Failed to disconnect device", 'error-message');
             }
         }
 
@@ -625,23 +722,28 @@
             deviceConnected = connected;
             const connectBtn = document.getElementById('device-connect-btn');
             const statusDiv = document.getElementById('connection-status');
+            const options = document.getElementById('device-options');
             
             if (connected) {
                 connectBtn.textContent = 'DISCONNECT DEVICE';
                 connectBtn.classList.remove('device-disconnected');
                 connectBtn.classList.add('device-connected');
+                connectBtn.onclick = disconnectDevice;
                 statusDiv.textContent = 'DEVICE CONNECTED';
                 statusDiv.classList.remove('connection-disconnected');
                 statusDiv.classList.add('connection-connected');
+                options.style.display = 'none';
             } else {
                 connectBtn.textContent = 'CONNECT DEVICE';
                 connectBtn.classList.remove('device-connected');
                 connectBtn.classList.add('device-disconnected');
+                connectBtn.onclick = showDeviceOptions;
                 statusDiv.textContent = 'No heart rate data yet. Connect a device first.';
                 statusDiv.classList.remove('connection-connected');
                 statusDiv.classList.add('connection-disconnected');
                 document.getElementById('current-bpm').textContent = '--';
                 document.getElementById('heart-rate-status').textContent = '--';
+                options.style.display = 'none';
             }
         }
 
@@ -732,6 +834,13 @@
                 document.getElementById("user-input").value = "";
             }
 
+            // Handle heart rate query directly
+            if (userInput.toLowerCase().includes('heart rate') && currentHeartRate) {
+                const advice = await getHeartRateAdvice(currentHeartRate);
+                appendMessage(`Your current heart rate is ${currentHeartRate} BPM. ${advice}`, 'bot-message');
+                return;
+            }
+
             const typingIndicator = showTypingIndicator();
 
             try {
@@ -758,6 +867,28 @@
                 if (error.message.includes('Unauthorized')) {
                     setTimeout(() => window.location.href = '/login', 2000);
                 }
+            }
+        }
+
+        // Get heart rate advice
+        async function getHeartRateAdvice(bpm) {
+            try {
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: 'include',
+                    body: JSON.stringify({ 
+                        message: `Give me health advice for a heart rate of ${bpm} BPM` 
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to get advice');
+                
+                const data = await response.json();
+                return data.response;
+            } catch (error) {
+                console.error('Error getting advice:', error);
+                return "Consult your doctor for personalized advice.";
             }
         }
 
