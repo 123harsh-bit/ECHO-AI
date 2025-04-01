@@ -101,13 +101,28 @@
             background: #00f5f9;
         }
 
-        .chat-container {
+        .main-container {
+            display: flex;
             width: 100%;
-            max-width: 900px;
+            max-width: 1400px;
             height: 85vh;
+            gap: 20px;
+        }
+
+        .chat-container {
+            width: 70%;
+            height: 100%;
             display: flex;
             flex-direction: column;
             position: relative;
+        }
+
+        .hr-container {
+            width: 30%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
         .welcome-message {
@@ -125,8 +140,6 @@
             flex-direction: column;
             gap: 10px;
             scrollbar-width: none;
-            width: 100%;
-            max-width: 850px;
         }
 
         .message {
@@ -253,54 +266,110 @@
             background: #0056b3;
         }
 
-        .hr-monitor-section {
+        .hr-section {
             background: #111;
             padding: 15px;
             border-radius: 10px;
-            margin-bottom: 15px;
-            text-align: center;
             border: 1px solid #333;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
         }
 
         .hr-display {
-            font-size: 18px;
-            margin-bottom: 10px;
+            font-size: 24px;
+            margin-bottom: 15px;
             color: #00f5f9;
+            text-align: center;
         }
 
         #current-hr {
             font-weight: bold;
             color: #ff4444;
+            font-size: 36px;
         }
 
-        .bluetooth-btn {
+        .hr-status {
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .hr-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .hr-btn {
             background: #0082fc;
             color: white;
             border: none;
-            padding: 10px 15px;
+            padding: 12px;
             border-radius: 20px;
             cursor: pointer;
-            margin: 5px;
-            font-size: 14px;
+            font-size: 16px;
             transition: 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
-        .bluetooth-btn:hover {
+        .hr-btn:hover {
             background: #0066c4;
         }
 
-        .bluetooth-btn.disconnect {
+        .hr-btn.disconnect {
             background: #666;
         }
 
-        .bluetooth-btn.disconnect:hover {
+        .hr-btn.disconnect:hover {
             background: #444;
+        }
+
+        .hr-btn.analyze {
+            background: #00a854;
+        }
+
+        .hr-btn.analyze:hover {
+            background: #008744;
+        }
+
+        .manual-hr-input {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            align-items: center;
+        }
+
+        #manual-hr {
+            width: 100%;
+            padding: 10px;
+            border-radius: 20px;
+            border: 1px solid #333;
+            background: #222;
+            color: white;
+            text-align: center;
+        }
+
+        #submit-hr {
+            padding: 10px 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            width: 100%;
         }
 
         .bluetooth-note {
             font-size: 12px;
             color: #aaa;
             margin-top: 10px;
+            text-align: center;
         }
 
         .bluetooth-limitations {
@@ -313,40 +382,56 @@
             border-radius: 8px;
         }
 
-        .manual-hr-input {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-            align-items: center;
+        .hr-history {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px;
+            background: #222;
+            border-radius: 8px;
+            margin-top: 15px;
         }
 
-        #manual-hr {
-            width: 80px;
-            padding: 8px;
-            border-radius: 20px;
-            border: 1px solid #333;
-            background: #222;
-            color: white;
+        .hr-history h3 {
+            color: #00f5f9;
+            margin-bottom: 10px;
             text-align: center;
         }
 
-        #submit-hr {
-            padding: 8px 15px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
+        .hr-history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
 
-        .chat-box::-webkit-scrollbar {
+        .hr-history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            background: #333;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .hr-history-value {
+            font-weight: bold;
+            color: #ff4444;
+        }
+
+        .chat-box::-webkit-scrollbar,
+        .hr-history::-webkit-scrollbar {
             display: none;
         }
 
         @media (max-width: 768px) {
-            .chat-container {
+            .main-container {
+                flex-direction: column;
                 height: 90vh;
                 width: 95%;
+            }
+            
+            .chat-container, .hr-container {
+                width: 100%;
+                height: auto;
             }
             
             .pre-prompts {
@@ -375,31 +460,65 @@
         <button id="logout-btn">Logout</button>
     </div>
 
-    <div class="chat-container">
-        <div class="welcome-message" id="welcome-message">
-            <p>AI Heart Health Chatbot</p>
-            <p>"Your AI-powered heart health assistant – monitor, analyze, and stay informed."</p>
+    <div class="main-container">
+        <div class="chat-container">
+            <div class="welcome-message" id="welcome-message">
+                <p>AI Heart Health Chatbot</p>
+                <p>"Your AI-powered heart health assistant – monitor, analyze, and stay informed."</p>
+            </div>
+
+            <div class="chat-box" id="chat-box"></div>
+
+            <div class="pre-prompts">
+                <button class="pre-prompt-btn" data-prompt="Best exercises for heart health">🏃 Best Exercises</button>
+                <button class="pre-prompt-btn" data-prompt="How to maintain healthy blood pressure?">💓 Blood Pressure</button>
+                <button class="pre-prompt-btn" data-prompt="Heart-friendly diet tips">🥗 Diet Tips</button>
+                <button class="pre-prompt-btn" data-prompt="Symptoms of heart disease">🫀 Warning Signs</button>
+            </div>
+
+            <div class="input-container">
+                <div class="input-row">
+                    <input type="text" id="user-input" placeholder="Ask me about heart health..." autofocus>
+                    <button class="send-btn" id="send-btn">Send</button>
+                </div>
+            </div>
         </div>
 
-        <div class="chat-box" id="chat-box"></div>
+        <div class="hr-container">
+            <div class="hr-section">
+                <div class="hr-display">
+                    <span>Current Heart Rate</span>
+                    <div id="current-hr">--</div>
+                    <div class="hr-status" id="hr-status">Not connected</div>
+                </div>
 
-        <div class="hr-monitor-section">
-            <div class="hr-display">
-                <span>Current HR: <span id="current-hr">--</span> bpm</span>
+                <div class="hr-actions">
+                    <button id="connect-btn" class="hr-btn">
+                        <span>Connect Smartwatch</span>
+                    </button>
+                    <button id="disconnect-btn" class="hr-btn disconnect">
+                        <span>Disconnect</span>
+                    </button>
+                    <button id="analyze-btn" class="hr-btn analyze" disabled>
+                        <span>Analyze Heart Rate</span>
+                    </button>
+                </div>
+
+                <div class="manual-hr-input">
+                    <input type="number" id="manual-hr" placeholder="Enter HR (BPM)" min="30" max="200">
+                    <button id="submit-hr">Submit</button>
+                </div>
+
+                <div class="bluetooth-note">(Chrome on Windows/Mac/Android only)</div>
+                
+                <div class="hr-history">
+                    <h3>Recent Readings</h3>
+                    <div class="hr-history-list" id="hr-history-list">
+                        <!-- HR history items will be added here -->
+                    </div>
+                </div>
             </div>
-            <button id="connect-btn" class="bluetooth-btn">
-                Connect Smartwatch
-            </button>
-            <button id="disconnect-btn" class="bluetooth-btn disconnect">
-                Disconnect
-            </button>
-            
-            <div class="manual-hr-input">
-                <input type="number" id="manual-hr" placeholder="HR (BPM)" min="30" max="200">
-                <button id="submit-hr">Submit</button>
-            </div>
-            
-            <div class="bluetooth-note">(Chrome on Windows/Mac/Android only)</div>
+
             <div class="bluetooth-limitations">
                 <p><strong>Note:</strong> This feature requires:</p>
                 <ul>
@@ -409,30 +528,18 @@
                 </ul>
             </div>
         </div>
-
-        <div class="pre-prompts">
-            <button class="pre-prompt-btn" data-prompt="Best exercises for heart health">🏃 Best Exercises</button>
-            <button class="pre-prompt-btn" data-prompt="How to maintain healthy blood pressure?">💓 Blood Pressure</button>
-            <button class="pre-prompt-btn" data-prompt="Heart-friendly diet tips">🥗 Diet Tips</button>
-            <button class="pre-prompt-btn" data-prompt="Symptoms of heart disease">🫀 Warning Signs</button>
-        </div>
-
-        <div class="input-container">
-            <div class="input-row">
-                <input type="text" id="user-input" placeholder="Ask me about heart health..." autofocus>
-                <button class="send-btn" id="send-btn">Send</button>
-            </div>
-        </div>
     </div>
 
     <script>
         // Global variable to track if user is logged in
         let isLoggedIn = false;
+        let hrHistory = [];
 
         // Bluetooth connection manager
         const bluetoothManager = {
             device: null,
             characteristic: null,
+            isConnected: false,
 
             async connect() {
                 try {
@@ -468,7 +575,11 @@
                     );
                     
                     appendMessage("Connected successfully!", 'bot-message');
+                    this.isConnected = true;
                     this.updateUI(true);
+                    document.getElementById('analyze-btn').disabled = false;
+                    document.getElementById('hr-status').textContent = "Connected";
+                    document.getElementById('hr-status').style.color = "#00ff00";
                     
                 } catch (error) {
                     console.error('Connection error:', error);
@@ -489,6 +600,7 @@
                     }
                     
                     this.displayHeartRate(rate);
+                    this.addToHistory(rate);
                     this.sendToBackend(rate);
                 } catch (error) {
                     console.error('Failed to parse HR:', error);
@@ -506,6 +618,46 @@
                 } else {
                     hrElement.style.color = '#00ff00';
                 }
+            },
+
+            addToHistory(rate) {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString();
+                
+                // Add to beginning of array
+                hrHistory.unshift({
+                    rate: rate,
+                    time: timeString,
+                    timestamp: now.getTime()
+                });
+                
+                // Keep only last 10 readings
+                if (hrHistory.length > 10) {
+                    hrHistory.pop();
+                }
+                
+                this.updateHistoryUI();
+            },
+
+            updateHistoryUI() {
+                const historyList = document.getElementById('hr-history-list');
+                historyList.innerHTML = '';
+                
+                hrHistory.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'hr-history-item';
+                    
+                    const timeElement = document.createElement('span');
+                    timeElement.textContent = item.time;
+                    
+                    const rateElement = document.createElement('span');
+                    rateElement.className = 'hr-history-value';
+                    rateElement.textContent = `${item.rate} bpm`;
+                    
+                    itemElement.appendChild(timeElement);
+                    itemElement.appendChild(rateElement);
+                    historyList.appendChild(itemElement);
+                });
             },
 
             async sendToBackend(rate) {
@@ -529,14 +681,18 @@
                 }
                 this.device = null;
                 this.characteristic = null;
+                this.isConnected = false;
                 this.updateUI(false);
                 document.getElementById('current-hr').textContent = '--';
                 document.getElementById('current-hr').style.color = '#ff4444';
+                document.getElementById('analyze-btn').disabled = true;
+                document.getElementById('hr-status').textContent = "Not connected";
+                document.getElementById('hr-status').style.color = "#ff4444";
             },
 
             updateUI(connected) {
-                document.getElementById('connect-btn').style.display = connected ? 'none' : 'inline-block';
-                document.getElementById('disconnect-btn').style.display = connected ? 'inline-block' : 'none';
+                document.getElementById('connect-btn').style.display = connected ? 'none' : 'block';
+                document.getElementById('disconnect-btn').style.display = connected ? 'block' : 'none';
             }
         };
 
@@ -556,9 +712,69 @@
             }
             
             bluetoothManager.displayHeartRate(hr);
+            bluetoothManager.addToHistory(hr);
             bluetoothManager.sendToBackend(hr);
             hrInput.value = '';
             appendMessage(`Manual HR submitted: ${hr} BPM`, 'bot-message');
+            
+            // Enable analyze button after manual input
+            document.getElementById('analyze-btn').disabled = false;
+        }
+
+        // Analyze heart rate data
+        async function analyzeHeartRate() {
+            if (hrHistory.length === 0) {
+                appendMessage("No heart rate data available for analysis", 'error-message');
+                return;
+            }
+            
+            const typingIndicator = showTypingIndicator();
+            
+            try {
+                // Calculate average HR
+                const sum = hrHistory.reduce((acc, item) => acc + item.rate, 0);
+                const average = Math.round(sum / hrHistory.length);
+                
+                // Prepare data for analysis
+                const analysisData = {
+                    currentHR: hrHistory[0].rate,
+                    averageHR: average,
+                    minHR: Math.min(...hrHistory.map(item => item.rate)),
+                    maxHR: Math.max(...hrHistory.map(item => item.rate)),
+                    readings: hrHistory
+                };
+                
+                // Send to backend for analysis
+                const response = await fetch('/analyze-hr', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(analysisData)
+                });
+                
+                const chatBox = document.getElementById('chat-box');
+                chatBox.removeChild(typingIndicator);
+                
+                if (!response.ok) {
+                    throw new Error('Analysis failed');
+                }
+                
+                const data = await response.json();
+                
+                // Format the analysis response
+                let analysisMessage = `🔍 Heart Rate Analysis:\n\n`;
+                analysisMessage += `Current: ${analysisData.currentHR} bpm\n`;
+                analysisMessage += `Average: ${analysisData.averageHR} bpm\n`;
+                analysisMessage += `Range: ${analysisData.minHR}-${analysisData.maxHR} bpm\n\n`;
+                analysisMessage += data.analysis;
+                
+                appendMessage(analysisMessage, 'bot-message');
+                
+            } catch (error) {
+                const chatBox = document.getElementById('chat-box');
+                chatBox.removeChild(typingIndicator);
+                appendMessage(`Analysis error: ${error.message}`, 'error-message');
+                console.error('Analysis error:', error);
+            }
         }
 
         // Initialize all event listeners
@@ -572,6 +788,9 @@
             document.getElementById('manual-hr').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') updateHRManually();
             });
+            
+            // Analyze button
+            document.getElementById('analyze-btn').addEventListener('click', analyzeHeartRate);
             
             // Pre-prompt buttons
             document.querySelectorAll('.pre-prompt-btn').forEach(button => {
@@ -601,6 +820,13 @@
             await loadUserData();
             initEventListeners();
             bluetoothManager.updateUI(false);
+            
+            // Load any existing HR history from local storage
+            const savedHistory = localStorage.getItem('hrHistory');
+            if (savedHistory) {
+                hrHistory = JSON.parse(savedHistory);
+                bluetoothManager.updateHistoryUI();
+            }
         });
 
         // Check if user is logged in
@@ -784,6 +1010,9 @@
                 if (bluetoothManager.device && bluetoothManager.device.gatt.connected) {
                     bluetoothManager.handleDisconnect();
                 }
+
+                // Save HR history to local storage
+                localStorage.setItem('hrHistory', JSON.stringify(hrHistory));
 
                 const response = await fetch('/logout', {
                     method: 'POST',
