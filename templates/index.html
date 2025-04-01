@@ -35,6 +35,7 @@
             position: relative;
         }
 
+        /* Profile Section */
         .profile-container {
             display: flex;
             align-items: center;
@@ -57,19 +58,20 @@
         }
 
         .profile-name {
-            color: white;
+            color: hwb(0 100% 0%);
             font-size: 16px;
             margin-right: 25px;
         }
 
+        /* Profile Details Section */
         .profile-details {
             position: absolute;
             top: 100px;
             right: 0;
-            background: #111;
+            background: #ffffff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 0 15px #00f5f9;
+            box-shadow: 0 4px 8px #00f5f9;
             width: 250px;
             display: none;
             flex-direction: column;
@@ -77,22 +79,17 @@
             color: #fff;
             margin-right: 25px;
             z-index: 1000;
-            border: 1px solid #333;
         }
 
         .profile-details p {
-            color: #fff;
+            color: hwb(0 8% 92%);
             margin-bottom: 10px;
             font-size: 14px;
         }
 
-        .profile-details strong {
-            color: #00f5f9;
-        }
-
         .profile-details button {
-            background: #019396;
-            color: white;
+            background:#019396;
+            color: rgb(255, 255, 255);
             border: none;
             padding: 8px 15px;
             border-radius: 20px;
@@ -166,76 +163,7 @@
             max-width: 80%;
         }
 
-        .heart-rate-panel {
-            background: #111;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            border: 1px solid #333;
-            width: 100%;
-        }
-
-        .heart-rate-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .heart-rate-value {
-            font-size: 28px;
-            font-weight: bold;
-            color: #00f5f9;
-        }
-
-        .heart-rate-status {
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .status-normal {
-            background-color: #28a745;
-            color: white;
-        }
-
-        .status-elevated {
-            background-color: #ffc107;
-            color: black;
-        }
-
-        .status-low {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        .device-connect-btn {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            margin-top: 10px;
-            font-size: 14px;
-            transition: 0.3s ease;
-            width: 100%;
-        }
-
-        .device-connect-btn:hover {
-            background: #0056b3;
-        }
-
-        .device-connected {
-            background: #28a745;
-        }
-
-        .device-disconnected {
-            background: #6c757d;
-        }
-
+        /* Typing dots animation */
         .typing-indicator {
             display: flex;
             align-items: center;
@@ -328,55 +256,12 @@
             background: #0056b3;
         }
 
+        /* Hide scrollbar */
         .chat-box::-webkit-scrollbar {
             display: none;
         }
 
-        .connection-status {
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            text-align: center;
-            font-size: 14px;
-        }
-
-        .connection-connected {
-            background-color: rgba(40, 167, 69, 0.2);
-            border: 1px solid #28a745;
-            color: #28a745;
-        }
-
-        .connection-disconnected {
-            background-color: rgba(108, 117, 125, 0.2);
-            border: 1px solid #6c757d;
-            color: #6c757d;
-        }
-
-        .device-options {
-            display: none;
-            margin-top: 10px;
-            padding: 10px;
-            background: #222;
-            border-radius: 8px;
-        }
-
-        .device-option {
-            display: flex;
-            align-items: center;
-            padding: 8px;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-
-        .device-option:hover {
-            background: #333;
-        }
-
-        .device-icon {
-            margin-right: 10px;
-            font-size: 20px;
-        }
-
+        /* Responsive adjustments */
         @media (max-width: 768px) {
             .chat-container {
                 height: 90vh;
@@ -391,23 +276,8 @@
             .pre-prompts button {
                 width: 100%;
             }
-            
-            .heart-rate-panel {
-                padding: 10px;
-            }
-            
-            .heart-rate-value {
-                font-size: 24px;
-            }
-            
-            .profile-details {
-                width: 200px;
-                right: 10px;
-            }
         }
     </style>
-    <!-- Add Socket.IO client library -->
-    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 </head>
 <body>
     <div class="header">
@@ -421,26 +291,6 @@
     <div class="profile-details" id="profile-details">
         <p><strong>Username:</strong> <span id="profile-username">User</span></p>
         <p><strong>Email:</strong> <span id="profile-email">user@example.com</span></p>
-        <div class="heart-rate-panel">
-            <div class="heart-rate-header">
-                <div>
-                    <div style="font-size: 12px; color: #aaa;">CURRENT HEART RATE</div>
-                    <div class="heart-rate-value" id="current-bpm">--</div>
-                </div>
-                <div class="heart-rate-status" id="heart-rate-status">--</div>
-            </div>
-            <button class="device-connect-btn" id="device-connect-btn" onclick="showDeviceOptions()">CONNECT DEVICE</button>
-            <div class="device-options" id="device-options">
-                <div class="device-option" onclick="connectBluetoothDevice()">
-                    <span class="device-icon">⌚</span>
-                    <span>Smartwatch (Bluetooth)</span>
-                </div>
-                <div class="device-option" onclick="connectSimulatedDevice()">
-                    <span class="device-icon">💻</span>
-                    <span>Simulated Device</span>
-                </div>
-            </div>
-        </div>
         <button onclick="logout()">Logout</button>
     </div>
 
@@ -450,19 +300,13 @@
             <p>"Your AI-powered heart health assistant – monitor, analyze, and stay informed."</p>
         </div>
 
-        <div class="chat-box" id="chat-box">
-            <div class="connection-status connection-disconnected" id="connection-status">
-                No heart rate data yet. Connect a device first.
-            </div>
-        </div>
+        <div class="chat-box" id="chat-box"></div>
 
         <div class="pre-prompts">
-            <button onclick="sendMessage('Best exercises for heart health')">🏃 Best Exercises</button>
-            <button onclick="sendMessage('How to maintain healthy blood pressure?')">💓 Blood Pressure</button>
-            <button onclick="sendMessage('Heart-friendly diet tips')">🥗 Diet Tips</button>
-            <button onclick="sendMessage('Symptoms of heart disease')">🫀 Warning Signs</button>
-            <button onclick="showHeartRateAnalysis()">📊 My Heart Analysis</button>
-            <button onclick="sendMessage('What is my current heart rate?')">❤️ Current Heart Rate</button>
+            <button onclick="sendPrePrompt('Best exercises for heart health')">🏃 Best Exercises</button>
+            <button onclick="sendPrePrompt('How to maintain healthy blood pressure?')">💓 Blood Pressure</button>
+            <button onclick="sendPrePrompt('Heart-friendly diet tips')">🥗 Diet Tips</button>
+            <button onclick="sendPrePrompt('Symptoms of heart disease')">🫀 Warning Signs</button>
         </div>
 
         <div class="input-container">
@@ -475,68 +319,16 @@
     </div>
 
     <script>
-        // Global variables
+        // Global variable to track if user is logged in
         let isLoggedIn = false;
-        let currentHeartRate = null;
-        let deviceConnected = false;
-        let heartRateInterval = null;
-        let socket = null;
-        let bluetoothDevice = null;
 
-        // Initialize when page loads
+        // Check login status and load user data when page loads
         document.addEventListener('DOMContentLoaded', async () => {
             await checkLoginStatus();
             await loadUserData();
-            initSocketConnection();
         });
 
-        // Initialize Socket.IO connection
-        function initSocketConnection() {
-            socket = io({
-                auth: {
-                    token: getCookie('session')
-                },
-                reconnection: true,
-                reconnectionAttempts: 5,
-                reconnectionDelay: 1000
-            });
-
-            // Connection handlers
-            socket.on('connect', () => {
-                console.log('Connected to WebSocket server');
-                checkDeviceConnection();
-            });
-
-            socket.on('disconnect', (reason) => {
-                console.log('Disconnected:', reason);
-                updateConnectionStatus(false);
-                if (reason === 'io server disconnect') {
-                    appendSystemMessage('Session expired. Please log in again.', 'error-message');
-                    setTimeout(() => window.location.href = '/login', 2000);
-                }
-            });
-
-            socket.on('connect_error', (error) => {
-                console.error('Connection error:', error);
-                if (error.message === 'unauthorized') {
-                    appendSystemMessage('Please log in to continue', 'error-message');
-                    window.location.href = '/login';
-                }
-            });
-
-            // Handle heart rate updates
-            socket.on('heart_rate_update', (data) => {
-                updateHeartRateDisplay(data);
-                currentHeartRate = data.bpm;
-            });
-
-            // Handle connection status updates
-            socket.on('device_status', (data) => {
-                updateDeviceStatus(data.connected);
-            });
-        }
-
-        // Check login status
+        // Check if user is logged in
         async function checkLoginStatus() {
             try {
                 const response = await fetch('/check-auth', {
@@ -547,17 +339,20 @@
                 if (response.ok) {
                     const data = await response.json();
                     isLoggedIn = data.authenticated;
-                    if (!isLoggedIn) window.location.href = '/login';
+                    
+                    if (!isLoggedIn) {
+                        window.location.href = '/login';
+                    }
                 } else {
                     window.location.href = '/login';
                 }
             } catch (error) {
-                console.error('Error checking auth:', error);
+                console.error('Error checking auth status:', error);
                 window.location.href = '/login';
             }
         }
 
-        // Load user data
+        // Load user data from server
         async function loadUserData() {
             try {
                 const response = await fetch('/check-auth', {
@@ -567,237 +362,31 @@
                 
                 if (response.ok) {
                     const data = await response.json();
+                    
+                    // Update UI with user data
                     if (data.authenticated && data.username) {
                         document.getElementById('username-display').textContent = data.username;
                         document.getElementById('profile-username').textContent = data.username;
                         document.getElementById('user-avatar').textContent = data.username.charAt(0).toUpperCase();
-                        if (data.email) document.getElementById('profile-email').textContent = data.email;
+                        
+                        if (data.email) {
+                            document.getElementById('profile-email').textContent = data.email;
+                        }
                     }
                 }
             } catch (error) {
-                console.error('Error loading user:', error);
+                console.error('Error loading user data:', error);
             }
         }
 
-        // Check device connection status
-        async function checkDeviceConnection() {
-            try {
-                const response = await fetch('/api/device/status', {
-                    method: 'GET',
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    updateDeviceStatus(data.device_connected);
-                    if (data.device_connected) {
-                        loadCurrentHeartRate();
-                    }
-                }
-            } catch (error) {
-                console.error('Error checking device status:', error);
-            }
-        }
-
-        // Load current heart rate
-        async function loadCurrentHeartRate() {
-            try {
-                const response = await fetch('/api/heart-rate/history', {
-                    method: 'GET',
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.length > 0) {
-                        updateHeartRateDisplay(data[0]);
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading heart rate:', error);
-            }
-        }
-
-        // Show device connection options
-        function showDeviceOptions() {
-            const options = document.getElementById('device-options');
-            options.style.display = options.style.display === 'block' ? 'none' : 'block';
-        }
-
-        // Connect Bluetooth device
-        async function connectBluetoothDevice() {
-            try {
-                if (!navigator.bluetooth) {
-                    throw new Error('Bluetooth not supported in this browser');
-                }
-
-                appendMessage("Searching for Bluetooth devices...", 'bot-message');
-                
-                const device = await navigator.bluetooth.requestDevice({
-                    filters: [{ services: ['heart_rate'] }],
-                    optionalServices: ['generic_access']
-                });
-
-                bluetoothDevice = device;
-                appendMessage(`Found device: ${device.name}`, 'bot-message');
-
-                const response = await fetch('/api/device/connect', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        device_type: 'Smartwatch',
-                        device_id: device.id
-                    })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    updateDeviceStatus(true);
-                    appendMessage(`${device.name} connected successfully`, 'bot-message');
-                    document.getElementById('device-options').style.display = 'none';
-                } else {
-                    throw new Error('Failed to connect device');
-                }
-            } catch (error) {
-                console.error('Bluetooth connection error:', error);
-                appendMessage(`Bluetooth error: ${error.message}`, 'error-message');
-            }
-        }
-
-        // Connect simulated device
-        async function connectSimulatedDevice() {
-            try {
-                const response = await fetch('/api/device/connect', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        device_type: 'simulated',
-                        device_id: 'simulated_device_' + Date.now()
-                    })
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    updateDeviceStatus(true);
-                    appendMessage("Simulated device connected", 'bot-message');
-                    document.getElementById('device-options').style.display = 'none';
-                } else {
-                    throw new Error('Failed to connect device');
-                }
-            } catch (error) {
-                console.error('Device connection error:', error);
-                appendMessage(`Connection error: ${error.message}`, 'error-message');
-            }
-        }
-
-        // Disconnect device
-        async function disconnectDevice() {
-            try {
-                const response = await fetch('/api/device/disconnect', {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    updateDeviceStatus(false);
-                    appendMessage("Device disconnected", 'bot-message');
-                    if (bluetoothDevice && bluetoothDevice.gatt.connected) {
-                        await bluetoothDevice.gatt.disconnect();
-                    }
-                }
-            } catch (error) {
-                console.error('Device disconnection error:', error);
-                appendMessage("Failed to disconnect device", 'error-message');
-            }
-        }
-
-        // Update device status
-        function updateDeviceStatus(connected) {
-            deviceConnected = connected;
-            const connectBtn = document.getElementById('device-connect-btn');
-            const statusDiv = document.getElementById('connection-status');
-            const options = document.getElementById('device-options');
-            
-            if (connected) {
-                connectBtn.textContent = 'DISCONNECT DEVICE';
-                connectBtn.classList.remove('device-disconnected');
-                connectBtn.classList.add('device-connected');
-                connectBtn.onclick = disconnectDevice;
-                statusDiv.textContent = 'DEVICE CONNECTED';
-                statusDiv.classList.remove('connection-disconnected');
-                statusDiv.classList.add('connection-connected');
-                options.style.display = 'none';
-            } else {
-                connectBtn.textContent = 'CONNECT DEVICE';
-                connectBtn.classList.remove('device-connected');
-                connectBtn.classList.add('device-disconnected');
-                connectBtn.onclick = showDeviceOptions;
-                statusDiv.textContent = 'No heart rate data yet. Connect a device first.';
-                statusDiv.classList.remove('connection-connected');
-                statusDiv.classList.add('connection-disconnected');
-                document.getElementById('current-bpm').textContent = '--';
-                document.getElementById('heart-rate-status').textContent = '--';
-                options.style.display = 'none';
-            }
-        }
-
-        // Update heart rate display
-        function updateHeartRateDisplay(data) {
-            const bpmElement = document.getElementById('current-bpm');
-            const statusElement = document.getElementById('heart-rate-status');
-            
-            bpmElement.textContent = data.bpm;
-            statusElement.textContent = data.status;
-            statusElement.className = 'heart-rate-status';
-            
-            // Update status class
-            switch(data.status) {
-                case 'normal': 
-                    statusElement.classList.add('status-normal'); 
-                    break;
-                case 'elevated': 
-                    statusElement.classList.add('status-elevated'); 
-                    break;
-                case 'low': 
-                    statusElement.classList.add('status-low'); 
-                    break;
-                default: 
-                    statusElement.classList.add('status-normal');
-            }
-            
-            // Update connection status text if needed
-            if (!deviceConnected) {
-                updateDeviceStatus(true);
-            }
-        }
-
-        // Update connection status
-        function updateConnectionStatus(connected) {
-            const statusDiv = document.getElementById('connection-status');
-            if (connected) {
-                statusDiv.textContent = 'DEVICE CONNECTED';
-                statusDiv.classList.remove('connection-disconnected');
-                statusDiv.classList.add('connection-connected');
-            } else {
-                statusDiv.textContent = 'Connection lost. Reconnecting...';
-                statusDiv.classList.remove('connection-connected');
-                statusDiv.classList.add('connection-disconnected');
-            }
-        }
-
-        // Toggle profile details
+        // Toggle Profile Details Visibility
         function toggleProfileDetails() {
             const profileDetails = document.getElementById("profile-details");
-            profileDetails.style.display = profileDetails.style.display === "none" ? "flex" : "none";
+            profileDetails.style.display = profileDetails.style.display === "none" || 
+                                         profileDetails.style.display === "" ? "flex" : "none";
         }
 
-        // Close profile when clicking outside
+        // Close profile details when clicking outside
         document.addEventListener('click', (event) => {
             const profileDetails = document.getElementById("profile-details");
             const profileContainer = document.querySelector('.profile-container');
@@ -809,142 +398,82 @@
             }
         });
 
-        // Handle Enter key
+        // Handle Enter key press
         function handleKeyPress(event) {
             if (event.key === 'Enter') {
                 sendMessage();
             }
         }
 
-        // Send message
-        async function sendMessage(message = null) {
-            const userInput = message || document.getElementById("user-input").value.trim();
-            if (!userInput) return;
+        // Pre-Prompt Function
+        function sendPrePrompt(message) {
+            document.getElementById("user-input").value = message;
+            sendMessage();
+        }
+
+        // Send Message Function
+        async function sendMessage() {
+            const userInput = document.getElementById("user-input").value.trim();
+            if (userInput === "") return;
 
             const chatBox = document.getElementById("chat-box");
             const welcomeMessage = document.getElementById("welcome-message");
 
-            if (welcomeMessage.style.display !== "none") {
+            // Hide welcome message after first input
+            if (welcomeMessage && welcomeMessage.style.display !== "none") {
                 welcomeMessage.style.display = "none";
             }
 
+            // Append User Message
             appendMessage(userInput, 'user-message');
-            
-            if (!message) {
-                document.getElementById("user-input").value = "";
-            }
 
-            // Handle heart rate query directly
-            if (userInput.toLowerCase().includes('heart rate') && currentHeartRate) {
-                const advice = await getHeartRateAdvice(currentHeartRate);
-                appendMessage(`Your current heart rate is ${currentHeartRate} BPM. ${advice}`, 'bot-message');
-                return;
-            }
+            // Clear input field
+            document.getElementById("user-input").value = "";
 
+            // Show typing indicator
             const typingIndicator = showTypingIndicator();
 
             try {
+                // Send Request to Flask Backend
                 const response = await fetch("/chat", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { 
+                        "Content-Type": "application/json",
+                    },
                     credentials: 'include',
                     body: JSON.stringify({ message: userInput })
                 });
 
+                // Remove typing indicator
                 chatBox.removeChild(typingIndicator);
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || 'Server error');
+                    throw new Error(errorData.message || 'Server error');
                 }
 
                 const data = await response.json();
-                formatBotResponse(data.response);
+                
+                if (data.status === "error") {
+                    appendMessage(data.message, 'error-message');
+                } else {
+                    formatBotResponse(data.response);
+                }
             } catch (error) {
                 chatBox.removeChild(typingIndicator);
                 appendMessage(`Error: ${error.message}`, 'error-message');
+                console.error('Chat error:', error);
                 
-                if (error.message.includes('Unauthorized')) {
-                    setTimeout(() => window.location.href = '/login', 2000);
+                // If unauthorized, redirect to login
+                if (error.message.includes('Please log in')) {
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
                 }
             }
         }
 
-        // Get heart rate advice
-        async function getHeartRateAdvice(bpm) {
-            try {
-                const response = await fetch("/chat", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: 'include',
-                    body: JSON.stringify({ 
-                        message: `Give me health advice for a heart rate of ${bpm} BPM` 
-                    })
-                });
-
-                if (!response.ok) throw new Error('Failed to get advice');
-                
-                const data = await response.json();
-                return data.response;
-            } catch (error) {
-                console.error('Error getting advice:', error);
-                return "Consult your doctor for personalized advice.";
-            }
-        }
-
-        // Show heart rate analysis
-        async function showHeartRateAnalysis() {
-            const chatBox = document.getElementById('chat-box');
-            const welcomeMessage = document.getElementById('welcome-message');
-            
-            if (welcomeMessage.style.display !== "none") {
-                welcomeMessage.style.display = "none";
-            }
-            
-            const typingIndicator = showTypingIndicator();
-            
-            try {
-                const response = await fetch('/api/heart-rate/analysis', {
-                    method: 'GET',
-                    credentials: 'include'
-                });
-                
-                chatBox.removeChild(typingIndicator);
-                
-                if (!response.ok) throw new Error('Failed to get analysis');
-                
-                const data = await response.json();
-                formatAnalysisResponse(data);
-            } catch (error) {
-                chatBox.removeChild(typingIndicator);
-                appendMessage(`Error: ${error.message}`, 'error-message');
-            }
-        }
-
-        // Format analysis response
-        function formatAnalysisResponse(data) {
-            let analysisMessage = "❤️ Heart Rate Analysis:\n\n";
-            
-            if (data.message && data.message === 'No heart rate data available') {
-                analysisMessage = "No heart rate data yet. Connect a device first.";
-                appendMessage(analysisMessage, 'bot-message');
-                return;
-            }
-            
-            analysisMessage += `📊 Average: ${data.average_bpm} BPM\n`;
-            analysisMessage += `⬆️ Highest: ${data.max_bpm} BPM\n`;
-            analysisMessage += `⬇️ Lowest: ${data.min_bpm} BPM\n\n`;
-            analysisMessage += `⏱️ Total Readings: ${data.record_count}\n`;
-            analysisMessage += `💓 Status Distribution:\n`;
-            analysisMessage += `- Normal: ${data.status_distribution.normal || 0}\n`;
-            analysisMessage += `- Elevated: ${data.status_distribution.elevated || 0}\n`;
-            analysisMessage += `- Low: ${data.status_distribution.low || 0}\n\n`;
-            analysisMessage += `🕒 Latest reading: ${data.latest.bpm} BPM (${data.latest.status})`;
-            
-            appendMessage(analysisMessage, 'bot-message');
-        }
-
-        // Append message
+        // Append message to chat box
         function appendMessage(text, className) {
             const chatBox = document.getElementById("chat-box");
             const message = document.createElement("div");
@@ -965,11 +494,12 @@
             return typingIndicator;
         }
 
-        // Format bot response
+        // Format and display bot response
         function formatBotResponse(response) {
             const chatBox = document.getElementById("chat-box");
 
             if (response.includes('|')) { 
+                // Detect Markdown-Style Table
                 const rows = response.trim().split('\n');
                 let tableHTML = '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
                 
@@ -988,23 +518,14 @@
                 botMessage.innerHTML = tableHTML;
                 chatBox.appendChild(botMessage);
             } else {
+                // Regular Text Message
                 appendMessage(response, "bot-message");
             }
 
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // Append system message
-        function appendSystemMessage(text, className) {
-            const chatBox = document.getElementById("chat-box");
-            const message = document.createElement("div");
-            message.classList.add("message", className);
-            message.innerHTML = `<small>System: ${text}</small>`;
-            chatBox.appendChild(message);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        // Logout
+        // Logout Function
         async function logout() {
             try {
                 const response = await fetch('/logout', {
@@ -1022,13 +543,7 @@
                 alert('Logout failed. Please try again.');
             }
         }
-
-        // Get cookie value
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        }
     </script>
 </body>
 </html>
+
