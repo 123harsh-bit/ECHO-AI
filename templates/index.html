@@ -735,61 +735,69 @@
             document.getElementById('analyze-btn').disabled = false;
         }
 
-        // Analyze heart rate data
-        async function analyzeHeartRate() {
-            if (hrHistory.length === 0) {
-                appendMessage("No heart rate data available for analysis", 'error-message');
-                return;
-            }
-            
-            const typingIndicator = showTypingIndicator();
-            
-            try {
-                // Calculate average HR
-                const sum = hrHistory.reduce((acc, item) => acc + item.rate, 0);
-                const average = Math.round(sum / hrHistory.length);
-                
-                // Prepare data for analysis
-                const analysisData = {
-                    currentHR: hrHistory[0].rate,
-                    averageHR: average,
-                    minHR: Math.min(...hrHistory.map(item => item.rate)),
-                    maxHR: Math.max(...hrHistory.map(item => item.rate)),
-                    readings: hrHistory
-                };
-                
-                // Send to backend for analysis
-                const response = await fetch('/analyze-hr', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(analysisData)
-                });
-                
-                const chatBox = document.getElementById('chat-box');
-                chatBox.removeChild(typingIndicator);
-                
-                if (!response.ok) {
-                    throw new Error('Analysis failed');
-                }
-                
-                const data = await response.json();
-                
-                // Format the analysis response
-                let analysisMessage = `🔍 Heart Rate Analysis:\n\n`;
-                analysisMessage += `Current: ${analysisData.currentHR} bpm\n`;
-                analysisMessage += `Average: ${analysisData.averageHR} bpm\n`;
-                analysisMessage += `Range: ${analysisData.minHR}-${analysisData.maxHR} bpm\n\n`;
-                analysisMessage += data.analysis;
-                
-                appendMessage(analysisMessage, 'bot-message');
-                
-            } catch (error) {
-                const chatBox = document.getElementById('chat-box');
-                chatBox.removeChild(typingIndicator);
-                appendMessage(`Analysis error: ${error.message}`, 'error-message');
-                console.error('Analysis error:', error);
-            }
+       // Update the analyzeHeartRate function to this:
+async function analyzeHeartRate() {
+    if (hrHistory.length === 0) {
+        appendMessage("No heart rate data available for analysis", 'error-message');
+        return;
+    }
+    
+    const typingIndicator = showTypingIndicator();
+    
+    try {
+        // Calculate basic stats
+        const rates = hrHistory.map(item => item.rate);
+        const currentHR = rates[0];
+        const average = Math.round(rates.reduce((a, b) => a + b, 0) / rates.length);
+        const min = Math.min(...rates);
+        const max = Math.max(...rates);
+        
+        // Determine HR status
+        let status = "Normal";
+        if (currentHR > 100) status = "High";
+        if (currentHR < 60) status = "Low";
+        
+        // Generate analysis message
+        let analysisMessage = `🔍 Heart Rate Analysis:\n\n`;
+        analysisMessage += `Current: ${currentHR} bpm (${status})\n`;
+        analysisMessage += `Average: ${average} bpm\n`;
+        analysisMessage += `Range: ${min}-${max} bpm\n\n`;
+        
+        // Add interpretation
+        if (status === "High") {
+            analysisMessage += `Your heart rate is currently elevated. This could be due to:\n`;
+            analysisMessage += `- Physical activity\n- Stress or anxiety\n- Caffeine intake\n- Medical conditions\n\n`;
+            analysisMessage += `Consider resting and monitoring. If consistently high without explanation, consult a doctor.`;
+        } else if (status === "Low") {
+            analysisMessage += `Your heart rate is currently low. This could be:\n`;
+            analysisMessage += `- Normal for athletes\n- Sign of good fitness\n- Result of medication\n- Medical condition\n\n`;
+            analysisMessage += `If you feel dizzy or fatigued, consult a doctor.`;
+        } else {
+            analysisMessage += `Your heart rate is in the normal range. Good job maintaining a healthy heart rate!`;
         }
+        
+        // Add trends if we have enough data
+        if (hrHistory.length > 3) {
+            const first = hrHistory[hrHistory.length-1].rate;
+            const last = hrHistory[0].rate;
+            const trend = last > first ? "increasing" : last < first ? "decreasing" : "stable";
+            
+            analysisMessage += `\n\nTrend: ${trend} over last ${hrHistory.length} readings`;
+        }
+        
+        const chatBox = document.getElementById('chat-box');
+        chatBox.removeChild(typingIndicator);
+        appendMessage(analysisMessage, 'bot-message');
+        
+    } catch (error) {
+        const chatBox = document.getElementById('chat-box');
+        chatBox.removeChild(typingIndicator);
+        appendMessage(`Analysis error: ${error.message}`, 'error-message');
+        console.error('Analysis error:', error);
+    }
+}
+
+// Make sure the event listener is properly set up:
 
         // Initialize all event listeners
         function initEventListeners() {
