@@ -925,107 +925,108 @@ async function analyzeHeartRate() {
 
         // Send Message Function
         async function sendMessage() {
-            const userInput = document.getElementById("user-input").value.trim();
-            if (userInput === "") return;
+    const userInput = document.getElementById("user-input").value.trim();
+    if (userInput === "") return;
 
-            const chatBox = document.getElementById("chat-box");
-            const welcomeMessage = document.getElementById("welcome-message");
+    const chatBox = document.getElementById("chat-box");
+    const welcomeMessage = document.getElementById("welcome-message");
 
-            if (welcomeMessage && welcomeMessage.style.display !== "none") {
-                welcomeMessage.style.display = "none";
-            }
+    if (welcomeMessage && welcomeMessage.style.display !== "none") {
+        welcomeMessage.style.display = "none";
+    }
 
-            appendMessage(userInput, 'user-message');
-            document.getElementById("user-input").value = "";
+    appendMessage(userInput, 'user-message');
+    document.getElementById("user-input").value = "";
 
-            const typingIndicator = showTypingIndicator();
+    const typingIndicator = showTypingIndicator();
 
-            try {
-                const response = await fetch("/chat", {
-                    method: "POST",
-                    headers: { 
-                        "Content-Type": "application/json",
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({ message: userInput })
-                });
+    try {
+        const response = await fetch("/chat", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+            },
+            credentials: 'include',
+            body: JSON.stringify({ message: userInput })
+        });
 
-                chatBox.removeChild(typingIndicator);
+        chatBox.removeChild(typingIndicator);
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Server error');
-                }
-
-                const data = await response.json();
-                
-                if (data.status === "error") {
-                    appendMessage(data.message, 'error-message');
-                } else {
-                    formatBotResponse(data.response);
-                }
-            } catch (error) {
-                chatBox.removeChild(typingIndicator);
-                appendMessage(`Error: ${error.message}`, 'error-message');
-                console.error('Chat error:', error);
-                
-                if (error.message.includes('Please log in')) {
-                    setTimeout(() => {
-                        window.location.href = '/login';
-                    }, 2000);
-                }
-            }
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Server error');
         }
 
-        // Append message to chat box
-        function appendMessage(text, className) {
-            const chatBox = document.getElementById("chat-box");
-            const message = document.createElement("div");
-            message.classList.add("message", className);
-            message.innerText = text;
-            chatBox.appendChild(message);
-            chatBox.scrollTop = chatBox.scrollHeight;
+        const data = await response.json();
+        
+        if (data.status === "error") {
+            appendMessage(data.message, 'error-message');
+        } else {
+            // This will display both heart-related answers and the restriction message exactly as received
+            appendMessage(data.response, "bot-message");
         }
-
-        // Show typing indicator
-        function showTypingIndicator() {
-            const chatBox = document.getElementById("chat-box");
-            const typingIndicator = document.createElement("div");
-            typingIndicator.classList.add("message", "typing-indicator");
-            typingIndicator.innerText = "Echo AI is typing";
-            chatBox.appendChild(typingIndicator);
-            chatBox.scrollTop = chatBox.scrollHeight;
-            return typingIndicator;
+    } catch (error) {
+        chatBox.removeChild(typingIndicator);
+        appendMessage(`Error: ${error.message}`, 'error-message');
+        console.error('Chat error:', error);
+        
+        if (error.message.includes('Please log in')) {
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 2000);
         }
+    }
+}
 
-        // Format and display bot response
-        function formatBotResponse(response) {
-            const chatBox = document.getElementById("chat-box");
+// Append message to chat box
+function appendMessage(text, className) {
+    const chatBox = document.getElementById("chat-box");
+    const message = document.createElement("div");
+    message.classList.add("message", className);
+    message.innerText = text;
+    chatBox.appendChild(message);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
 
-            if (response.includes('|')) { 
-                const rows = response.trim().split('\n');
-                let tableHTML = '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
-                
-                rows.forEach((row, index) => {
-                    const cells = row.split('|').filter(cell => cell.trim());
-                    tableHTML += '<tr>' + cells.map(cell => 
-                        `<${index === 0 ? 'th' : 'td'} style="border: 1px solid #555; padding: 8px; text-align: left;">
-                            ${cell.trim()}
-                        </${index === 0 ? 'th' : 'td'}>`).join('') + '</tr>';
-                });
+// Show typing indicator
+function showTypingIndicator() {
+    const chatBox = document.getElementById("chat-box");
+    const typingIndicator = document.createElement("div");
+    typingIndicator.classList.add("message", "typing-indicator");
+    typingIndicator.innerText = "Echo AI is typing";
+    chatBox.appendChild(typingIndicator);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    return typingIndicator;
+}
 
-                tableHTML += '</table>';
+// Format and display bot response (kept for table formatting if needed)
+function formatBotResponse(response) {
+    const chatBox = document.getElementById("chat-box");
 
-                const botMessage = document.createElement("div");
-                botMessage.classList.add("message", "bot-message");
-                botMessage.innerHTML = tableHTML;
-                chatBox.appendChild(botMessage);
-            } else {
-                appendMessage(response, "bot-message");
-            }
+    if (response.includes('|')) { 
+        const rows = response.trim().split('\n');
+        let tableHTML = '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
+        
+        rows.forEach((row, index) => {
+            const cells = row.split('|').filter(cell => cell.trim());
+            tableHTML += '<tr>' + cells.map(cell => 
+                `<${index === 0 ? 'th' : 'td'} style="border: 1px solid #555; padding: 8px; text-align: left;">
+                    ${cell.trim()}
+                </${index === 0 ? 'th' : 'td'}>`).join('') + '</tr>';
+        });
 
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
+        tableHTML += '</table>';
+
+        const botMessage = document.createElement("div");
+        botMessage.classList.add("message", "bot-message");
+        botMessage.innerHTML = tableHTML;
+        chatBox.appendChild(botMessage);
+    } else {
+        appendMessage(response, "bot-message");
+    }
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
 
         // Logout Function
         async function logout() {
