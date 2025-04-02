@@ -239,8 +239,8 @@ def chat():
 
     if not is_heart_related(user_input):
         return jsonify({
-            'status': 'error',
-            'message': 'I can only answer heart health-related questions.',
+            'status': 'success',
+            'response': 'I can only answer heart health-related questions.',
             'type': 'text'
         }), 400
 
