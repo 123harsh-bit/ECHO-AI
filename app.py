@@ -236,7 +236,7 @@ def chat():
             'type': 'text'
         })
 
-    if user_input in ["who created you?", "who invented you?", "who made you?","who created you", "who invented you", "who made you","who created you echo ai","who created you echoai","who created you echo ai"?]:
+    if user_input in ["who created you?", "who invented you?", "who made you?","who created you", "who invented you", "who made you","who created you echo ai","who created you echoai","who created you echo ai?"]:
         return jsonify({
             'status': 'success',
             'response': "I was created by a dedicated team of developers. Our team includes Guru Prasad, Harshavardhan Reddy, Ranjith, Giri. We are working to provide reliable heart health assistance through AI.",
