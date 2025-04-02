@@ -950,20 +950,22 @@ async function analyzeHeartRate() {
             body: JSON.stringify({ message: userInput })
         });
 
+        const data = await response.json();
         chatBox.removeChild(typingIndicator);
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Server error');
-        }
-
-        const data = await response.json();
-        
-        if (data.status === "error") {
+            // Handle HTTP errors (like 400 for non-heart questions)
+            if (response.status === 400 && data.response === 'I can only answer heart health-related questions.') {
+                appendMessage("I only support heart-related questions.", 'bot-message');
+            } else {
+                throw new Error(data.message || 'Server error');
+            }
+        } else if (data.status === "error") {
+            // Handle application errors
             appendMessage(data.message, 'error-message');
         } else {
-            // This will display both heart-related answers and the restriction message exactly as received
-            appendMessage(data.response, "bot-message");
+            // Handle successful responses
+            formatBotResponse(data.response);
         }
     } catch (error) {
         chatBox.removeChild(typingIndicator);
@@ -999,11 +1001,12 @@ function showTypingIndicator() {
     return typingIndicator;
 }
 
-// Format and display bot response (kept for table formatting if needed)
+// Format and display bot response
 function formatBotResponse(response) {
     const chatBox = document.getElementById("chat-box");
 
     if (response.includes('|')) { 
+        // Table formatting for structured responses
         const rows = response.trim().split('\n');
         let tableHTML = '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
         
@@ -1022,6 +1025,7 @@ function formatBotResponse(response) {
         botMessage.innerHTML = tableHTML;
         chatBox.appendChild(botMessage);
     } else {
+        // Regular text response
         appendMessage(response, "bot-message");
     }
 
