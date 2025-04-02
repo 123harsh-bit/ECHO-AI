@@ -339,45 +339,45 @@
         }
         
         .manual-hr-input {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-    align-items: center;
-    width: 100%;
-}
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            align-items: center;
+            width: 100%;
+        }
 
-#manual-hr {
-    flex-grow: 1;
-    padding: 12px;
-    border-radius: 20px;
-    border: 1px solid #333;
-    background: #222;
-    color: white;
-    font-size: 16px;
-    outline: none;
-    transition: border-color 0.3s;
-}
+        #manual-hr {
+            flex-grow: 1;
+            padding: 12px;
+            border-radius: 20px;
+            border: 1px solid #333;
+            background: #222;
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
 
-#manual-hr:focus {
-    border-color: #00f5f9;
-    box-shadow: 0 0 0 2px rgba(0, 245, 249, 0.2);
-}
+        #manual-hr:focus {
+            border-color: #00f5f9;
+            box-shadow: 0 0 0 2px rgba(0, 245, 249, 0.2);
+        }
 
-#submit-hr {
-    padding: 12px 20px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background 0.3s;
-    white-space: nowrap;
-}
+        #submit-hr {
+            padding: 12px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+            white-space: nowrap;
+        }
 
-#submit-hr:hover {
-    background: #0056b3;
-}
+        #submit-hr:hover {
+            background: #0056b3;
+        }
 
         .bluetooth-note {
             font-size: 12px;
@@ -431,6 +431,52 @@
             color: #ff4444;
         }
 
+        /* Professional Table Styling */
+        .bot-message table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .bot-message th {
+            background-color: #019396;
+            color: white;
+            font-weight: bold;
+            padding: 12px 15px;
+            text-align: left;
+        }
+        
+        .bot-message td {
+            padding: 12px 15px;
+            border: 1px solid #333;
+            text-align: left;
+        }
+        
+        .bot-message tr:nth-child(even) {
+            background-color: #1a1a1a;
+        }
+        
+        .bot-message tr:nth-child(odd) {
+            background-color: #222;
+        }
+        
+        .bot-message tr:hover {
+            background-color: #2a2a2a;
+        }
+        
+        .bot-message ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+        
+        .bot-message li {
+            margin-bottom: 5px;
+            list-style-type: disc;
+        }
+
         .chat-box::-webkit-scrollbar,
         .hr-history::-webkit-scrollbar {
             display: none;
@@ -456,6 +502,12 @@
             .pre-prompts button {
                 width: 100%;
             }
+
+            .bot-message table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
         }
     </style>
 </head>
@@ -479,6 +531,12 @@
             <div class="welcome-message" id="welcome-message">
                 <p>AI Heart Health Chatbot</p>
                 <p>"Your AI-powered heart health assistant – monitor, analyze, and stay informed."</p>
+                <p style="margin-top: 20px; font-size: 16px; color: #00f5f9;">
+                    I specialize in heart health topics including:<br>
+                    • Heart disease • Blood pressure • Cholesterol<br>
+                    • Heart-healthy diets • Exercise for heart health<br>
+                    • Heart rate monitoring • Cardiovascular symptoms
+                </p>
             </div>
 
             <div class="chat-box" id="chat-box"></div>
@@ -506,21 +564,21 @@
                     <div class="hr-status" id="hr-status">Not connected</div>
                 </div>
 
-            <div class="hr-actions">
-  <button id="connect-btn" class="hr-btn">
-    <span>Connect Device</span>
-  </button>
-  <button id="disconnect-btn" class="hr-btn disconnect">
-    <span>Disconnect</span>
-  </button>
-  <button id="analyze-btn" class="hr-btn analyze" disabled>
-    <span>Analyze Heart Rate</span>
-  </button>
-            </div>
+                <div class="hr-actions">
+                    <button id="connect-btn" class="hr-btn">
+                        <span>Connect Device</span>
+                    </button>
+                    <button id="disconnect-btn" class="hr-btn disconnect">
+                        <span>Disconnect</span>
+                    </button>
+                    <button id="analyze-btn" class="hr-btn analyze" disabled>
+                        <span>Analyze Heart Rate</span>
+                    </button>
+                </div>
 
                 <div class="manual-hr-input">
-    <input type="number" id="manual-hr" placeholder="Enter HR (30-250 BPM)" min="30" max="250">
-    <button id="submit-hr">Submit</button>
+                    <input type="number" id="manual-hr" placeholder="Enter HR (30-250 BPM)" min="30" max="250">
+                    <button id="submit-hr">Submit</button>
                 </div>
 
                 <div class="bluetooth-note">(Chrome on Windows/Mac/Android only)</div>
@@ -536,7 +594,7 @@
             <div class="bluetooth-limitations">
                 <p><strong>Note:</strong> This feature requires:</p>
                 <ul>
-                    <li>Chrome browser (Windows/Mac/Android/Ios)</li>
+                    <li>Chrome browser (Windows/Mac/Android/iOS)</li>
                     <li>Bluetooth-enabled smartwatch</li>
                     <li>Device already paired in system settings</li>
                 </ul>
@@ -735,70 +793,67 @@
             document.getElementById('analyze-btn').disabled = false;
         }
 
-       // Update the analyzeHeartRate function to this:
-async function analyzeHeartRate() {
-    if (hrHistory.length === 0) {
-        appendMessage("No heart rate data available for analysis", 'error-message');
-        return;
-    }
-    
-    const typingIndicator = showTypingIndicator();
-    
-    try {
-        // Calculate basic stats
-        const rates = hrHistory.map(item => item.rate);
-        const currentHR = rates[0];
-        const average = Math.round(rates.reduce((a, b) => a + b, 0) / rates.length);
-        const min = Math.min(...rates);
-        const max = Math.max(...rates);
-        
-        // Determine HR status
-        let status = "Normal";
-        if (currentHR > 100) status = "High";
-        if (currentHR < 60) status = "Low";
-        
-        // Generate analysis message
-        let analysisMessage = `🔍 Heart Rate Analysis:\n\n`;
-        analysisMessage += `Current: ${currentHR} bpm (${status})\n`;
-        analysisMessage += `Average: ${average} bpm\n`;
-        analysisMessage += `Range: ${min}-${max} bpm\n\n`;
-        
-        // Add interpretation
-        if (status === "High") {
-            analysisMessage += `Your heart rate is currently elevated. This could be due to:\n`;
-            analysisMessage += `- Physical activity\n- Stress or anxiety\n- Caffeine intake\n- Medical conditions\n\n`;
-            analysisMessage += `Consider resting and monitoring. If consistently high without explanation, consult a doctor.`;
-        } else if (status === "Low") {
-            analysisMessage += `Your heart rate is currently low. This could be:\n`;
-            analysisMessage += `- Normal for athletes\n- Sign of good fitness\n- Result of medication\n- Medical condition\n\n`;
-            analysisMessage += `If you feel dizzy or fatigued, consult a doctor.`;
-        } else {
-            analysisMessage += `Your heart rate is in the normal range. Good job maintaining a healthy heart rate!`;
-        }
-        
-        // Add trends if we have enough data
-        if (hrHistory.length > 3) {
-            const first = hrHistory[hrHistory.length-1].rate;
-            const last = hrHistory[0].rate;
-            const trend = last > first ? "increasing" : last < first ? "decreasing" : "stable";
+        // Heart rate analysis function
+        async function analyzeHeartRate() {
+            if (hrHistory.length === 0) {
+                appendMessage("No heart rate data available for analysis", 'error-message');
+                return;
+            }
             
-            analysisMessage += `\n\nTrend: ${trend} over last ${hrHistory.length} readings`;
+            const typingIndicator = showTypingIndicator();
+            
+            try {
+                // Calculate basic stats
+                const rates = hrHistory.map(item => item.rate);
+                const currentHR = rates[0];
+                const average = Math.round(rates.reduce((a, b) => a + b, 0) / rates.length);
+                const min = Math.min(...rates);
+                const max = Math.max(...rates);
+                
+                // Determine HR status
+                let status = "Normal";
+                if (currentHR > 100) status = "High";
+                if (currentHR < 60) status = "Low";
+                
+                // Generate analysis message
+                let analysisMessage = `🔍 Heart Rate Analysis:\n\n`;
+                analysisMessage += `Current: ${currentHR} bpm (${status})\n`;
+                analysisMessage += `Average: ${average} bpm\n`;
+                analysisMessage += `Range: ${min}-${max} bpm\n\n`;
+                
+                // Add interpretation
+                if (status === "High") {
+                    analysisMessage += `Your heart rate is currently elevated. This could be due to:\n`;
+                    analysisMessage += `- Physical activity\n- Stress or anxiety\n- Caffeine intake\n- Medical conditions\n\n`;
+                    analysisMessage += `Consider resting and monitoring. If consistently high without explanation, consult a doctor.`;
+                } else if (status === "Low") {
+                    analysisMessage += `Your heart rate is currently low. This could be:\n`;
+                    analysisMessage += `- Normal for athletes\n- Sign of good fitness\n- Result of medication\n- Medical condition\n\n`;
+                    analysisMessage += `If you feel dizzy or fatigued, consult a doctor.`;
+                } else {
+                    analysisMessage += `Your heart rate is in the normal range. Good job maintaining a healthy heart rate!`;
+                }
+                
+                // Add trends if we have enough data
+                if (hrHistory.length > 3) {
+                    const first = hrHistory[hrHistory.length-1].rate;
+                    const last = hrHistory[0].rate;
+                    const trend = last > first ? "increasing" : last < first ? "decreasing" : "stable";
+                    
+                    analysisMessage += `\n\nTrend: ${trend} over last ${hrHistory.length} readings`;
+                }
+                
+                const chatBox = document.getElementById('chat-box');
+                chatBox.removeChild(typingIndicator);
+                appendMessage(analysisMessage, 'bot-message');
+                
+            } catch (error) {
+                const chatBox = document.getElementById('chat-box');
+                chatBox.removeChild(typingIndicator);
+                appendMessage(`Analysis error: ${error.message}`, 'error-message');
+                console.error('Analysis error:', error);
+            }
         }
-        
-        const chatBox = document.getElementById('chat-box');
-        chatBox.removeChild(typingIndicator);
-        appendMessage(analysisMessage, 'bot-message');
-        
-    } catch (error) {
-        const chatBox = document.getElementById('chat-box');
-        chatBox.removeChild(typingIndicator);
-        appendMessage(`Analysis error: ${error.message}`, 'error-message');
-        console.error('Analysis error:', error);
-    }
-}
-   
-
-// Make sure the event listener is properly set up:
 
         // Initialize all event listeners
         function initEventListeners() {
@@ -925,112 +980,167 @@ async function analyzeHeartRate() {
 
         // Send Message Function
         async function sendMessage() {
-    const userInput = document.getElementById("user-input").value.trim();
-    if (userInput === "") return;
+            const userInput = document.getElementById("user-input").value.trim();
+            if (userInput === "") return;
 
-    const chatBox = document.getElementById("chat-box");
-    const welcomeMessage = document.getElementById("welcome-message");
+            const chatBox = document.getElementById("chat-box");
+            const welcomeMessage = document.getElementById("welcome-message");
 
-    if (welcomeMessage && welcomeMessage.style.display !== "none") {
-        welcomeMessage.style.display = "none";
-    }
-
-    appendMessage(userInput, 'user-message');
-    document.getElementById("user-input").value = "";
-
-    const typingIndicator = showTypingIndicator();
-
-    try {
-        const response = await fetch("/chat", {
-            method: "POST",
-            headers: { 
-                "Content-Type": "application/json",
-            },
-            credentials: 'include',
-            body: JSON.stringify({ message: userInput })
-        });
-
-        const data = await response.json();
-        chatBox.removeChild(typingIndicator);
-
-        if (!response.ok) {
-            // Handle HTTP errors (like 400 for non-heart questions)
-            if (response.status === 400 && data.response === 'I can only answer heart health-related questions.') {
-                appendMessage("I only support heart-related questions.", 'bot-message');
-            } else {
-                throw new Error(data.message || 'Server error');
+            if (welcomeMessage && welcomeMessage.style.display !== "none") {
+                welcomeMessage.style.display = "none";
             }
-        } else if (data.status === "error") {
-            // Handle application errors
-            appendMessage(data.message, 'error-message');
-        } else {
-            // Handle successful responses
-            formatBotResponse(data.response);
+
+            appendMessage(userInput, 'user-message');
+            document.getElementById("user-input").value = "";
+
+            const typingIndicator = showTypingIndicator();
+
+            try {
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ message: userInput })
+                });
+
+                const data = await response.json();
+                chatBox.removeChild(typingIndicator);
+
+                if (!response.ok) {
+                    // Handle HTTP errors (like 400 for non-heart questions)
+                    if (response.status === 400 && data.response === 'I can only answer heart health-related questions.') {
+                        appendMessage("I only support heart-related questions.", 'bot-message');
+                    } else {
+                        throw new Error(data.message || 'Server error');
+                    }
+                } else if (data.status === "error") {
+                    // Handle application errors
+                    appendMessage(data.message, 'error-message');
+                } else {
+                    // Handle successful responses
+                    formatBotResponse(data.response);
+                }
+            } catch (error) {
+                chatBox.removeChild(typingIndicator);
+                appendMessage(`Error: ${error.message}`, 'error-message');
+                console.error('Chat error:', error);
+                
+                if (error.message.includes('Please log in')) {
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                }
+            }
         }
-    } catch (error) {
-        chatBox.removeChild(typingIndicator);
-        appendMessage(`Error: ${error.message}`, 'error-message');
-        console.error('Chat error:', error);
-        
-        if (error.message.includes('Please log in')) {
-            setTimeout(() => {
-                window.location.href = '/login';
-            }, 2000);
+
+        // Append message to chat box
+        function appendMessage(text, className) {
+            const chatBox = document.getElementById("chat-box");
+            const message = document.createElement("div");
+            message.classList.add("message", className);
+            message.innerText = text;
+            chatBox.appendChild(message);
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
-    }
-}
 
-// Append message to chat box
-function appendMessage(text, className) {
-    const chatBox = document.getElementById("chat-box");
-    const message = document.createElement("div");
-    message.classList.add("message", className);
-    message.innerText = text;
-    chatBox.appendChild(message);
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
+        // Show typing indicator
+        function showTypingIndicator() {
+            const chatBox = document.getElementById("chat-box");
+            const typingIndicator = document.createElement("div");
+            typingIndicator.classList.add("message", "typing-indicator");
+            typingIndicator.innerText = "Echo AI is typing";
+            chatBox.appendChild(typingIndicator);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            return typingIndicator;
+        }
 
-// Show typing indicator
-function showTypingIndicator() {
-    const chatBox = document.getElementById("chat-box");
-    const typingIndicator = document.createElement("div");
-    typingIndicator.classList.add("message", "typing-indicator");
-    typingIndicator.innerText = "Echo AI is typing";
-    chatBox.appendChild(typingIndicator);
-    chatBox.scrollTop = chatBox.scrollHeight;
-    return typingIndicator;
-}
+        // Format and display bot response with professional tables
+        function formatBotResponse(response) {
+            const chatBox = document.getElementById("chat-box");
 
-// Format and display bot response
-function formatBotResponse(response) {
-    const chatBox = document.getElementById("chat-box");
-
-    if (response.includes('|')) { 
-        // Table formatting for structured responses
-        const rows = response.trim().split('\n');
-        let tableHTML = '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
-        
-        rows.forEach((row, index) => {
-            const cells = row.split('|').filter(cell => cell.trim());
-            tableHTML += '<tr>' + cells.map(cell => 
-                `<${index === 0 ? 'th' : 'td'} style="border: 1px solid #555; padding: 8px; text-align: left;">
-                    ${cell.trim()}
-                </${index === 0 ? 'th' : 'td'}>`).join('') + '</tr>';
-        });
-
-        tableHTML += '</table>';
-
-        const botMessage = document.createElement("div");
-        botMessage.classList.add("message", "bot-message");
-        botMessage.innerHTML = tableHTML;
-        chatBox.appendChild(botMessage);
-    } else {
-        // Regular text response
-        appendMessage(response, "bot-message");
-    }
-
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
+            if (response.includes('|')) { 
+                // Create container for scrollable tables on mobile
+                const tableContainer = document.createElement("div");
+                tableContainer.style.overflowX = "auto";
+                tableContainer.style.margin = "15px 0";
+                
+                // Create the table element
+                const table = document.createElement("table");
+                table.style.width = "100%";
+                table.style.borderCollapse = "collapse";
+                table.style.borderRadius = "8px";
+                table.style.overflow = "hidden";
+                table.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
+                
+                // Split response into rows
+                const rows = response.trim().split('\n').filter(row => row.includes('|'));
+                
+                rows.forEach((row, rowIndex) => {
+                    const tr = document.createElement("tr");
+                    
+                    // Alternate row colors
+                    if (rowIndex % 2 === 0) {
+                        tr.style.backgroundColor = "#1a1a1a";
+                    } else {
+                        tr.style.backgroundColor = "#222";
+                    }
+                    
+                    // Header row styling
+                    if (rowIndex === 0) {
+                        tr.style.backgroundColor = "#019396";
+                        tr.style.color = "white";
+                        tr.style.fontWeight = "bold";
+                    }
+                    
+                    // Split cells and handle bullet points
+                    const cells = row.split('|').filter(cell => cell.trim());
+                    
+                    cells.forEach((cell, cellIndex) => {
+                        const td = document.createElement(rowIndex === 0 ? "th" : "td");
+                        
+                        // Check for bullet points
+                        if (cell.includes('-') && rowIndex > 0) {
+                            const listItems = cell.split('-').filter(item => item.trim());
+                            const ul = document.createElement("ul");
+                            listItems.forEach(item => {
+                                const li = document.createElement("li");
+                                li.textContent = item.trim();
+                                ul.appendChild(li);
+                            });
+                            td.appendChild(ul);
+                        } else {
+                            td.textContent = cell.trim();
+                        }
+                        
+                        td.style.padding = "12px 15px";
+                        td.style.border = "1px solid #333";
+                        td.style.textAlign = "left";
+                        
+                        // First column styling
+                        if (cellIndex === 0) {
+                            td.style.fontWeight = rowIndex === 0 ? "bold" : "600";
+                        }
+                        
+                        tr.appendChild(td);
+                    });
+                    
+                    table.appendChild(tr);
+                });
+                
+                tableContainer.appendChild(table);
+                
+                const botMessage = document.createElement("div");
+                botMessage.classList.add("message", "bot-message");
+                botMessage.appendChild(tableContainer);
+                chatBox.appendChild(botMessage);
+            } else {
+                appendMessage(response, "bot-message");
+            }
+            
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
 
         // Logout Function
         async function logout() {
