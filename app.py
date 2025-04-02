@@ -226,13 +226,19 @@ def chat():
     if user_input in ["who are you?","Who are you", "what is your name?", "who is this?","who are you","what is echo ai"]:
         return jsonify({
             'status': 'success',
-            'response': "I am Echo, your heart health assistant. I provide guidance and insights related to heart health to help you stay informed and make better health decisions.",
+            'response': "I am Echo Ai, your heart health assistant. I provide guidance and insights related to heart health to help you stay informed and make better health decisions.",
+            'type': 'text'
+        })
+    if user_input in ["what is echo ai","what is echo ai"]:
+        return jsonify({
+            'status': 'success',
+            'response': "Echo Ai is a heart health assistant. It provide guidance and insights related to heart health to help you stay informed and make better health decisions.",
             'type': 'text'
         })
     if user_input in ["hello","hi",]:
         return jsonify({
             'status': 'success',
-            'response': "I am Echo, your heart health assistant. How can i Help you?",
+            'response': "I am Echo Ai, your heart health assistant. How can i Help you?",
             'type': 'text'
         })
 
