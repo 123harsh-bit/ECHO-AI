@@ -229,7 +229,7 @@ def chat():
             'response': "I am Echo, your heart health assistant. I provide guidance and insights related to heart health to help you stay informed and make better health decisions.",
             'type': 'text'
         })
-        if user_input in ["hello","hi",]:
+    if user_input in ["hello","hi",]:
         return jsonify({
             'status': 'success',
             'response': "I am Echo, your heart health assistant. How can i Help you?",
