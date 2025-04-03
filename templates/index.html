@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Echo AI - Heart Health Chatbot</title>
     <style>
         * {
@@ -10,7 +10,6 @@
             padding: 0;
             box-sizing: border-box;
             font-family: Arial, sans-serif;
-            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -21,7 +20,6 @@
             align-items: center;
             height: 100vh;
             flex-direction: column;
-            overflow: hidden;
         }
 
         .header {
@@ -35,7 +33,6 @@
             color: #00f5f9;
             justify-content: space-between;
             position: relative;
-            z-index: 100;
         }
 
         .profile-container {
@@ -110,7 +107,6 @@
             max-width: 1400px;
             height: 85vh;
             gap: 20px;
-            padding: 10px;
         }
 
         .chat-container {
@@ -144,7 +140,6 @@
             flex-direction: column;
             gap: 10px;
             scrollbar-width: none;
-            padding-bottom: 120px; /* Space for fixed input */
         }
 
         .message {
@@ -210,11 +205,6 @@
             background: #111;
             border-top: 1px solid #222;
             border-radius: 15px;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 99;
         }
 
         .pre-prompts {
@@ -223,15 +213,6 @@
             margin-bottom: 10px;
             justify-content: center;
             flex-wrap: wrap;
-            position: fixed;
-            bottom: 70px;
-            left: 0;
-            right: 0;
-            padding: 10px;
-            background: #111;
-            z-index: 98;
-            overflow-x: auto;
-            white-space: nowrap;
         }
 
         .pre-prompts button {
@@ -243,7 +224,6 @@
             border-radius: 20px;
             font-size: 14px;
             transition: 0.3s ease;
-            flex: 0 0 auto;
         }
 
         .pre-prompts button:hover {
@@ -268,7 +248,6 @@
             color: white;
             font-size: 16px;
             border-radius: 20px;
-            min-height: 44px;
         }
 
         button.send-btn {
@@ -281,8 +260,6 @@
             border-radius: 20px;
             margin-left: 10px;
             transition: 0.3s ease;
-            min-height: 44px;
-            min-width: 44px;
         }
 
         button.send-btn:hover {
@@ -339,7 +316,6 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            min-height: 44px;
         }
 
         .hr-btn:hover {
@@ -380,7 +356,6 @@
             font-size: 16px;
             outline: none;
             transition: border-color 0.3s;
-            min-height: 44px;
         }
 
         #manual-hr:focus {
@@ -398,7 +373,6 @@
             font-size: 16px;
             transition: background 0.3s;
             white-space: nowrap;
-            min-height: 44px;
         }
 
         #submit-hr:hover {
@@ -509,147 +483,30 @@
         }
 
         @media (max-width: 768px) {
-            body {
-                height: auto;
-                min-height: 100vh;
-                padding: 0;
-            }
-            
             .main-container {
-                flex-direction: column-reverse;
-                height: calc(100vh - 60px);
-                width: 100%;
-                max-width: 100%;
-                padding: 0;
-                gap: 10px;
+                flex-direction: column;
+                height: 90vh;
+                width: 95%;
             }
             
             .chat-container, .hr-container {
                 width: 100%;
                 height: auto;
-                padding: 10px;
-            }
-            
-            .chat-container {
-                order: 2;
-                flex: 1;
-                height: 60vh;
-            }
-            
-            .hr-container {
-                order: 1;
-                height: auto;
-                max-height: 40vh;
-            }
-            
-            .welcome-message {
-                padding: 30px 10px;
-                font-size: 18px;
-            }
-            
-            .chat-box {
-                padding-bottom: 180px; /* More space for mobile input */
             }
             
             .pre-prompts {
-                bottom: 120px;
-                flex-wrap: nowrap;
-                justify-content: flex-start;
-                padding: 10px 5px;
+                flex-direction: column;
+                align-items: center;
             }
             
             .pre-prompts button {
-                padding: 10px 12px;
-                font-size: 13px;
-            }
-            
-            .input-container {
-                bottom: 60px;
-            }
-            
-            .hr-actions {
-                flex-direction: row;
-                flex-wrap: wrap;
-            }
-            
-            .hr-btn {
-                flex: 1 1 45%;
-                padding: 10px;
-                font-size: 14px;
-            }
-            
-            .manual-hr-input {
-                flex-direction: column;
-            }
-            
-            #submit-hr {
                 width: 100%;
-                margin-top: 5px;
             }
-            
-            .message {
-                max-width: 90%;
-                padding: 12px;
-                font-size: 14px;
-            }
-            
-            .bot-message table {
-                font-size: 12px;
-            }
-            
-            .bot-message th, 
-            .bot-message td {
-                padding: 8px 10px;
-            }
-            
-            .profile-details {
-                top: 60px;
-                right: 10px;
-                width: 200px;
-            }
-        }
 
-        @media (max-width: 480px) {
-            .header {
-                font-size: 20px;
-                padding: 8px;
-            }
-            
-            .profile-avatar {
-                width: 35px;
-                height: 35px;
-                font-size: 14px;
-            }
-            
-            .profile-name {
-                font-size: 14px;
-                margin-right: 15px;
-            }
-            
-            .hr-display {
-                font-size: 20px;
-            }
-            
-            #current-hr {
-                font-size: 28px;
-            }
-            
-            .hr-btn {
-                font-size: 12px;
-            }
-            
-            .input-row {
-                padding: 8px;
-            }
-            
-            input {
-                padding: 10px;
-                font-size: 14px;
-            }
-            
-            button.send-btn {
-                padding: 10px 15px;
-                font-size: 14px;
+            .bot-message table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
             }
         }
     </style>
@@ -1033,14 +890,6 @@
             
             // Logout button
             document.getElementById('logout-btn').addEventListener('click', logout);
-
-            // Handle mobile viewport resize
-            window.addEventListener('resize', function() {
-                if (window.innerWidth < 768) {
-                    const chatBox = document.getElementById('chat-box');
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                }
-            });
         }
 
         // Check login status and load user data when page loads
@@ -1055,14 +904,6 @@
             if (savedHistory) {
                 hrHistory = JSON.parse(savedHistory);
                 bluetoothManager.updateHistoryUI();
-            }
-
-            // Scroll to bottom on mobile
-            if (window.innerWidth < 768) {
-                const chatBox = document.getElementById('chat-box');
-                setTimeout(() => {
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                }, 300);
             }
         });
 
