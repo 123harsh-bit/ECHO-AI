@@ -52,9 +52,53 @@ class User(db.Model):
 
 # ------------------ HEALTH KEYWORDS ------------------
 HEART_KEYWORDS = [
-    "heart", "cardiac", "blood pressure", "72","cholesterol", "heart attack",
-    "stroke", "arrhythmia", "hypertension", "pulse", "artery", "circulation",
-    "ECG", "EKG", "cardiovascular", "angioplasty", "bypass surgery"
+    # General Terms
+    "heart", "cardiac", "cardiovascular", "pulse", "BPM", "heartbeat", 
+    "circulation", "blood flow", "ventricle", "atrium", "aorta", "artery",
+    "vein", "capillary", "myocardium", "pericardium", "valve", "ventricular",
+    
+    # Conditions & Diseases
+    "heart attack", "myocardial infarction", "angina", "arrhythmia", 
+    "tachycardia", "bradycardia", "AFib", "atrial fibrillation", 
+    "ventricular fibrillation", "heart failure", "CHF", "cardiomyopathy",
+    "endocarditis", "pericarditis", "atherosclerosis", "ischemia", 
+    "heart murmur", "mitral regurgitation", "aortic stenosis", 
+    "congenital heart", "CHD", "cardiac arrest", "sudden cardiac death",
+    
+    # Measurements & Tests
+    "blood pressure", "BP", "systolic", "diastolic", "hypertension", 
+    "hypotension", "cholesterol", "LDL", "HDL", "triglycerides", 
+    "lipid profile", "ECG", "EKG", "electrocardiogram", "echo", 
+    "echocardiogram", "stress test", "angiogram", "Holter monitor",
+    "cardiac CT", "calcium score", "CABG", "angioplasty", "stent",
+    
+    # Symptoms
+    "chest pain", "palpitations", "dizziness", "shortness of breath",
+    "SOB", "fatigue", "edema", "swelling", "syncope", "fainting",
+    "fluttering", "racing heart", "skipped beats", "indigestion",
+    "arm pain", "jaw pain", "cold sweat", "cyanosis", "clubbing",
+    
+    # Lifestyle & Prevention
+    "heart-healthy diet", "Mediterranean diet", "DASH diet", "exercise", 
+    "cardio", "aerobic", "walking", "swimming", "cycling", "smoking", 
+    "alcohol", "stress", "BMI", "obesity", "salt intake", "sodium",
+    "potassium", "omega-3", "coenzyme Q10", "antioxidants", "fiber",
+    
+    # Medications & Treatments
+    "statin", "beta blocker", "ACE inhibitor", "ARB", "diuretic",
+    "blood thinner", "warfarin", "aspirin", "nitroglycerin", "pacemaker",
+    "ICD", "defibrillator", "CABG", "bypass surgery", "valve replacement",
+    "TAVR", "cardiac rehab", "CPR", "AED",
+    
+    # Demographic Terms
+    "women heart health", "men's cardiovascular", "senior heart care",
+    "pediatric cardiology", "athlete heart", "genetic risk",
+    
+    # Numbers & Ranges
+    "72", "120/80", "140/90", "60-100", "40-60", "100+", "200+",
+    
+    # Emergency Terms
+    "911", "emergency", "chest tightness", "crushing pain", "call doctor"
 ]
 
 def is_heart_related(user_input):
