@@ -72,7 +72,7 @@ class ChatMessage(db.Model):
 
 # ------------------ HEALTH KEYWORDS ------------------
 HEART_KEYWORDS = [
-   # General Terms
+    # General Terms
     "heart", "cardiac", "cardiovascular", "pulse", "BPM", "heartbeat", 
     "circulation", "blood flow", "ventricle", "atrium", "aorta", "artery",
     "vein", "capillary", "myocardium", "pericardium", "valve", "ventricular",
@@ -260,13 +260,81 @@ def delete_chat_session(session_id):
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    # (Keep your existing signup route code)
-    # ... your existing signup code ...
+    if 'user_id' in session:
+        return redirect(url_for('home'))
+
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '').strip()
+
+        # Validate all fields
+        if not username or not password or not email:
+            return render_template('signup.html', error_message="All fields are required.")
+
+        # Basic email validation
+        if '@' not in email or '.' not in email.split('@')[-1]:
+            return render_template('signup.html', error_message="Please enter a valid email address.")
+
+        # Check for existing username or email
+        if User.query.filter_by(username=username).first():
+            return render_template('signup.html', error_message="Username already exists.")
+            
+        if User.query.filter_by(email=email).first():
+            return render_template('signup.html', error_message="Email already registered.")
+
+        # Create new user
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+        new_user = User(username=username, email=email, password=hashed_password)
+
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+
+            # Set session variables
+            session.permanent = True
+            session['user_id'] = new_user.id
+            session['username'] = new_user.username
+
+            return redirect(url_for('home'))
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Registration error: {str(e)}")
+            error_msg = "Registration failed. Please try again."
+            if "unique constraint" in str(e).lower():
+                error_msg = "Username or email already exists."
+            return render_template('signup.html', error_message=error_msg)
+
+    return render_template('signup.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # (Keep your existing login route code)
-    # ... your existing login code ...
+    if 'user_id' in session:
+        return redirect(url_for('home'))
+
+    if request.method == 'POST':
+        identifier = request.form.get('username_or_email', '').strip()
+        password = request.form.get('password', '').strip()
+
+        # Find user by username or email
+        user = None
+        if '@' in identifier:
+            user = User.query.filter_by(email=identifier).first()
+        else:
+            user = User.query.filter_by(username=identifier).first()
+
+        # Validate credentials
+        if not user or not check_password_hash(user.password, password):
+            return render_template('login.html', error_message="Invalid credentials.")
+
+        # Set session variables
+        session.permanent = True
+        session['user_id'] = user.id
+        session['username'] = user.username
+
+        return redirect(url_for('home'), code=303)
+
+    return render_template('login.html')
 
 @app.route('/logout', methods=['POST'])
 def logout():
