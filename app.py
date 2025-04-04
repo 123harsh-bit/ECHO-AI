@@ -7,6 +7,8 @@ import openai
 from dotenv import load_dotenv
 from flask_cors import CORS
 from flask_migrate import Migrate
+import json
+from datetime import datetime
 
 # ------------------ INITIAL SETUP ------------------
 load_dotenv()  # Load environment variables from .env
@@ -49,61 +51,53 @@ class User(db.Model):
     username = db.Column(db.String(150), unique=True, nullable=False)
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
+    chat_sessions = db.relationship('ChatSession', backref='user', lazy=True)
+
+class ChatSession(db.Model):
+    __tablename__ = "chat_sessions"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    messages = db.relationship('ChatMessage', backref='session', lazy=True, cascade="all, delete-orphan")
+
+class ChatMessage(db.Model):
+    __tablename__ = "chat_messages"
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('chat_sessions.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    is_user = db.Column(db.Boolean, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # ------------------ HEALTH KEYWORDS ------------------
 HEART_KEYWORDS = [
-    # General Terms
-    "heart", "cardiac", "cardiovascular", "pulse", "BPM", "heartbeat", 
-    "circulation", "blood flow", "ventricle", "atrium", "aorta", "artery",
-    "vein", "capillary", "myocardium", "pericardium", "valve", "ventricular",
-    
-    # Conditions & Diseases
-    "heart attack", "myocardial infarction", "angina", "arrhythmia", 
-    "tachycardia", "bradycardia", "AFib", "atrial fibrillation", 
-    "ventricular fibrillation", "heart failure", "CHF", "cardiomyopathy",
-    "endocarditis", "pericarditis", "atherosclerosis", "ischemia", 
-    "heart murmur", "mitral regurgitation", "aortic stenosis", 
-    "congenital heart", "CHD", "cardiac arrest", "sudden cardiac death",
-    
-    # Measurements & Tests
-    "blood pressure", "BP", "systolic", "diastolic", "hypertension", 
-    "hypotension", "cholesterol", "LDL", "HDL", "triglycerides", 
-    "lipid profile", "ECG", "EKG", "electrocardiogram", "echo", 
-    "echocardiogram", "stress test", "angiogram", "Holter monitor",
-    "cardiac CT", "calcium score", "CABG", "angioplasty", "stent",
-    
-    # Symptoms
-    "chest pain", "palpitations", "dizziness", "shortness of breath",
-    "SOB", "fatigue", "edema", "swelling", "syncope", "fainting",
-    "fluttering", "racing heart", "skipped beats", "indigestion",
-    "arm pain", "jaw pain", "cold sweat", "cyanosis", "clubbing",
-    
-    # Lifestyle & Prevention
-    "heart-healthy diet", "Mediterranean diet", "DASH diet", "exercise", 
-    "cardio", "aerobic", "walking", "swimming", "cycling", "smoking", 
-    "alcohol", "stress", "BMI", "obesity", "salt intake", "sodium",
-    "potassium", "omega-3", "coenzyme Q10", "antioxidants", "fiber",
-    
-    # Medications & Treatments
-    "statin", "beta blocker", "ACE inhibitor", "ARB", "diuretic",
-    "blood thinner", "warfarin", "aspirin", "nitroglycerin", "pacemaker",
-    "ICD", "defibrillator", "CABG", "bypass surgery", "valve replacement",
-    "TAVR", "cardiac rehab", "CPR", "AED",
-    
-    # Demographic Terms
-    "women heart health", "men's cardiovascular", "senior heart care",
-    "pediatric cardiology", "athlete heart", "genetic risk",
-    
-    # Numbers & Ranges
-    "72", "120/80", "140/90", "60-100", "40-60", "100+", "200+",
-    
-    # Emergency Terms
-    "911", "emergency", "chest tightness", "crushing pain", "call doctor"
+    # (Keep your existing HEART_KEYWORDS list here)
+    # ... your existing keywords ...
 ]
 
 def is_heart_related(user_input):
     user_input = user_input.lower()
     return any(keyword in user_input for keyword in HEART_KEYWORDS)
+
+def generate_chat_title(user_input):
+    """Generate a title for the chat session based on the first user message"""
+    try:
+        if not openai.api_key:
+            return user_input[:30] + ("..." if len(user_input) > 30 else "")
+            
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "Generate a very short title (3-5 words max) for this chat about heart health. Just return the title, nothing else."},
+                {"role": "user", "content": user_input}
+            ],
+            temperature=0.3,
+            max_tokens=15
+        )
+        return response['choices'][0]['message']['content'].strip('"\'')
+    except Exception:
+        return user_input[:30] + ("..." if len(user_input) > 30 else "")
 
 # ------------------ MIDDLEWARE ------------------
 @app.before_request
@@ -133,83 +127,101 @@ def check_auth():
         })
     return jsonify({'authenticated': False}), 401
 
+@app.route('/api/chat-sessions', methods=['GET'])
+def get_chat_sessions():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    sessions = ChatSession.query.filter_by(user_id=session['user_id']).order_by(ChatSession.updated_at.desc()).all()
+    
+    sessions_data = [{
+        'id': session.id,
+        'title': session.title,
+        'created_at': session.created_at.strftime('%Y-%m-%d %H:%M'),
+        'updated_at': session.updated_at.strftime('%Y-%m-%d %H:%M'),
+        'is_current': 'current_chat_id' in session and session.id == session['current_chat_id']
+    } for session in sessions]
+    
+    return jsonify(sessions_data)
+
+@app.route('/api/chat-sessions', methods=['POST'])
+def create_chat_session():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    new_session = ChatSession(
+        user_id=session['user_id'],
+        title="New Chat"
+    )
+    
+    try:
+        db.session.add(new_session)
+        db.session.commit()
+        session['current_chat_id'] = new_session.id
+        return jsonify({
+            'id': new_session.id,
+            'title': new_session.title,
+            'created_at': new_session.created_at.strftime('%Y-%m-%d %H:%M')
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/chat-sessions/<int:session_id>', methods=['GET'])
+def get_chat_session(session_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    chat_session = ChatSession.query.filter_by(id=session_id, user_id=session['user_id']).first()
+    if not chat_session:
+        return jsonify({'error': 'Chat session not found'}), 404
+    
+    messages = [{
+        'content': msg.content,
+        'is_user': msg.is_user,
+        'created_at': msg.created_at.strftime('%Y-%m-%d %H:%M')
+    } for msg in chat_session.messages]
+    
+    return jsonify({
+        'id': chat_session.id,
+        'title': chat_session.title,
+        'messages': messages
+    })
+
+@app.route('/api/chat-sessions/<int:session_id>', methods=['DELETE'])
+def delete_chat_session(session_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    chat_session = ChatSession.query.filter_by(id=session_id, user_id=session['user_id']).first()
+    if not chat_session:
+        return jsonify({'error': 'Chat session not found'}), 404
+    
+    try:
+        db.session.delete(chat_session)
+        db.session.commit()
+        
+        # If we deleted the current chat, create a new one
+        if 'current_chat_id' in session and session['current_chat_id'] == session_id:
+            new_session = ChatSession(user_id=session['user_id'], title="New Chat")
+            db.session.add(new_session)
+            db.session.commit()
+            session['current_chat_id'] = new_session.id
+            
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    if 'user_id' in session:
-        return redirect(url_for('home'))
-
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '').strip()
-
-        # Validate all fields
-        if not username or not password or not email:
-            return render_template('signup.html', error_message="All fields are required.")
-
-        # Basic email validation
-        if '@' not in email or '.' not in email.split('@')[-1]:
-            return render_template('signup.html', error_message="Please enter a valid email address.")
-
-        # Check for existing username or email
-        if User.query.filter_by(username=username).first():
-            return render_template('signup.html', error_message="Username already exists.")
-            
-        if User.query.filter_by(email=email).first():
-            return render_template('signup.html', error_message="Email already registered.")
-
-        # Create new user
-        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-        new_user = User(username=username, email=email, password=hashed_password)
-
-        try:
-            db.session.add(new_user)
-            db.session.commit()
-
-            # Set session variables
-            session.permanent = True
-            session['user_id'] = new_user.id
-            session['username'] = new_user.username
-
-            return redirect(url_for('home'))
-        except Exception as e:
-            db.session.rollback()
-            app.logger.error(f"Registration error: {str(e)}")
-            error_msg = "Registration failed. Please try again."
-            if "unique constraint" in str(e).lower():
-                error_msg = "Username or email already exists."
-            return render_template('signup.html', error_message=error_msg)
-
-    return render_template('signup.html')
+    # (Keep your existing signup route code)
+    # ... your existing signup code ...
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if 'user_id' in session:
-        return redirect(url_for('home'))
-
-    if request.method == 'POST':
-        identifier = request.form.get('username_or_email', '').strip()
-        password = request.form.get('password', '').strip()
-
-        # Find user by username or email
-        user = None
-        if '@' in identifier:
-            user = User.query.filter_by(email=identifier).first()
-        else:
-            user = User.query.filter_by(username=identifier).first()
-
-        # Validate credentials
-        if not user or not check_password_hash(user.password, password):
-            return render_template('login.html', error_message="Invalid credentials.")
-
-        # Set session variables
-        session.permanent = True
-        session['user_id'] = user.id
-        session['username'] = user.username
-
-        return redirect(url_for('home'), code=303)
-
-    return render_template('login.html')
+    # (Keep your existing login route code)
+    # ... your existing login code ...
 
 @app.route('/logout', methods=['POST'])
 def logout():
@@ -266,75 +278,100 @@ def chat():
             'type': 'text'
         }), 400
 
+    # Check if we have a current chat session
+    if 'current_chat_id' not in session:
+        # Create a new chat session
+        chat_title = generate_chat_title(user_input)
+        new_session = ChatSession(
+            user_id=session['user_id'],
+            title=chat_title
+        )
+        db.session.add(new_session)
+        db.session.commit()
+        session['current_chat_id'] = new_session.id
+    else:
+        # Get current chat session
+        chat_session = ChatSession.query.get(session['current_chat_id'])
+        if not chat_session:
+            # Session was deleted or doesn't exist
+            chat_title = generate_chat_title(user_input)
+            new_session = ChatSession(
+                user_id=session['user_id'],
+                title=chat_title
+            )
+            db.session.add(new_session)
+            db.session.commit()
+            session['current_chat_id'] = new_session.id
+
+    # Save user message to database
+    user_message = ChatMessage(
+        session_id=session['current_chat_id'],
+        content=user_input,
+        is_user=True
+    )
+    db.session.add(user_message)
+
     # Custom responses
     if user_input in ["who are you?","Who are you", "what is your name?", "who is this?","who are you","what is echo ai"]:
-        return jsonify({
-            'status': 'success',
-            'response': "I am Echo Ai, your heart health assistant. I provide guidance and insights related to heart health to help you stay informed and make better health decisions.",
-            'type': 'text'
-        })
-    if user_input in ["what is echo ai","what is echo ai"]:
-        return jsonify({
-            'status': 'success',
-            'response': "Echo Ai is a heart health assistant. It provide guidance and insights related to heart health to help you stay informed and make better health decisions.",
-            'type': 'text'
-        })
-    if user_input in ["hello","hi",]:
-        return jsonify({
-            'status': 'success',
-            'response': "I am Echo Ai, your heart health assistant. How can i Help you?",
-            'type': 'text'
-        })
+        bot_response = "I am Echo Ai, your heart health assistant. I provide guidance and insights related to heart health to help you stay informed and make better health decisions."
+    elif user_input in ["what is echo ai","what is echo ai"]:
+        bot_response = "Echo Ai is a heart health assistant. It provide guidance and insights related to heart health to help you stay informed and make better health decisions."
+    elif user_input in ["hello","hi",]:
+        bot_response = "I am Echo Ai, your heart health assistant. How can i Help you?"
+    elif user_input in ["who created you?", "who invented you?", "who made you?","who created you", "who invented you", "who made you","who created you echo ai","who created you echoai","who created you echo ai?"]:
+        bot_response = "I was created by a dedicated team of developers. Our team includes Guru Prasad, Harshavardhan Reddy, Ranjith, Giri. We are working to provide reliable heart health assistance through AI."
+    elif not is_heart_related(user_input):
+        bot_response = 'I can only answer heart health-related questions.'
+    else:
+        try:
+            if not openai.api_key:
+                return jsonify({
+                    'status': 'error',
+                    'message': 'OpenAI API key is missing.',
+                    'type': 'text'
+                }), 500
 
-    if user_input in ["who created you?", "who invented you?", "who made you?","who created you", "who invented you", "who made you","who created you echo ai","who created you echoai","who created you echo ai?"]:
-        return jsonify({
-            'status': 'success',
-            'response': "I was created by a dedicated team of developers. Our team includes Guru Prasad, Harshavardhan Reddy, Ranjith, Giri. We are working to provide reliable heart health assistance through AI.",
-            'type': 'text'
-        })
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a helpful heart health expert."},
+                    {"role": "user", "content": user_input}
+                ],
+                temperature=0.7
+            )
 
-    if not is_heart_related(user_input):
-        return jsonify({
-            'status': 'success',
-            'response': 'I can only answer heart health-related questions.',
-            'type': 'text'
-        }), 400
-
-    try:
-        if not openai.api_key:
+            bot_response = response['choices'][0]['message']['content']
+        except Exception as e:
             return jsonify({
                 'status': 'error',
-                'message': 'OpenAI API key is missing.',
+                'message': f'Error: {str(e)}',
                 'type': 'text'
             }), 500
 
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful heart health expert."},
-                {"role": "user", "content": user_input}
-            ],
-            temperature=0.7
-        )
+    # Save bot response to database
+    bot_message = ChatMessage(
+        session_id=session['current_chat_id'],
+        content=bot_response,
+        is_user=False
+    )
+    db.session.add(bot_message)
+    
+    # Update chat session title if it's the first message
+    chat_session = ChatSession.query.get(session['current_chat_id'])
+    if len(chat_session.messages) <= 2:  # User message + bot response
+        chat_session.title = generate_chat_title(user_input)
+    
+    db.session.commit()
 
-        chatbot_response = response['choices'][0]['message']['content']
-
-        return jsonify({
-            'status': 'success',
-            'response': chatbot_response,
-            'type': 'text'
-        })
-
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': f'Error: {str(e)}',
-            'type': 'text'
-        }), 500
+    return jsonify({
+        'status': 'success',
+        'response': bot_response,
+        'type': 'text',
+        'chat_session_id': session['current_chat_id']
+    })
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=os.getenv('FLASK_ENV') == 'development')
-    
