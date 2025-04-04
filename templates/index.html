@@ -30,6 +30,8 @@
             height: 100vh;
             overflow: hidden;
             transition: all 0.3s ease;
+            position: relative;
+            z-index: 1000;
         }
 
         .sidebar.collapsed {
@@ -92,6 +94,7 @@
             align-items: center;
             gap: 8px;
             font-size: 14px;
+            margin: 10px;
         }
 
         .new-chat-btn:hover {
@@ -635,23 +638,46 @@
             margin-right: 15px;
         }
 
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 position: fixed;
                 top: 0;
-                left: 0;
+                left: -280px;
                 bottom: 0;
                 z-index: 1000;
                 width: 280px;
-                transform: translateX(-100%);
                 transition: transform 0.3s ease;
             }
 
             .sidebar.open {
-                transform: translateX(0);
+                transform: translateX(280px);
+            }
+
+            .sidebar.collapsed {
+                width: 280px;
+                left: -280px;
+            }
+
+            .sidebar.collapsed.open {
+                transform: translateX(280px);
             }
 
             .sidebar-toggle {
+                display: block;
+            }
+
+            .overlay.active {
                 display: block;
             }
 
@@ -681,22 +707,29 @@
                 overflow-x: auto;
                 white-space: nowrap;
             }
-
-            .sidebar.collapsed {
-                width: 60px;
-            }
         }
     </style>
 </head>
 <body>
+    <!-- Overlay for mobile sidebar -->
+    <div class="overlay" id="overlay"></div>
+
     <!-- Sidebar for chat history -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-header-text">Chat History</div>
             <button class="collapse-btn" id="collapse-btn">≡</button>
         </div>
+        <button class="new-chat-btn" id="new-chat-btn">
+            <span>+ New chat</span>
+        </button>
         <div class="chat-history" id="chat-history">
             <!-- Chat history items will be populated here -->
+            <div class="chat-history-date">Today</div>
+            <div class="chat-history-item active">Heart Health Basics</div>
+            <div class="chat-history-item">Exercise Recommendations</div>
+            <div class="chat-history-date">Yesterday</div>
+            <div class="chat-history-item">Diet Plan Discussion</div>
         </div>
     </div>
 
@@ -778,6 +811,14 @@
                         <h3>Recent Readings</h3>
                         <div class="hr-history-list" id="hr-history-list">
                             <!-- HR history items will be added here -->
+                            <div class="hr-history-item">
+                                <span>10:30 AM</span>
+                                <span class="hr-history-value">72 bpm</span>
+                            </div>
+                            <div class="hr-history-item">
+                                <span>10:15 AM</span>
+                                <span class="hr-history-value">68 bpm</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -844,6 +885,13 @@
             
             // Sidebar collapse button
             document.getElementById('collapse-btn').addEventListener('click', toggleCollapseSidebar);
+            
+            // Overlay click to close sidebar on mobile
+            document.getElementById('overlay').addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    toggleSidebar();
+                }
+            });
         }
 
         // Toggle sidebar collapse state
@@ -859,7 +907,17 @@
         // Toggle sidebar visibility on mobile
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            
             sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+            
+            // Prevent scrolling when sidebar is open
+            if (sidebar.classList.contains('open')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
         }
 
         // Create a new chat session
@@ -886,7 +944,7 @@
                     
                     // Close sidebar on mobile
                     if (window.innerWidth <= 768) {
-                        document.getElementById('sidebar').classList.remove('open');
+                        toggleSidebar();
                     }
                 } else {
                     throw new Error('Failed to create new chat');
@@ -909,6 +967,14 @@
                     const sessions = await response.json();
                     const historyContainer = document.getElementById('chat-history');
                     historyContainer.innerHTML = '';
+                    
+                    // Add new chat button
+                    const newChatBtn = document.createElement('button');
+                    newChatBtn.className = 'new-chat-btn';
+                    newChatBtn.id = 'new-chat-btn';
+                    newChatBtn.innerHTML = '<span>+ New chat</span>';
+                    newChatBtn.addEventListener('click', createNewChat);
+                    historyContainer.appendChild(newChatBtn);
                     
                     // Group by date
                     const today = new Date();
@@ -978,7 +1044,7 @@
         function addChatSessionToHistory(session, container) {
             const sessionElement = document.createElement('div');
             sessionElement.className = `chat-history-item ${session.id === currentChatId ? 'active' : ''}`;
-            sessionElement.textContent = session.title;
+            sessionElement.textContent = session.title || "New Chat";
             sessionElement.dataset.id = session.id;
             
             // Add delete button
@@ -1033,7 +1099,7 @@
                     
                     // Close sidebar on mobile
                     if (window.innerWidth <= 768) {
-                        document.getElementById('sidebar').classList.remove('open');
+                        toggleSidebar();
                     }
                 } else {
                     throw new Error('Failed to load chat session');
@@ -1096,7 +1162,7 @@
             
             // Load sidebar collapsed state
             const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            if (isCollapsed) {
+            if (isCollapsed && window.innerWidth > 768) {
                 document.getElementById('sidebar').classList.add('collapsed');
             }
         });
