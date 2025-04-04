@@ -29,6 +29,32 @@
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar.collapsed {
+            width: 60px;
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed .sidebar-header-text,
+        .sidebar.collapsed .new-chat-btn span,
+        .sidebar.collapsed .chat-history-item,
+        .sidebar.collapsed .chat-history-date {
+            display: none;
+        }
+
+        .sidebar.collapsed .new-chat-btn {
+            justify-content: center;
+            padding: 8px;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            margin: 0 auto;
+        }
+
+        .sidebar.collapsed .sidebar-header {
+            justify-content: center;
         }
 
         .sidebar-header {
@@ -37,6 +63,21 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        .sidebar-header-text {
+            font-weight: bold;
+            color: #00f5f9;
+            font-size: 18px;
+        }
+
+        .collapse-btn {
+            background: none;
+            border: none;
+            color: #00f5f9;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 5px;
         }
 
         .new-chat-btn {
@@ -640,6 +681,10 @@
                 overflow-x: auto;
                 white-space: nowrap;
             }
+
+            .sidebar.collapsed {
+                width: 60px;
+            }
         }
     </style>
 </head>
@@ -647,9 +692,8 @@
     <!-- Sidebar for chat history -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <button class="new-chat-btn" id="new-chat-btn">
-                <span>+ New chat</span>
-            </button>
+            <div class="sidebar-header-text">Chat History</div>
+            <button class="collapse-btn" id="collapse-btn">≡</button>
         </div>
         <div class="chat-history" id="chat-history">
             <!-- Chat history items will be populated here -->
@@ -797,6 +841,19 @@
             
             // Sidebar toggle for mobile
             document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
+            
+            // Sidebar collapse button
+            document.getElementById('collapse-btn').addEventListener('click', toggleCollapseSidebar);
+        }
+
+        // Toggle sidebar collapse state
+        function toggleCollapseSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+            
+            // Save state to localStorage
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
         }
 
         // Toggle sidebar visibility on mobile
@@ -1035,6 +1092,12 @@
             if (savedHistory) {
                 hrHistory = JSON.parse(savedHistory);
                 bluetoothManager.updateHistoryUI();
+            }
+            
+            // Load sidebar collapsed state
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                document.getElementById('sidebar').classList.add('collapsed');
             }
         });
 
