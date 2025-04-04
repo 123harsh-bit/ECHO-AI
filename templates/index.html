@@ -965,12 +965,6 @@
             historyContainer.innerHTML = '';
             
             // Add new chat button
-            const newChatBtn = document.createElement('button');
-            newChatBtn.className = 'new-chat-btn';
-            newChatBtn.id = 'new-chat-btn';
-            newChatBtn.innerHTML = '<span>+ New chat</span>';
-            newChatBtn.addEventListener('click', createNewChat);
-            historyContainer.appendChild(newChatBtn);
             
             // Group by date
             const today = new Date();
