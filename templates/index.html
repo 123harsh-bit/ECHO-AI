@@ -840,6 +840,7 @@
         let isLoggedIn = false;
         let hrHistory = [];
         let currentChatId = null;
+        let chatSessions = [];
 
         // Initialize all event listeners
         function initEventListeners() {
@@ -923,120 +924,109 @@
         // Create a new chat session
         async function createNewChat() {
             try {
-                const response = await fetch('/api/chat-sessions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include'
-                });
+                // Create a new chat session in memory
+                const newSession = {
+                    id: Date.now().toString(),
+                    title: "New Chat",
+                    created_at: new Date().toISOString(),
+                    messages: []
+                };
                 
-                if (response.ok) {
-                    const data = await response.json();
-                    currentChatId = data.id;
-                    
-                    // Clear the chat box
-                    document.getElementById('chat-box').innerHTML = '';
-                    
-                    // Show welcome message
-                    document.getElementById('welcome-message').style.display = 'block';
-                    
-                    // Reload chat history
-                    loadChatHistory();
-                    
-                    // Close sidebar on mobile
-                    if (window.innerWidth <= 768) {
-                        toggleSidebar();
-                    }
-                } else {
-                    throw new Error('Failed to create new chat');
+                // Add to our sessions array
+                chatSessions.unshift(newSession);
+                currentChatId = newSession.id;
+                
+                // Clear the chat box
+                document.getElementById('chat-box').innerHTML = '';
+                
+                // Show welcome message
+                document.getElementById('welcome-message').style.display = 'block';
+                
+                // Update chat history UI
+                updateChatHistoryUI();
+                
+                // Close sidebar on mobile
+                if (window.innerWidth <= 768) {
+                    toggleSidebar();
                 }
+                
+                // Save to localStorage
+                saveChatSessions();
+                
             } catch (error) {
                 console.error('Error creating new chat:', error);
                 appendMessage('Failed to create new chat. Please try again.', 'error-message');
             }
         }
 
-        // Load chat history from server
-        async function loadChatHistory() {
-            try {
-                const response = await fetch('/api/chat-sessions', {
-                    method: 'GET',
-                    credentials: 'include'
-                });
+        // Update the chat history sidebar UI
+        function updateChatHistoryUI() {
+            const historyContainer = document.getElementById('chat-history');
+            historyContainer.innerHTML = '';
+            
+            // Add new chat button
+            const newChatBtn = document.createElement('button');
+            newChatBtn.className = 'new-chat-btn';
+            newChatBtn.id = 'new-chat-btn';
+            newChatBtn.innerHTML = '<span>+ New chat</span>';
+            newChatBtn.addEventListener('click', createNewChat);
+            historyContainer.appendChild(newChatBtn);
+            
+            // Group by date
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            const todaySessions = chatSessions.filter(session => {
+                const sessionDate = new Date(session.created_at);
+                return sessionDate.toDateString() === today.toDateString();
+            });
+            
+            const yesterdaySessions = chatSessions.filter(session => {
+                const sessionDate = new Date(session.created_at);
+                return sessionDate.toDateString() === yesterday.toDateString();
+            });
+            
+            const olderSessions = chatSessions.filter(session => {
+                const sessionDate = new Date(session.created_at);
+                return sessionDate.toDateString() !== today.toDateString() && 
+                       sessionDate.toDateString() !== yesterday.toDateString();
+            });
+            
+            // Render today's sessions
+            if (todaySessions.length > 0) {
+                const dateHeader = document.createElement('div');
+                dateHeader.className = 'chat-history-date';
+                dateHeader.textContent = 'Today';
+                historyContainer.appendChild(dateHeader);
                 
-                if (response.ok) {
-                    const sessions = await response.json();
-                    const historyContainer = document.getElementById('chat-history');
-                    historyContainer.innerHTML = '';
-                    
-                    // Add new chat button
-                    const newChatBtn = document.createElement('button');
-                    newChatBtn.className = 'new-chat-btn';
-                    newChatBtn.id = 'new-chat-btn';
-                    newChatBtn.innerHTML = '<span>+ New chat</span>';
-                    newChatBtn.addEventListener('click', createNewChat);
-                    historyContainer.appendChild(newChatBtn);
-                    
-                    // Group by date
-                    const today = new Date();
-                    const yesterday = new Date(today);
-                    yesterday.setDate(yesterday.getDate() - 1);
-                    
-                    const todaySessions = sessions.filter(session => {
-                        const sessionDate = new Date(session.created_at);
-                        return sessionDate.toDateString() === today.toDateString();
-                    });
-                    
-                    const yesterdaySessions = sessions.filter(session => {
-                        const sessionDate = new Date(session.created_at);
-                        return sessionDate.toDateString() === yesterday.toDateString();
-                    });
-                    
-                    const olderSessions = sessions.filter(session => {
-                        const sessionDate = new Date(session.created_at);
-                        return sessionDate.toDateString() !== today.toDateString() && 
-                               sessionDate.toDateString() !== yesterday.toDateString();
-                    });
-                    
-                    // Render today's sessions
-                    if (todaySessions.length > 0) {
-                        const dateHeader = document.createElement('div');
-                        dateHeader.className = 'chat-history-date';
-                        dateHeader.textContent = 'Today';
-                        historyContainer.appendChild(dateHeader);
-                        
-                        todaySessions.forEach(session => {
-                            addChatSessionToHistory(session, historyContainer);
-                        });
-                    }
-                    
-                    // Render yesterday's sessions
-                    if (yesterdaySessions.length > 0) {
-                        const dateHeader = document.createElement('div');
-                        dateHeader.className = 'chat-history-date';
-                        dateHeader.textContent = 'Yesterday';
-                        historyContainer.appendChild(dateHeader);
-                        
-                        yesterdaySessions.forEach(session => {
-                            addChatSessionToHistory(session, historyContainer);
-                        });
-                    }
-                    
-                    // Render older sessions
-                    if (olderSessions.length > 0) {
-                        const dateHeader = document.createElement('div');
-                        dateHeader.className = 'chat-history-date';
-                        dateHeader.textContent = 'Older';
-                        historyContainer.appendChild(dateHeader);
-                        
-                        olderSessions.forEach(session => {
-                            addChatSessionToHistory(session, historyContainer);
-                        });
-                    }
-                } else {
-                    throw new Error('Failed to load chat history');
-                }
-            } catch (error) {
-                console.error('Error loading chat history:', error);
+                todaySessions.forEach(session => {
+                    addChatSessionToHistory(session, historyContainer);
+                });
+            }
+            
+            // Render yesterday's sessions
+            if (yesterdaySessions.length > 0) {
+                const dateHeader = document.createElement('div');
+                dateHeader.className = 'chat-history-date';
+                dateHeader.textContent = 'Yesterday';
+                historyContainer.appendChild(dateHeader);
+                
+                yesterdaySessions.forEach(session => {
+                    addChatSessionToHistory(session, historyContainer);
+                });
+            }
+            
+            // Render older sessions
+            if (olderSessions.length > 0) {
+                const dateHeader = document.createElement('div');
+                dateHeader.className = 'chat-history-date';
+                dateHeader.textContent = 'Older';
+                historyContainer.appendChild(dateHeader);
+                
+                olderSessions.forEach(session => {
+                    addChatSessionToHistory(session, historyContainer);
+                });
             }
         }
 
@@ -1068,42 +1058,41 @@
         // Load a specific chat session
         async function loadChatSession(sessionId) {
             try {
-                const response = await fetch(`/api/chat-sessions/${sessionId}`, {
-                    method: 'GET',
-                    credentials: 'include'
+                const session = chatSessions.find(s => s.id === sessionId);
+                if (!session) {
+                    throw new Error('Chat session not found');
+                }
+                
+                currentChatId = session.id;
+                
+                // Clear the chat box
+                const chatBox = document.getElementById('chat-box');
+                chatBox.innerHTML = '';
+                
+                // Hide welcome message
+                document.getElementById('welcome-message').style.display = 'none';
+                
+                // Add messages to chat box
+                session.messages.forEach(msg => {
+                    appendMessage(msg.content, msg.is_user ? 'user-message' : 'bot-message');
                 });
                 
-                if (response.ok) {
-                    const session = await response.json();
-                    currentChatId = session.id;
-                    
-                    // Clear the chat box
-                    const chatBox = document.getElementById('chat-box');
-                    chatBox.innerHTML = '';
-                    
-                    // Hide welcome message
-                    document.getElementById('welcome-message').style.display = 'none';
-                    
-                    // Add messages to chat box
-                    session.messages.forEach(msg => {
-                        appendMessage(msg.content, msg.is_user ? 'user-message' : 'bot-message');
-                    });
-                    
-                    // Update active state in sidebar
-                    document.querySelectorAll('.chat-history-item').forEach(item => {
-                        item.classList.remove('active');
-                        if (parseInt(item.dataset.id) === sessionId) {
-                            item.classList.add('active');
-                        }
-                    });
-                    
-                    // Close sidebar on mobile
-                    if (window.innerWidth <= 768) {
-                        toggleSidebar();
+                // Update active state in sidebar
+                document.querySelectorAll('.chat-history-item').forEach(item => {
+                    item.classList.remove('active');
+                    if (item.dataset.id === sessionId) {
+                        item.classList.add('active');
                     }
-                } else {
-                    throw new Error('Failed to load chat session');
+                });
+                
+                // Close sidebar on mobile
+                if (window.innerWidth <= 768) {
+                    toggleSidebar();
                 }
+                
+                // Scroll to bottom of chat
+                chatBox.scrollTop = chatBox.scrollHeight;
+                
             } catch (error) {
                 console.error('Error loading chat session:', error);
                 appendMessage('Failed to load chat. Please try again.', 'error-message');
@@ -1113,25 +1102,36 @@
         // Delete a chat session
         async function deleteChatSession(sessionId) {
             try {
-                const response = await fetch(`/api/chat-sessions/${sessionId}`, {
-                    method: 'DELETE',
-                    credentials: 'include'
-                });
+                // Remove from our sessions array
+                chatSessions = chatSessions.filter(session => session.id !== sessionId);
                 
-                if (response.ok) {
-                    // Reload chat history
-                    await loadChatHistory();
-                    
-                    // If we deleted the current chat, create a new one
-                    if (currentChatId === sessionId) {
-                        await createNewChat();
-                    }
-                } else {
-                    throw new Error('Failed to delete chat session');
+                // Update UI
+                updateChatHistoryUI();
+                
+                // If we deleted the current chat, create a new one
+                if (currentChatId === sessionId) {
+                    await createNewChat();
                 }
+                
+                // Save to localStorage
+                saveChatSessions();
+                
             } catch (error) {
                 console.error('Error deleting chat session:', error);
                 appendMessage('Failed to delete chat. Please try again.', 'error-message');
+            }
+        }
+
+        // Save chat sessions to localStorage
+        function saveChatSessions() {
+            localStorage.setItem('chatSessions', JSON.stringify(chatSessions));
+        }
+
+        // Load chat sessions from localStorage
+        function loadChatSessions() {
+            const savedSessions = localStorage.getItem('chatSessions');
+            if (savedSessions) {
+                chatSessions = JSON.parse(savedSessions);
             }
         }
 
@@ -1142,16 +1142,20 @@
             initEventListeners();
             bluetoothManager.updateUI(false);
             
-            // Load chat history
-            await loadChatHistory();
+            // Load chat sessions from localStorage
+            loadChatSessions();
             
-            // If we have a current chat ID, load it
-            if (currentChatId) {
-                await loadChatSession(currentChatId);
-            } else {
-                // Otherwise create a new chat
+            // If we have no sessions, create a new one
+            if (chatSessions.length === 0) {
                 await createNewChat();
+            } else {
+                // Otherwise load the most recent session
+                currentChatId = chatSessions[0].id;
+                await loadChatSession(currentChatId);
             }
+            
+            // Update chat history UI
+            updateChatHistoryUI();
             
             // Load any existing HR history from local storage
             const savedHistory = localStorage.getItem('hrHistory');
@@ -1254,38 +1258,46 @@
             const typingIndicator = showTypingIndicator();
 
             try {
-                const response = await fetch("/chat", {
-                    method: "POST",
-                    headers: { 
-                        "Content-Type": "application/json",
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({ message: userInput })
-                });
-
-                const data = await response.json();
-                chatBox.removeChild(typingIndicator);
-
-                if (!response.ok) {
-                    // Handle HTTP errors (like 400 for non-heart questions)
-                    if (response.status === 400 && data.response === 'I can only answer heart health-related questions.') {
-                        appendMessage("I only support heart-related questions.", 'bot-message');
-                    } else {
-                        throw new Error(data.message || 'Server error');
-                    }
-                } else if (data.status === "error") {
-                    // Handle application errors
-                    appendMessage(data.message, 'error-message');
-                } else {
-                    // Handle successful responses
-                    formatBotResponse(data.response);
-                    
-                    // Update current chat ID if this is a new session
-                    if (data.chat_session_id) {
-                        currentChatId = data.chat_session_id;
-                        await loadChatHistory();
-                    }
+                // Find current session
+                const currentSession = chatSessions.find(s => s.id === currentChatId);
+                if (!currentSession) {
+                    throw new Error('Current chat session not found');
                 }
+                
+                // Add user message to session
+                currentSession.messages.push({
+                    content: userInput,
+                    is_user: true,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Update session title if it's the first message
+                if (currentSession.messages.length === 1) {
+                    currentSession.title = userInput.length > 30 ? userInput.substring(0, 30) + '...' : userInput;
+                    updateChatHistoryUI();
+                }
+                
+                // Save sessions
+                saveChatSessions();
+                
+                // Simulate API response (in a real app, you would call your backend here)
+                const botResponse = await simulateBotResponse(userInput);
+                
+                chatBox.removeChild(typingIndicator);
+                
+                // Add bot response to session
+                currentSession.messages.push({
+                    content: botResponse,
+                    is_user: false,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Format and display the response
+                formatBotResponse(botResponse);
+                
+                // Save sessions again
+                saveChatSessions();
+                
             } catch (error) {
                 chatBox.removeChild(typingIndicator);
                 appendMessage(`Error: ${error.message}`, 'error-message');
@@ -1297,6 +1309,20 @@
                     }, 2000);
                 }
             }
+        }
+
+        // Simulate bot response (replace with actual API call in production)
+        async function simulateBotResponse(userInput) {
+            // Simple response simulation
+            const responses = {
+                "Best exercises for heart health": "For heart health, consider these exercises:\n\n1. Brisk walking (30 min/day)\n2. Swimming (3-4 times/week)\n3. Cycling (30-60 min/day)\n4. Running (20-30 min/day)\n5. Strength training (2-3 times/week)\n\nAlways consult your doctor before starting a new exercise regimen.",
+                "How to maintain healthy blood pressure?": "To maintain healthy blood pressure:\n\n- Reduce sodium intake (<1500mg/day)\n- Exercise regularly (150 min/week)\n- Maintain healthy weight\n- Limit alcohol\n- Manage stress\n- Eat potassium-rich foods\n- Avoid tobacco\n- Monitor regularly",
+                "Indian based Heart-friendly diet plan in tabular format": "Here's a heart-friendly Indian diet plan:\n\n| Meal      | Food Items                          | Benefits                          |\n|-----------|-------------------------------------|-----------------------------------|\n| Breakfast | Oats with nuts, Poha with veggies   | High fiber, low cholesterol       |\n| Lunch     | Roti, Dal, Sabzi, Salad             | Balanced nutrients, low fat       |\n| Snacks    | Fruits, Nuts, Buttermilk           | Antioxidants, healthy fats        |\n| Dinner    | Khichdi, Vegetable soup, Curd      | Light, easy to digest             |",
+                "Symptoms of heart disease": "Common heart disease symptoms:\n\n- Chest pain/discomfort (angina)\n- Shortness of breath\n- Pain in arms/jaw/neck/back\n- Nausea/vomiting\n- Fatigue\n- Dizziness\n- Swelling in legs\n- Irregular heartbeat\n\nSeek immediate medical attention if you experience these symptoms."
+            };
+            
+            // Default response if no match
+            return responses[userInput] || "I'm your heart health assistant. I can provide information about heart disease, blood pressure, cholesterol, heart-healthy diets, exercise recommendations, and more. Please ask me a specific question about heart health.";
         }
 
         // Append message to chat box
@@ -1513,6 +1539,8 @@
 
                 // Save HR history to local storage
                 localStorage.setItem('hrHistory', JSON.stringify(hrHistory));
+                // Save chat sessions
+                saveChatSessions();
 
                 const response = await fetch('/logout', {
                     method: 'POST',
@@ -1632,6 +1660,9 @@
                 }
                 
                 this.updateHistoryUI();
+                
+                // Save to localStorage
+                localStorage.setItem('hrHistory', JSON.stringify(hrHistory));
             },
 
             updateHistoryUI() {
