@@ -1280,23 +1280,43 @@
                 // Save sessions
                 saveChatSessions();
                 
-                // Simulate API response (in a real app, you would call your backend here)
-                const botResponse = await simulateBotResponse(userInput);
-                
-                chatBox.removeChild(typingIndicator);
-                
-                // Add bot response to session
-                currentSession.messages.push({
-                    content: botResponse,
-                    is_user: false,
-                    timestamp: new Date().toISOString()
+                // Call the actual API endpoint
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ message: userInput })
                 });
-                
-                // Format and display the response
-                formatBotResponse(botResponse);
-                
-                // Save sessions again
-                saveChatSessions();
+
+                const data = await response.json();
+                chatBox.removeChild(typingIndicator);
+
+                if (!response.ok) {
+                    // Handle HTTP errors
+                    if (response.status === 400 && data.response === 'I can only answer heart health-related questions.') {
+                        appendMessage("I only support heart-related questions.", 'bot-message');
+                    } else {
+                        throw new Error(data.message || 'Server error');
+                    }
+                } else if (data.status === "error") {
+                    // Handle application errors
+                    appendMessage(data.message, 'error-message');
+                } else {
+                    // Handle successful responses
+                    formatBotResponse(data.response);
+                    
+                    // Add bot response to session
+                    currentSession.messages.push({
+                        content: data.response,
+                        is_user: false,
+                        timestamp: new Date().toISOString()
+                    });
+                    
+                    // Save sessions again
+                    saveChatSessions();
+                }
                 
             } catch (error) {
                 chatBox.removeChild(typingIndicator);
@@ -1309,20 +1329,6 @@
                     }, 2000);
                 }
             }
-        }
-
-        // Simulate bot response (replace with actual API call in production)
-        async function simulateBotResponse(userInput) {
-            // Simple response simulation
-            const responses = {
-                "Best exercises for heart health": "For heart health, consider these exercises:\n\n1. Brisk walking (30 min/day)\n2. Swimming (3-4 times/week)\n3. Cycling (30-60 min/day)\n4. Running (20-30 min/day)\n5. Strength training (2-3 times/week)\n\nAlways consult your doctor before starting a new exercise regimen.",
-                "How to maintain healthy blood pressure?": "To maintain healthy blood pressure:\n\n- Reduce sodium intake (<1500mg/day)\n- Exercise regularly (150 min/week)\n- Maintain healthy weight\n- Limit alcohol\n- Manage stress\n- Eat potassium-rich foods\n- Avoid tobacco\n- Monitor regularly",
-                "Indian based Heart-friendly diet plan in tabular format": "Here's a heart-friendly Indian diet plan:\n\n| Meal      | Food Items                          | Benefits                          |\n|-----------|-------------------------------------|-----------------------------------|\n| Breakfast | Oats with nuts, Poha with veggies   | High fiber, low cholesterol       |\n| Lunch     | Roti, Dal, Sabzi, Salad             | Balanced nutrients, low fat       |\n| Snacks    | Fruits, Nuts, Buttermilk           | Antioxidants, healthy fats        |\n| Dinner    | Khichdi, Vegetable soup, Curd      | Light, easy to digest             |",
-                "Symptoms of heart disease": "Common heart disease symptoms:\n\n- Chest pain/discomfort (angina)\n- Shortness of breath\n- Pain in arms/jaw/neck/back\n- Nausea/vomiting\n- Fatigue\n- Dizziness\n- Swelling in legs\n- Irregular heartbeat\n\nSeek immediate medical attention if you experience these symptoms."
-            };
-            
-            // Default response if no match
-            return responses[userInput] || "I'm your heart health assistant. I can provide information about heart disease, blood pressure, cholesterol, heart-healthy diets, exercise recommendations, and more. Please ask me a specific question about heart health.";
         }
 
         // Append message to chat box
