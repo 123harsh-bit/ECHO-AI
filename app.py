@@ -23,12 +23,6 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
 
-# Heart rate thresholds (beats per minute)
-LOW_HR_THRESHOLD = 50
-HIGH_HR_THRESHOLD = 100
-CRITICAL_LOW_HR = 40
-CRITICAL_HIGH_HR = 120
-
 # Enable CORS
 CORS(app, resources={
     r"/chat": {"origins": "*"},
@@ -368,42 +362,15 @@ def handle_heart_rate():
         return jsonify({'status': 'error', 'message': 'Unauthorized'}), 401
         
     data = request.get_json()
-    bpm = int(data['bpm'])
-    timestamp = data['timestamp']
     
-    # Determine heart rate status
-    status = "normal"
-    if bpm < LOW_HR_THRESHOLD:
-        status = "low"
-    elif bpm > HIGH_HR_THRESHOLD:
-        status = "high"
-    if bpm < CRITICAL_LOW_HR or bpm > CRITICAL_HIGH_HR:
-        status = "critical"
-    
-    # Here you could:
+    # Here you can:
     # 1. Store in database
-    # 2. Send notifications
-    # 3. Trigger emergency alerts if needed
+    # 2. Perform analysis
+    # 3. Trigger alerts if needed
     
-    print(f"Heart rate received from user {session['user_id']}: {bpm} bpm ({status}) at {timestamp}")
+    print(f"Heart rate received from user {session['user_id']}: {data['bpm']} bpm at {data['timestamp']}")
     
-    return jsonify({
-        'status': 'success',
-        'heart_rate_status': status,
-        'message': get_hr_status_message(bpm, status)
-    })
-
-def get_hr_status_message(bpm, status):
-    """Generate appropriate message based on heart rate status"""
-    if status == "normal":
-        return f"Your heart rate is normal ({bpm} bpm)"
-    elif status == "low":
-        return f"⚠️ Warning: Low heart rate detected ({bpm} bpm)"
-    elif status == "high":
-        return f"⚠️ Warning: High heart rate detected ({bpm} bpm)"
-    elif status == "critical":
-        return f"🚨 Critical heart rate detected ({bpm} bpm) - Please seek medical attention"
-    return ""
+    return jsonify({'status': 'success'})
 
 @app.route('/chat', methods=['POST'])
 def chat():
