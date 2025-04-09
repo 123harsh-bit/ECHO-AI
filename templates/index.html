@@ -1665,195 +1665,195 @@ document.addEventListener('click', () => userInteracted = true, { once: true });
             }
         }
 
-        // Bluetooth connection manager
         const bluetoothManager = {
-            device: null,
-            characteristic: null,
-            isConnected: false,
+    device: null,
+    characteristic: null,
+    isConnected: false,
+    hrHistory: JSON.parse(localStorage.getItem('hrHistory')) || [], // Initialize hrHistory from localStorage
 
-            async connect() {
-                try {
-                    // Check if Bluetooth is supported
-                    if (!navigator.bluetooth) {
-                        throw new Error('Bluetooth not supported in this browser');
-                    }
+    async connect() {
+        try {
+            // Check if Bluetooth is supported
+            if (!navigator.bluetooth) {
+                throw new Error('Bluetooth not supported in this browser');
+            }
 
-                    appendMessage("Searching for devices...", 'bot-message');
-                    
-                    // Request Bluetooth device
-                    this.device = await navigator.bluetooth.requestDevice({
-                        acceptAllDevices: true,
-                        optionalServices: ['heart_rate']
-                    });
-                    
-                    // Add disconnect listener
-                    this.device.addEventListener('gattserverdisconnected', () => {
-                        this.handleDisconnect();
-                    });
-                    
-                    appendMessage(`Found device: ${this.device.name || 'Unknown'}`, 'bot-message');
-                    appendMessage("Connecting...", 'bot-message');
-                    
-                    const server = await this.device.gatt.connect();
-                    const service = await server.getPrimaryService('heart_rate');
-                    this.characteristic = await service.getCharacteristic('heart_rate_measurement');
-                    
-                    await this.characteristic.startNotifications();
-                    this.characteristic.addEventListener(
-                        'characteristicvaluechanged',
-                        this.handleHeartRateMeasurement.bind(this)
-                    );
-                    
-                    appendMessage("Connected successfully!", 'bot-message');
-                    this.isConnected = true;
-                    this.updateUI(true);
-                    document.getElementById('analyze-btn').disabled = false;
-                    document.getElementById('hr-status').textContent = "Connected";
-                    document.getElementById('hr-status').style.color = "#00ff00";
-                    
-                } catch (error) {
-                    console.error('Connection error:', error);
-                    appendMessage(`Error: ${error.message}`, 'error-message');
-                    appendMessage("Please enter heart rate manually", 'bot-message');
-                    this.handleDisconnect();
-                }
-            },
+            appendMessage("Searching for devices...", 'bot-message');
+            
+            // Request Bluetooth device
+            this.device = await navigator.bluetooth.requestDevice({
+                acceptAllDevices: true,
+                optionalServices: ['heart_rate']
+            });
+            
+            // Add disconnect listener
+            this.device.addEventListener('gattserverdisconnected', () => {
+                this.handleDisconnect();
+            });
+            
+            appendMessage(`Found device: ${this.device.name || 'Unknown'}`, 'bot-message');
+            appendMessage("Connecting...", 'bot-message');
+            
+            const server = await this.device.gatt.connect();
+            const service = await server.getPrimaryService('heart_rate');
+            this.characteristic = await service.getCharacteristic('heart_rate_measurement');
+            
+            await this.characteristic.startNotifications();
+            this.characteristic.addEventListener(
+                'characteristicvaluechanged',
+                this.handleHeartRateMeasurement.bind(this)
+            );
+            
+            appendMessage("Connected successfully!", 'bot-message');
+            this.isConnected = true;
+            this.updateUI(true);
+            document.getElementById('analyze-btn').disabled = false;
+            document.getElementById('hr-status').textContent = "Connected";
+            document.getElementById('hr-status').style.color = "#00ff00";
+            
+        } catch (error) {
+            console.error('Connection error:', error);
+            appendMessage(`Error: ${error.message}`, 'error-message');
+            appendMessage("Please enter heart rate manually", 'bot-message');
+            this.handleDisconnect();
+        }
+    },
 
-            handleHeartRateMeasurement(event) {
-                try {
-                    const value = event.target.value;
-                    const flags = value.getUint8(0);
-                    let rate = value.getUint8(1);
-                    
-                    if (flags & 0x1) { // 16-bit format
-                        rate = value.getUint16(1, true);
-                    }
-                    
-                    this.displayHeartRate(rate);
-                    this.addToHistory(rate);
-                    this.sendToBackend(rate);
-                } catch (error) {
-                    console.error('Failed to parse HR:', error);
-                }
-            },
+    handleHeartRateMeasurement(event) {
+        try {
+            const value = event.target.value;
+            const flags = value.getUint8(0);
+            let rate = value.getUint8(1);
+            
+            if (flags & 0x1) { // 16-bit format
+                rate = value.getUint16(1, true);
+            }
+            
+            this.displayHeartRate(rate);
+            this.addToHistory(rate);
+            this.sendToBackend(rate);
+        } catch (error) {
+            console.error('Failed to parse HR:', error);
+        }
+    },
 
-            displayHeartRate(rate) {
-                const hrElement = document.getElementById('current-hr');
-                hrElement.textContent = rate;
-                
-                if (rate > 100) {
-                    hrElement.style.color = '#ff4444';
-                } else if (rate < 60) {
-                    hrElement.style.color = '#ffff00';
-                } else {
-                    hrElement.style.color = '#00ff00';
-                }
-            },
+    displayHeartRate(rate) {
+        const hrElement = document.getElementById('current-hr');
+        hrElement.textContent = rate;
+        
+        if (rate > 100) {
+            hrElement.style.color = '#ff4444';
+        } else if (rate < 60) {
+            hrElement.style.color = '#ffff00';
+        } else {
+            hrElement.style.color = '#00ff00';
+        }
+    },
 
-            addToHistory(rate) {
-                const now = new Date();
-                const timeString = now.toLocaleTimeString();
-                
-                // Add to beginning of array
-                hrHistory.unshift({
-                    rate: rate,
-                    time: timeString,
-                    timestamp: now.getTime()
-                });
-                
-                // Keep only last 10 readings
-                if (hrHistory.length > 10) {
-                    hrHistory.pop();
-                }
-                
-                this.updateHistoryUI();
-                
-                // Save to localStorage
-                localStorage.setItem('hrHistory', JSON.stringify(hrHistory));
-            },
-
-            updateHistoryUI() {
-                const historyList = document.getElementById('hr-history-list');
-                historyList.innerHTML = '';
-                
-                hrHistory.forEach(item => {
-                    const itemElement = document.createElement('div');
-                    itemElement.className = 'hr-history-item';
-                    
-                    const timeElement = document.createElement('span');
-                    timeElement.textContent = item.time;
-                    
-                    const rateElement = document.createElement('span');
-                    rateElement.className = 'hr-history-value';
-                    rateElement.textContent = `${item.rate} bpm`;
-                    
-                    itemElement.appendChild(timeElement);
-                    itemElement.appendChild(rateElement);
-                    historyList.appendChild(itemElement);
-                });
-            },
-            async sendToBackend(rate) {
-    try {
-        const response = await fetch('/api/heart-rate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                bpm: rate, 
-                timestamp: new Date().toISOString()
-            })
+    addToHistory(rate) {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString();
+        
+        // Add to beginning of array
+        this.hrHistory.unshift({
+            rate: rate,
+            time: timeString,
+            timestamp: now.getTime()
         });
         
-        if (response.ok) {
-            const data = await response.json();
-            if (data.heart_rate_status) {
-                // Show notification based on heart rate status
-                showHeartRateNotification(
-                    rate, 
-                    data.heart_rate_status, 
-                    data.message
-                );
-            }
+        // Keep only last 10 readings
+        if (this.hrHistory.length > 10) {
+            this.hrHistory.pop();
         }
-    } catch (error) {
-        console.error('Failed to send to backend:', error);
+        
+        this.updateHistoryUI();
+        
+        // Save to localStorage
+        localStorage.setItem('hrHistory', JSON.stringify(this.hrHistory));
+    },
+
+    updateHistoryUI() {
+        const historyList = document.getElementById('hr-history-list');
+        historyList.innerHTML = '';
+        
+        this.hrHistory.forEach(item => {
+            const itemElement = document.createElement('div');
+            itemElement.className = 'hr-history-item';
+            
+            const timeElement = document.createElement('span');
+            timeElement.textContent = item.time;
+            
+            const rateElement = document.createElement('span');
+            rateElement.className = 'hr-history-value';
+            rateElement.textContent = `${item.rate} bpm`;
+            
+            itemElement.appendChild(timeElement);
+            itemElement.appendChild(rateElement);
+            historyList.appendChild(itemElement);
+        });
+    },
+
+    async sendToBackend(rate) {
+        try {
+            const response = await fetch('/api/heart-rate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    bpm: rate, 
+                    timestamp: new Date().toISOString()
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.heart_rate_status) {
+                    // Show notification based on heart rate status
+                    showHeartRateNotification(
+                        rate, 
+                        data.heart_rate_status, 
+                        data.message
+                    );
+                }
+            }
+        } catch (error) {
+            console.error('Failed to send to backend:', error);
+        }
+    },
+
+    handleDisconnect() {
+        if (this.device && this.device.gatt.connected) {
+            this.device.gatt.disconnect();
+        }
+        this.device = null;
+        this.characteristic = null;
+        this.isConnected = false;
+        this.updateUI(false);
+        document.getElementById('current-hr').textContent = '--';
+        document.getElementById('current-hr').style.color = '#ff4444';
+        document.getElementById('analyze-btn').disabled = true;
+        document.getElementById('hr-status').textContent = "Not connected";
+        document.getElementById('hr-status').style.color = "#ff4444";
+    },
+
+    updateUI(connected) {
+        document.getElementById('connect-btn').style.display = connected ? 'none' : 'block';
+        document.getElementById('disconnect-btn').style.display = connected ? 'block' : 'none';
     }
-            }
+};
 
-            async sendToBackend(rate) {
-                try {
-                    await fetch('/api/heart-rate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            bpm: rate, 
-                            timestamp: new Date().toISOString()
-                        })
-                    });
-                } catch (error) {
-                    console.error('Failed to send to backend:', error);
-                }
-            },
+// Example function to append messages to the UI
+function appendMessage(message, className) {
+    const messageElement = document.createElement('div');
+    messageElement.className = className;
+    messageElement.textContent = message;
+    document.getElementById('messages').appendChild(messageElement);
+}
 
-            handleDisconnect() {
-                if (this.device && this.device.gatt.connected) {
-                    this.device.gatt.disconnect();
-                }
-                this.device = null;
-                this.characteristic = null;
-                this.isConnected = false;
-                this.updateUI(false);
-                document.getElementById('current-hr').textContent = '--';
-                document.getElementById('current-hr').style.color = '#ff4444';
-                document.getElementById('analyze-btn').disabled = true;
-                document.getElementById('hr-status').textContent = "Not connected";
-                document.getElementById('hr-status').style.color = "#ff4444";
-            },
-
-            updateUI(connected) {
-                document.getElementById('connect-btn').style.display = connected ? 'none' : 'block';
-                document.getElementById('disconnect-btn').style.display = connected ? 'block' : 'none';
-            }
-        };
+// Example function to show heart rate notifications
+function showHeartRateNotification(rate, status, message) {
+    // Implement notification logic here
+    console.log(`Heart Rate: ${rate}, Status: ${status}, Message: ${message}`);
+}
     </script>
 </body>
 </html>
