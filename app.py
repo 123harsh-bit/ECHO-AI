@@ -72,65 +72,87 @@ class ChatMessage(db.Model):
 
 # ------------------ HEALTH KEYWORDS ------------------
 HEART_KEYWORDS = [
-
-    "గుండె", "గుండె", "హృదయనాళ", "పల్స్", "BPM", "గుండె చప్పుడు", 
-    "ప్రసరణ", "రక్త ప్రవాహం", "జఠరిక", "కర్ణిక", "బృహద్ధమని", "ధమని",
-    "సిర", "కేశనాళిక", "మయోకార్డియం", "పెరికార్డియం", "కవాటం", "జఠరిక" "ఆరోగ్యం"
-    "हृदय", "हृदय", "हृदयवाहिनी", "पल्स", "बीपीएम", "हृदय की धड़कन", 
-    "परिसंचरण", "रक्त प्रवाह", "वेंट्रिकल", "एट्रियम", "महाधमनी", "धमनी", 
-    "नस", "केशिका", "मायोकार्डियम", "पेरीकार्डियम", "वाल्व", "वेंट्रिकुलर" "स्वास्थ्य"
-    # General Terms
-    "heart", "cardiac", "cardiovascular", "pulse", "BPM", "heartbeat", 
+    # English Terms - General
+    "heart", "cardiac", "cardiovascular", "pulse", "bpm", "heartbeat", 
     "circulation", "blood flow", "ventricle", "atrium", "aorta", "artery",
     "vein", "capillary", "myocardium", "pericardium", "valve", "ventricular",
     
     # Conditions & Diseases
     "heart attack", "myocardial infarction", "angina", "arrhythmia", 
-    "tachycardia", "bradycardia", "AFib", "atrial fibrillation", 
-    "ventricular fibrillation", "heart failure", "CHF", "cardiomyopathy",
+    "tachycardia", "bradycardia", "afib", "atrial fibrillation", 
+    "ventricular fibrillation", "heart failure", "chf", "cardiomyopathy",
     "endocarditis", "pericarditis", "atherosclerosis", "ischemia", 
     "heart murmur", "mitral regurgitation", "aortic stenosis", 
-    "congenital heart", "CHD", "cardiac arrest", "sudden cardiac death",
+    "congenital heart", "chd", "cardiac arrest", "sudden cardiac death",
     
     # Measurements & Tests
-    "blood pressure", "BP", "systolic", "diastolic", "hypertension", 
-    "hypotension", "cholesterol", "LDL", "HDL", "triglycerides", 
-    "lipid profile", "ECG", "EKG", "electrocardiogram", "echo", 
-    "echocardiogram", "stress test", "angiogram", "Holter monitor",
-    "cardiac CT", "calcium score", "CABG", "angioplasty", "stent",
+    "blood pressure", "bp", "systolic", "diastolic", "hypertension", 
+    "hypotension", "cholesterol", "ldl", "hdl", "triglycerides", 
+    "lipid profile", "ecg", "ekg", "electrocardiogram", "echo", 
+    "echocardiogram", "stress test", "angiogram", "holter monitor",
+    "cardiac ct", "calcium score", "cabg", "angioplasty", "stent",
     
     # Symptoms
     "chest pain", "palpitations", "dizziness", "shortness of breath",
-    "SOB", "fatigue", "edema", "swelling", "syncope", "fainting",
+    "sob", "fatigue", "edema", "swelling", "syncope", "fainting",
     "fluttering", "racing heart", "skipped beats", "indigestion",
     "arm pain", "jaw pain", "cold sweat", "cyanosis", "clubbing",
     
     # Lifestyle & Prevention
-    "heart-healthy diet", "Mediterranean diet", "DASH diet", "exercise", 
+    "heart-healthy diet", "mediterranean diet", "dash diet", "exercise", 
     "cardio", "aerobic", "walking", "swimming", "cycling", "smoking", 
-    "alcohol", "stress", "BMI", "obesity", "salt intake", "sodium",
-    "potassium", "omega-3", "coenzyme Q10", "antioxidants", "fiber",
+    "alcohol", "stress", "bmi", "obesity", "salt intake", "sodium",
+    "potassium", "omega-3", "coenzyme q10", "antioxidants", "fiber",
     
     # Medications & Treatments
-    "statin", "beta blocker", "ACE inhibitor", "ARB", "diuretic",
+    "statin", "beta blocker", "ace inhibitor", "arb", "diuretic",
     "blood thinner", "warfarin", "aspirin", "nitroglycerin", "pacemaker",
-    "ICD", "defibrillator", "CABG", "bypass surgery", "valve replacement",
-    "TAVR", "cardiac rehab", "CPR", "AED",
+    "icd", "defibrillator", "cabg", "bypass surgery", "valve replacement",
+    "tavr", "cardiac rehab", "cpr", "aed",
     
-    # Demographic Terms
-    "women heart health", "men's cardiovascular", "senior heart care",
-    "pediatric cardiology", "athlete heart", "genetic risk",
+    # Health Terms
+    "health", "diet", "exercise", "nutrition", "diagnosis", "treatment",
+    "doctor", "checkup", "medicine", "medication", "therapy", "lifestyle",
     
-    # Numbers & Ranges
-    "72", "120/80", "140/90", "60-100", "40-60", "100+", "200+",
+    # Telugu Terms
+    "గుండె", "హృదయనాళ", "పల్స్", "గుండె చప్పుడు", 
+    "ప్రసరణ", "రక్త ప్రవాహం", "జఠరిక", "కర్ణిక", "బృహద్ధమని", "ధమని",
+    "సిర", "కేశనాళిక", "మయోకార్డియం", "పెరికార్డియం", "కవాటం", "ఆరోగ్యం",
     
-    # Emergency Terms
-    "911", "emergency", "chest tightness", "crushing pain", "call doctor"
+    # Hindi Terms
+    "हृदय", "हृदयवाहिनी", "पल्स", "बीपीएम", "हृदय की धड़कन", 
+    "परिसंचरण", "रक्त प्रवाह", "वेंट्रिकल", "एट्रियम", "महाधमनी", "धमनी", 
+    "नस", "केशिका", "मायोकार्डियम", "पेरीकार्डियम", "वाल्व", "स्वास्थ्य"
 ]
 
 def is_heart_related(user_input):
+    """Improved function to detect heart-related questions"""
     user_input = user_input.lower()
-    return any(keyword in user_input for keyword in HEART_KEYWORDS)
+    
+    # Direct keyword match
+    for keyword in HEART_KEYWORDS:
+        if keyword.lower() in user_input:
+            return True
+    
+    # Common health phrases that might be heart-related
+    health_phrases = [
+        "check my heart", "my heart", "heart health", "chest", "breathing problem",
+        "blood pressure", "exercise advice", "diet for heart", "medical history",
+        "heart rate", "heart monitor", "cardiac", "heart specialist", "cardiologist",
+        "risk factor", "family history", "check up", "monitor", "ecg", "ekg"
+    ]
+    
+    for phrase in health_phrases:
+        if phrase in user_input:
+            return True
+    
+    # If the question seems to be asking about health in general
+    general_health_terms = ["health", "healthy", "doctor", "medical", "condition", "symptoms", "treatment"]
+    if any(term in user_input for term in general_health_terms):
+        # For general health questions, be more permissive
+        return True
+        
+    return False
 
 def generate_chat_title(user_input):
     """Generate a title for the chat session based on the first user message"""
@@ -372,6 +394,36 @@ def handle_heart_rate():
     
     return jsonify({'status': 'success'})
 
+@app.route('/test-openai', methods=['GET'])
+def test_openai():
+    """Test OpenAI API connection"""
+    try:
+        if not openai.api_key:
+            return jsonify({
+                'status': 'error',
+                'message': 'OpenAI API key is missing.'
+            }), 500
+
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "Hello, are you working?"}
+            ],
+            temperature=0.7
+        )
+
+        return jsonify({
+            'status': 'success',
+            'message': 'OpenAI API is working.',
+            'response': response['choices'][0]['message']['content']
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error: {str(e)}'
+        }), 500
+
 @app.route('/chat', methods=['POST'])
 def chat():
     if 'user_id' not in session:
@@ -389,7 +441,11 @@ def chat():
         }), 400
 
     data = request.get_json()
-    user_input = data.get('message', '').strip().lower()
+    user_input = data.get('message', '').strip()
+
+    # Debug info
+    print(f"Received message: '{user_input}'")
+    print(f"Is heart related: {is_heart_related(user_input.lower())}")
 
     if not user_input:
         return jsonify({
@@ -431,17 +487,20 @@ def chat():
     )
     db.session.add(user_message)
 
+    # Handle predefined queries with specific responses
+    lower_input = user_input.lower().strip()
+    
     # Custom responses
-    if user_input in ["who are you?","Who are you", "what is your name?", "who is this?","who are you","what is echo ai"]:
-        bot_response = "I am Echo Ai, your heart health assistant. I provide guidance and insights related to heart health to help you stay informed and make better health decisions."
-    elif user_input in ["what is echo ai","what is echo ai"]:
-        bot_response = "Echo Ai is a heart health assistant. It provide guidance and insights related to heart health to help you stay informed and make better health decisions."
-    elif user_input in ["hello","hi",]:
-        bot_response = "I am Echo Ai, your heart health assistant. How can i Help you?"
-    elif user_input in ["who created you?", "who invented you?", "who made you?","who created you", "who invented you", "who made you","who created you echo ai","who created you echoai","who created you echo ai?"]:
-        bot_response = "I was created by a dedicated team of developers. Our team includes Guru Prasad, Harshavardhan Reddy, Ranjith, Giri. We are working to provide reliable heart health assistance through AI."
+    if lower_input in ["who are you?", "who are you", "what is your name?", "who is this?", "what is echo ai?"]:
+        bot_response = "I am Echo AI, your heart health assistant. I provide guidance and insights related to heart health to help you stay informed and make better health decisions."
+    elif lower_input in ["what is echo ai", "what is echo ai?"]:
+        bot_response = "Echo AI is a heart health assistant. It provides guidance and insights related to heart health to help you stay informed and make better health decisions."
+    elif lower_input in ["hello", "hi", "hey", "greetings"]:
+        bot_response = "Hello! I am Echo AI, your heart health assistant. How can I help you today?"
+    elif lower_input in ["who created you?", "who invented you?", "who made you?", "who created you", "who invented you", "who made you", "who created you echo ai", "who created you echoai", "who created you echo ai?"]:
+        bot_response = "I was created by a dedicated team of developers. Our team includes Guru Prasad, Harshavardhan Reddy, Ranjith, and Giri. We are working to provide reliable heart health assistance through AI."
     elif not is_heart_related(user_input):
-        bot_response = 'I can only answer heart health-related questions.'
+        bot_response = "I'm specially designed to answer heart health-related questions. Could you please ask me something related to heart health, cardiac care, or general health concerns?"
     else:
         try:
             if not openai.api_key:
@@ -454,7 +513,7 @@ def chat():
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": "You are a helpful heart health expert."},
+                    {"role": "system", "content": "You are a helpful heart health expert. Provide accurate, empathetic, and concise information about heart health topics. Include relevant medical facts when appropriate, but always encourage users to consult healthcare professionals for personalized advice."},
                     {"role": "user", "content": user_input}
                 ],
                 temperature=0.7
@@ -462,11 +521,8 @@ def chat():
 
             bot_response = response['choices'][0]['message']['content']
         except Exception as e:
-            return jsonify({
-                'status': 'error',
-                'message': f'Error: {str(e)}',
-                'type': 'text'
-            }), 500
+            app.logger.error(f"OpenAI API error: {str(e)}")
+            bot_response = "I'm having trouble connecting to my knowledge base right now. Please try again in a moment or rephrase your question."
 
     # Save bot response to database
     bot_message = ChatMessage(
