@@ -10,6 +10,7 @@
             padding: 0;
             box-sizing: border-box;
             font-family: Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -18,6 +19,50 @@
             display: flex;
             height: 100vh;
             overflow: hidden;
+        }
+
+        /* Notification styles */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ff4444;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 2000;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            max-width: 300px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.warning {
+            background: #ff9800;
+        }
+
+        .notification.info {
+            background: #2196F3;
+        }
+
+        .notification .icon {
+            font-size: 24px;
+        }
+
+        .notification .close-btn {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
         }
 
         /* Sidebar styles */
@@ -368,6 +413,7 @@
             border-radius: 20px;
             font-size: 14px;
             transition: 0.3s ease;
+            min-height: 44px;
         }
 
         .pre-prompts button:hover {
@@ -392,6 +438,7 @@
             color: white;
             font-size: 16px;
             border-radius: 20px;
+            min-height: 44px;
         }
 
         button.send-btn {
@@ -404,6 +451,7 @@
             border-radius: 20px;
             margin-left: 10px;
             transition: 0.3s ease;
+            min-height: 44px;
         }
 
         button.send-btn:hover {
@@ -460,6 +508,7 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            min-height: 44px;
         }
 
         .hr-btn:hover {
@@ -500,6 +549,7 @@
             font-size: 16px;
             outline: none;
             transition: border-color 0.3s;
+            min-height: 44px;
         }
 
         #manual-hr:focus {
@@ -517,6 +567,7 @@
             font-size: 16px;
             transition: background 0.3s;
             white-space: nowrap;
+            min-height: 44px;
         }
 
         #submit-hr:hover {
@@ -636,6 +687,8 @@
             font-size: 24px;
             cursor: pointer;
             margin-right: 15px;
+            min-height: 44px;
+            min-width: 44px;
         }
 
         .overlay {
@@ -647,6 +700,70 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
             z-index: 999;
+        }
+
+        /* Mobile HR Section */
+        .mobile-hr-section {
+            display: none;
+            background: #111;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px;
+            border: 1px solid #333;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .hr-display-mobile {
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 10px;
+            color: #00f5f9;
+        }
+
+        #current-hr-mobile {
+            font-size: 36px;
+            font-weight: bold;
+            color: #ff4444;
+        }
+
+        .hr-status-mobile {
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+
+        .hr-actions-mobile {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .hr-actions-mobile button {
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: none;
+            background: #0082fc;
+            color: white;
+            cursor: pointer;
+            min-height: 44px;
+        }
+
+        .hr-actions-mobile button.disconnect {
+            background: #666;
+        }
+
+        .toggle-hr-view {
+            display: none;
+            background: #019396;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 20px;
+            margin: 0 15px 15px;
+            cursor: pointer;
+            text-align: center;
+            min-height: 44px;
         }
 
         @media (max-width: 768px) {
@@ -707,10 +824,47 @@
                 overflow-x: auto;
                 white-space: nowrap;
             }
+
+            .mobile-hr-section {
+                display: flex;
+            }
+
+            .hr-container {
+                display: none;
+                margin-top: 15px;
+            }
+
+            .hr-container.visible {
+                display: flex;
+            }
+
+            .toggle-hr-view {
+                display: block;
+            }
+
+            .welcome-message {
+                padding: 30px 15px;
+                font-size: 18px;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+
+            .input-container {
+                padding: 15px;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Notification Container -->
+    <div class="notification" id="hr-notification">
+        <span class="icon">⚠️</span>
+        <span class="message" id="notification-message"></span>
+        <button class="close-btn" id="close-notification">×</button>
+    </div>
+
     <!-- Overlay for mobile sidebar -->
     <div class="overlay" id="overlay"></div>
 
@@ -750,6 +904,20 @@
             <button id="logout-btn">Logout</button>
         </div>
 
+        <!-- Mobile HR Section -->
+        <div class="mobile-hr-section">
+            <div class="hr-display-mobile">
+                <div id="current-hr-mobile">--</div>
+                <div class="hr-status-mobile" id="hr-status-mobile">Not connected</div>
+            </div>
+            <div class="hr-actions-mobile">
+                <button id="connect-btn-mobile">Connect</button>
+                <button id="disconnect-btn-mobile" class="disconnect" style="display:none;">Disconnect</button>
+            </div>
+        </div>
+
+        <button class="toggle-hr-view" id="toggle-hr-view">Show Full Heart Rate Panel</button>
+
         <div class="main-container">
             <div class="chat-container">
                 <div class="welcome-message" id="welcome-message">
@@ -780,7 +948,7 @@
                 </div>
             </div>
 
-            <div class="hr-container">
+            <div class="hr-container" id="hr-container">
                 <div class="hr-section">
                     <div class="hr-display">
                         <span>Current Heart Rate</span>
@@ -841,12 +1009,16 @@
         let hrHistory = [];
         let currentChatId = null;
         let chatSessions = [];
+        let lastNotificationTime = 0;
+        const NOTIFICATION_COOLDOWN = 30000; // 30 seconds
 
         // Initialize all event listeners
         function initEventListeners() {
             // Bluetooth buttons
             document.getElementById('connect-btn').addEventListener('click', () => bluetoothManager.connect());
             document.getElementById('disconnect-btn').addEventListener('click', () => bluetoothManager.handleDisconnect());
+            document.getElementById('connect-btn-mobile').addEventListener('click', () => bluetoothManager.connect());
+            document.getElementById('disconnect-btn-mobile').addEventListener('click', () => bluetoothManager.handleDisconnect());
             
             // Manual HR input
             document.getElementById('submit-hr').addEventListener('click', updateHRManually);
@@ -893,6 +1065,58 @@
                     toggleSidebar();
                 }
             });
+
+            // Close notification button
+            document.getElementById('close-notification').addEventListener('click', hideNotification);
+
+            // Toggle HR view button
+            document.getElementById('toggle-hr-view').addEventListener('click', toggleHRView);
+
+            // Click outside profile details to close
+            document.addEventListener('click', (event) => {
+                const profileDetails = document.getElementById('profile-details');
+                const profileContainer = document.getElementById('profile-container');
+                
+                if (profileDetails.style.display === 'flex' && 
+                    !profileContainer.contains(event.target) && 
+                    !profileDetails.contains(event.target)) {
+                    profileDetails.style.display = 'none';
+                }
+            });
+        }
+
+        // Toggle HR view on mobile
+        function toggleHRView() {
+            const hrContainer = document.getElementById('hr-container');
+            const toggleBtn = document.getElementById('toggle-hr-view');
+            
+            hrContainer.classList.toggle('visible');
+            toggleBtn.textContent = hrContainer.classList.contains('visible') 
+                ? 'Hide Heart Rate Panel' 
+                : 'Show Full Heart Rate Panel';
+        }
+
+        // Show notification
+        function showNotification(message, type = 'warning') {
+            const now = Date.now();
+            if (now - lastNotificationTime < NOTIFICATION_COOLDOWN) return;
+            
+            const notification = document.getElementById('hr-notification');
+            const messageElement = document.getElementById('notification-message');
+            
+            notification.className = `notification ${type}`;
+            messageElement.textContent = message;
+            notification.classList.add('show');
+            
+            lastNotificationTime = now;
+            
+            // Auto-hide after 10 seconds
+            setTimeout(hideNotification, 10000);
+        }
+
+        // Hide notification
+        function hideNotification() {
+            document.getElementById('hr-notification').classList.remove('show');
         }
 
         // Toggle sidebar collapse state
@@ -963,8 +1187,6 @@
         function updateChatHistoryUI() {
             const historyContainer = document.getElementById('chat-history');
             historyContainer.innerHTML = '';
-            
-            // Add new chat button
             
             // Group by date
             const today = new Date();
@@ -1222,18 +1444,6 @@
                                          profileDetails.style.display === "" ? "flex" : "none";
         }
 
-        // Close profile details when clicking outside
-        document.addEventListener('click', (event) => {
-            const profileDetails = document.getElementById("profile-details");
-            const profileContainer = document.getElementById('profile-container');
-            
-            if (profileDetails.style.display === "flex" && 
-                !profileContainer.contains(event.target) && 
-                !profileDetails.contains(event.target)) {
-                profileDetails.style.display = "none";
-            }
-        });
-
         // Send Message Function
         async function sendMessage() {
             const userInput = document.getElementById("user-input").value.trim();
@@ -1466,6 +1676,23 @@
             
             // Enable analyze button after manual input
             document.getElementById('analyze-btn').disabled = false;
+            
+            // Check for alerts
+            checkHRAlerts(hr);
+        }
+
+        // Check for heart rate alerts
+        function checkHRAlerts(hr) {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            
+            if (hr > 100) {
+                showNotification(`⚠️ High Heart Rate Alert: ${hr} BPM at ${timeString}. Consider resting and monitoring.`, 'warning');
+                appendMessage(`Warning: Your heart rate is high (${hr} BPM). Consider resting.`, 'bot-message');
+            } else if (hr < 60) {
+                showNotification(`⚠️ Low Heart Rate Alert: ${hr} BPM at ${timeString}. If you feel dizzy, consult a doctor.`, 'warning');
+                appendMessage(`Notice: Your heart rate is low (${hr} BPM). This may be normal for some people.`, 'bot-message');
+            }
         }
 
         // Heart rate analysis function
@@ -1603,6 +1830,8 @@
                     document.getElementById('analyze-btn').disabled = false;
                     document.getElementById('hr-status').textContent = "Connected";
                     document.getElementById('hr-status').style.color = "#00ff00";
+                    document.getElementById('hr-status-mobile').textContent = "Connected";
+                    document.getElementById('hr-status-mobile').style.color = "#00ff00";
                     
                 } catch (error) {
                     console.error('Connection error:', error);
@@ -1625,6 +1854,9 @@
                     this.displayHeartRate(rate);
                     this.addToHistory(rate);
                     this.sendToBackend(rate);
+                    
+                    // Check for alerts
+                    checkHRAlerts(rate);
                 } catch (error) {
                     console.error('Failed to parse HR:', error);
                 }
@@ -1632,20 +1864,27 @@
 
             displayHeartRate(rate) {
                 const hrElement = document.getElementById('current-hr');
-                hrElement.textContent = rate;
+                const mobileHrElement = document.getElementById('current-hr-mobile');
                 
+                hrElement.textContent = rate;
+                if (mobileHrElement) mobileHrElement.textContent = rate;
+                
+                let color;
                 if (rate > 100) {
-                    hrElement.style.color = '#ff4444';
+                    color = '#ff4444'; // Red for high
                 } else if (rate < 60) {
-                    hrElement.style.color = '#ffff00';
+                    color = '#ffff00'; // Yellow for low
                 } else {
-                    hrElement.style.color = '#00ff00';
+                    color = '#00ff00'; // Green for normal
                 }
+                
+                hrElement.style.color = color;
+                if (mobileHrElement) mobileHrElement.style.color = color;
             },
 
             addToHistory(rate) {
                 const now = new Date();
-                const timeString = now.toLocaleTimeString();
+                const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 
                 // Add to beginning of array
                 hrHistory.unshift({
@@ -1709,16 +1948,24 @@
                 this.characteristic = null;
                 this.isConnected = false;
                 this.updateUI(false);
+                
                 document.getElementById('current-hr').textContent = '--';
                 document.getElementById('current-hr').style.color = '#ff4444';
+                document.getElementById('current-hr-mobile').textContent = '--';
+                document.getElementById('current-hr-mobile').style.color = '#ff4444';
+                
                 document.getElementById('analyze-btn').disabled = true;
                 document.getElementById('hr-status').textContent = "Not connected";
                 document.getElementById('hr-status').style.color = "#ff4444";
+                document.getElementById('hr-status-mobile').textContent = "Not connected";
+                document.getElementById('hr-status-mobile').style.color = "#ff4444";
             },
 
             updateUI(connected) {
                 document.getElementById('connect-btn').style.display = connected ? 'none' : 'block';
                 document.getElementById('disconnect-btn').style.display = connected ? 'block' : 'none';
+                document.getElementById('connect-btn-mobile').style.display = connected ? 'none' : 'block';
+                document.getElementById('disconnect-btn-mobile').style.display = connected ? 'block' : 'none';
             }
         };
     </script>
