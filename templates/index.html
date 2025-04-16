@@ -1695,59 +1695,73 @@
             }
         }
 
-        // Heart rate analysis function
+        // Heart rate analysis function using GPT-3.5
         async function analyzeHeartRate() {
             if (hrHistory.length === 0) {
                 appendMessage("No heart rate data available for analysis", 'error-message');
                 return;
             }
             
+            const currentHR = hrHistory[0].rate;
             const typingIndicator = showTypingIndicator();
             
             try {
-                // Calculate basic stats
-                const rates = hrHistory.map(item => item.rate);
-                const currentHR = rates[0];
-                const average = Math.round(rates.reduce((a, b) => a + b, 0) / rates.length);
-                const min = Math.min(...rates);
-                const max = Math.max(...rates);
-                
-                // Determine HR status
-                let status = "Normal";
-                if (currentHR > 100) status = "High";
-                if (currentHR < 60) status = "Low";
-                
-                // Generate analysis message
-                let analysisMessage = `🔍 Heart Rate Analysis:\n\n`;
-                analysisMessage += `Current: ${currentHR} bpm (${status})\n`;
-                analysisMessage += `Average: ${average} bpm\n`;
-                analysisMessage += `Range: ${min}-${max} bpm\n\n`;
-                
-                // Add interpretation
-                if (status === "High") {
-                    analysisMessage += `Your heart rate is currently elevated. This could be due to:\n`;
-                    analysisMessage += `- Physical activity\n- Stress or anxiety\n- Caffeine intake\n- Medical conditions\n\n`;
-                    analysisMessage += `Consider resting and monitoring. If consistently high without explanation, consult a doctor.`;
-                } else if (status === "Low") {
-                    analysisMessage += `Your heart rate is currently low. This could be:\n`;
-                    analysisMessage += `- Normal for athletes\n- Sign of good fitness\n- Result of medication\n- Medical condition\n\n`;
-                    analysisMessage += `If you feel dizzy or fatigued, consult a doctor.`;
-                } else {
-                    analysisMessage += `Your heart rate is in the normal range. Good job maintaining a healthy heart rate!`;
+                // Find current session
+                const currentSession = chatSessions.find(s => s.id === currentChatId);
+                if (!currentSession) {
+                    throw new Error('Current chat session not found');
                 }
                 
-                // Add trends if we have enough data
-                if (hrHistory.length > 3) {
-                    const first = hrHistory[hrHistory.length-1].rate;
-                    const last = hrHistory[0].rate;
-                    const trend = last > first ? "increasing" : last < first ? "decreasing" : "stable";
-                    
-                    analysisMessage += `\n\nTrend: ${trend} over last ${hrHistory.length} readings`;
-                }
+                // Prepare the prompt for GPT-3.5
+                const prompt = `My current heart rate is ${currentHR} BPM. Can you analyze this for me and provide: 
+                1. What this heart rate means for my health
+                2. Potential causes for this reading
+                3. When I should be concerned
+                4. Recommended actions
+                Please provide this in a clear, structured format with bullet points.`;
                 
+                // Add the analysis request to chat history
+                currentSession.messages.push({
+                    content: prompt,
+                    is_user: true,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Save sessions
+                saveChatSessions();
+                
+                // Call the API endpoint with the analysis request
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ message: prompt })
+                });
+
+                const data = await response.json();
                 const chatBox = document.getElementById('chat-box');
                 chatBox.removeChild(typingIndicator);
-                appendMessage(analysisMessage, 'bot-message');
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Server error');
+                } else if (data.status === "error") {
+                    appendMessage(data.message, 'error-message');
+                } else {
+                    // Format and display the GPT-3.5 response
+                    formatBotResponse(data.response);
+                    
+                    // Add bot response to session
+                    currentSession.messages.push({
+                        content: data.response,
+                        is_user: false,
+                        timestamp: new Date().toISOString()
+                    });
+                    
+                    // Save sessions again
+                    saveChatSessions();
+                }
                 
             } catch (error) {
                 const chatBox = document.getElementById('chat-box');
