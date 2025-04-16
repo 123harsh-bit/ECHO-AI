@@ -329,6 +329,7 @@
             flex-direction: column;
             gap: 10px;
             scrollbar-width: none;
+            -webkit-overflow-scrolling: touch; /* Enable smooth scrolling on iOS */
         }
 
         .message {
@@ -598,6 +599,7 @@
             background: #222;
             border-radius: 8px;
             margin-top: 15px;
+            -webkit-overflow-scrolling: touch; /* Enable smooth scrolling on iOS */
         }
 
         .hr-history h3 {
@@ -624,6 +626,56 @@
         .hr-history-value {
             font-weight: bold;
             color: #ff4444;
+        }
+
+        /* Enhanced Text Formatting */
+        .bot-message h1, 
+        .bot-message h2, 
+        .bot-message h3, 
+        .bot-message h4 {
+            color: #00f5f9;
+            margin: 15px 0 10px 0;
+        }
+
+        .bot-message h1 {
+            font-size: 22px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+
+        .bot-message h2 {
+            font-size: 20px;
+        }
+
+        .bot-message h3 {
+            font-size: 18px;
+        }
+
+        .bot-message h4 {
+            font-size: 16px;
+        }
+
+        .bot-message strong {
+            color: #00f5f9;
+            font-weight: bold;
+        }
+
+        .bot-message em {
+            font-style: italic;
+            color: #aaa;
+        }
+
+        .bot-message p {
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+
+        .bot-message blockquote {
+            border-left: 3px solid #019396;
+            padding-left: 15px;
+            margin: 15px 0;
+            color: #aaa;
+            font-style: italic;
         }
 
         /* Professional Table Styling */
@@ -662,14 +714,22 @@
             background-color: #2a2a2a;
         }
         
-        .bot-message ul {
-            margin: 5px 0;
-            padding-left: 20px;
+        .bot-message ul, .bot-message ol {
+            margin: 15px 0;
+            padding-left: 25px;
         }
         
         .bot-message li {
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        
+        .bot-message ul li {
             list-style-type: disc;
+        }
+        
+        .bot-message ol li {
+            list-style-type: decimal;
         }
 
         .chat-box::-webkit-scrollbar,
@@ -854,6 +914,22 @@
             .input-container {
                 padding: 15px;
             }
+
+            /* Fix mobile scrolling */
+            body, html {
+                overflow: auto;
+                height: 100%;
+            }
+
+            .main-content {
+                overflow: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .chat-box {
+                overflow-y: scroll;
+                -webkit-overflow-scrolling: touch;
+            }
         }
     </style>
 </head>
@@ -921,14 +997,20 @@
         <div class="main-container">
             <div class="chat-container">
                 <div class="welcome-message" id="welcome-message">
-                    <p>AI Heart Health Chatbot</p>
+                    <h1>AI Heart Health Chatbot</h1>
                     <p>"Your AI-powered heart health assistant – monitor, analyze, and stay informed."</p>
-                    <p style="margin-top: 20px; font-size: 16px; color: #00f5f9;">
-                        I specialize in heart health topics including:<br>
-                        • Heart disease • Blood pressure • Cholesterol<br>
-                        • Heart-healthy diets • Exercise for heart health<br>
-                        • Heart rate monitoring • Cardiovascular symptoms
-                    </p>
+                    <div style="margin-top: 20px; font-size: 16px; color: #00f5f9;">
+                        <h3>I specialize in heart health topics including:</h3>
+                        <ul>
+                            <li><strong>Heart disease</strong> - Prevention and management</li>
+                            <li><strong>Blood pressure</strong> - Monitoring and control</li>
+                            <li><strong>Cholesterol</strong> - Understanding levels and impact</li>
+                            <li><strong>Heart-healthy diets</strong> - Nutrition plans</li>
+                            <li><strong>Exercise for heart health</strong> - Recommended routines</li>
+                            <li><strong>Heart rate monitoring</strong> - Interpretation and analysis</li>
+                            <li><strong>Cardiovascular symptoms</strong> - Recognition and response</li>
+                        </ul>
+                    </div>
                 </div>
 
                 <div class="chat-box" id="chat-box"></div>
@@ -951,7 +1033,7 @@
             <div class="hr-container" id="hr-container">
                 <div class="hr-section">
                     <div class="hr-display">
-                        <span>Current Heart Rate</span>
+                        <h3>Current Heart Rate</h3>
                         <div id="current-hr">--</div>
                         <div class="hr-status" id="hr-status">Not connected</div>
                     </div>
@@ -1545,11 +1627,39 @@
             if (text.includes('|') && text.includes('\n')) {
                 formatBotResponse(text, message);
             } else {
-                message.innerText = text;
+                // Format headings, bold text, etc.
+                message.innerHTML = formatTextResponse(text);
             }
             
             chatBox.appendChild(message);
             chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Format text with headings, bold, etc.
+        function formatTextResponse(text) {
+            // Convert markdown-style headings to HTML
+            text = text.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+            text = text.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+            text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+            
+            // Convert markdown bold to HTML
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            // Convert markdown lists to HTML
+            text = text.replace(/^\s*\*\s(.*$)/gm, '<li>$1</li>');
+            text = text.replace(/^\s*-\s(.*$)/gm, '<li>$1</li>');
+            text = text.replace(/^\s*\+\s(.*$)/gm, '<li>$1</li>');
+            
+            // Convert newlines to paragraphs where appropriate
+            text = text.replace(/\n\n/g, '</p><p>');
+            
+            // Wrap in paragraph tags if not already wrapped
+            if (!text.startsWith('<h') && !text.startsWith('<p') && !text.startsWith('<ul') && !text.startsWith('<li')) {
+                text = '<p>' + text + '</p>';
+            }
+            
+            return text;
         }
 
         // Show typing indicator
@@ -1623,7 +1733,7 @@
                             });
                             td.appendChild(ul);
                         } else {
-                            td.textContent = cell.trim();
+                            td.innerHTML = formatTextResponse(cell.trim());
                         }
                         
                         td.style.padding = "12px 15px";
@@ -1644,7 +1754,7 @@
                 tableContainer.appendChild(table);
                 message.appendChild(tableContainer);
             } else {
-                message.innerText = response;
+                message.innerHTML = formatTextResponse(response);
             }
             
             if (!container) {
@@ -1688,10 +1798,10 @@
             
             if (hr > 100) {
                 showNotification(`⚠️ High Heart Rate Alert: ${hr} BPM at ${timeString}. Consider resting and monitoring.`, 'warning');
-                appendMessage(`Warning: Your heart rate is high (${hr} BPM). Consider resting.`, 'bot-message');
+                appendMessage(`<strong>Warning:</strong> Your heart rate is high (${hr} BPM). Consider resting.`, 'bot-message');
             } else if (hr < 60) {
                 showNotification(`⚠️ Low Heart Rate Alert: ${hr} BPM at ${timeString}. If you feel dizzy, consult a doctor.`, 'warning');
-                appendMessage(`Notice: Your heart rate is low (${hr} BPM). This may be normal for some people.`, 'bot-message');
+                appendMessage(`<strong>Notice:</strong> Your heart rate is low (${hr} BPM). This may be normal for some people.`, 'bot-message');
             }
         }
 
