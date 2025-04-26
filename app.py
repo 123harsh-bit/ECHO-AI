@@ -110,44 +110,90 @@ HEART_KEYWORDS = [
     "icd", "defibrillator", "cabg", "bypass surgery", "valve replacement",
     "tavr", "cardiac rehab", "cpr", "aed",
     
-    # Health Terms
-    "health", "diet", "exercise", "nutrition", "diagnosis", "treatment",
-    "doctor", "checkup", "medicine", "medication", "therapy", "lifestyle",
-    
     # Telugu Terms
-    "గుండె", "హృదయనాళ", "పల్స్", "గుండె చప్పుడు", 
-    "ప్రసరణ", "రక్త ప్రవాహం", "జఠరిక", "కర్ణిక", "బృహద్ధమని", "ధమని",
-    "సిర", "కేశనాళిక", "మయోకార్డియం", "పెరికార్డియం", "కవాటం", "ఆరోగ్యం",
+    "గుండె", "హృదయం", "హృదయ వైఫల్యం", "రక్తపోటు", "బీపీ", "గుండె ఆరోగ్యం",
+    "గుండె నొప్పి", "హృదయ స్పందన", "పల్స్", "గుండె జబ్బు", "హృదయ వ్యాయామం",
+    "కొలెస్ట్రాల్", "గుండెపోటు", "హృదయ నాళాలు", "రక్తం", "ధమనులు", "సిరలు",
+    "గుండె మందులు", "హృదయ శస్త్రచికిత్స", "గుండె వైద్యుడు", "కార్డియాలజిస్ట్",
     
     # Hindi Terms
-    "हृदय", "हृदयवाहिनी", "पल्स", "बीपीएम", "हृदय की धड़कन", 
-    "परिसंचरण", "रक्त प्रवाह", "वेंट्रिकल", "एट्रियम", "महाधमनी", "धमनी", 
-    "नस", "केशिका", "मायोकार्डियम", "पेरीकार्डियम", "वाल्व", "स्वास्थ्य"
+    "हृदय", "दिल", "हार्ट", "हृदय रोग", "रक्तचाप", "बीपी", "हृदय स्वास्थ्य", 
+    "सीने में दर्द", "हृदय गति", "नब्ज", "हृदय रोग", "हृदय व्यायाम", 
+    "कोलेस्ट्रॉल", "हार्ट अटैक", "हृदय धमनियाँ", "रक्त", "धमनियाँ", "नसें",
+    "हृदय की दवाएं", "हृदय शल्य चिकित्सा", "हृदय रोग विशेषज्ञ", "कार्डियोलॉजिस्ट",
+    
+    # Kannada Terms
+    "ಹೃದಯ", "ಗುಂಡಿಗೆ", "ಹೃದಯ ಸಮಸ್ಯೆ", "ರಕ್ತದೊತ್ತಡ", "ಬಿಪಿ", "ಹೃದಯ ಆರೋಗ್ಯ",
+    "ಎದೆ ನೋವು", "ಹೃದಯ ಬಡಿತ", "ನಾಡಿ", "ಹೃದಯ ರೋಗ", "ಹೃದಯ ವ್ಯಾಯಾಮ", 
+    "ಕೊಲೆಸ್ಟರಾಲ್", "ಹೃದಯಾಘಾತ", "ಹೃದಯ ಧಮನಿಗಳು", "ರಕ್ತ", "ಧಮನಿಗಳು", "ಸಿರೆಗಳು",
+    "ಹೃದಯ medicine", "ಹೃದಯ ಶಸ್ತ್ರಚಿಕಿತ್ಸೆ", "ಹೃದಯ ವೈದ್ಯ", "ಕಾರ್ಡಿಯೋಲಜಿಸ್ಟ್",
+    
+    # Tamil Terms
+    "இதயம்", "கார்டியாக்", "இதய நோய்", "இரத்த அழுத்தம்", "பிபி", "இதய ஆரோக்கியம்",
+    "மார்பு வலி", "இதய துடிப்பு", "நாடி", "இதய பிரச்சினை", "இதய உடற்பயிற்சி", 
+    "கொலஸ்ட்ரால்", "இதயத்துடிப்பு", "இதய நாளங்கள்", "இரத்தம்", "தமனிகள்", "சிரைகள்",
+    "இதய மருந்துகள்", "இதய அறுவை சிகிச்சை", "இதய மருத்துவர்", "கார்டியாலஜிஸ்ட்",
+    
+    # Common health terms across languages
+    "health", "ఆరోగ్యం", "स्वास्थ्य", "ಆರೋಗ್ಯ", "ஆரோக்யம்",
+    "doctor", "డాక్టర్", "डॉक्टर", "ಡಾಕ್ಟರ್", "மருத்துவர்",
+    "medicine", "మందు", "दवा", "ಮದ್ದು", "மருந்து",
+    "treatment", "చికిత్స", "इलाज", "ಚಿಕಿತ್ಸೆ", "சிகிச்சை",
+    "symptoms", "లక్షణాలు", "लक्षण", "ಲಕ್ಷಣಗಳು", "அறிகுறிகள்"
 ]
 
 def is_heart_related(user_input):
-    """Improved function to detect heart-related questions"""
+    """Improved function to detect heart-related questions in multiple languages"""
     user_input = user_input.lower()
     
-    # Direct keyword match
+    # Direct keyword match in any language
     for keyword in HEART_KEYWORDS:
         if keyword.lower() in user_input:
             return True
     
-    # Common health phrases that might be heart-related
+    # Common health phrases that might be heart-related (multilingual)
     health_phrases = [
+        # English
         "check my heart", "my heart", "heart health", "chest", "breathing problem",
         "blood pressure", "exercise advice", "diet for heart", "medical history",
         "heart rate", "heart monitor", "cardiac", "heart specialist", "cardiologist",
-        "risk factor", "family history", "check up", "monitor", "ecg", "ekg"
+        "risk factor", "family history", "check up", "monitor", "ecg", "ekg",
+        
+        # Telugu
+        "గుండె తనిఖీ", "నా గుండె", "గుండె ఆరోగ్యం", "ఛాతీ", "శ్వాస సమస్య",
+        "రక్తపోటు", "వ్యాయామ సలహా", "గుండెకు ఆహారం", "వైద్య చరిత్ర",
+        
+        # Hindi
+        "दिल की जांच", "मेरा दिल", "दिल की सेहत", "छाती", "सांस की समस्या",
+        "ब्लड प्रेशर", "व्यायाम सलाह", "दिल के लिए आहार", "चिकित्सा इतिहास",
+        
+        # Kannada
+        "ಹೃದಯ ಪರಿಶೀಲನೆ", "ನನ್ನ ಹೃದಯ", "ಹೃದಯ ಆರೋಗ್ಯ", "ಎದೆ", "ಉಸಿರಾಟದ ತೊಂದರೆ",
+        "ರಕ್ತದೊತ್ತಡ", "ವ್ಯಾಯಾಮ ಸಲಹೆ", "ಹೃದಯಕ್ಕೆ ಆಹಾರ", "ವೈದ್ಯಕೀಯ ಇತಿಹಾಸ",
+        
+        # Tamil
+        "இதய சோதனை", "என் இதயம்", "இதய ஆரோக்கியம்", "மார்பு", "மூச்சுத் திணறல்",
+        "இரத்த அழுத்தம்", "உடற்பயிற்சி ஆலோசனை", "இதயத்திற்கான உணவு", "மருத்துவ வரலாறு"
     ]
     
     for phrase in health_phrases:
-        if phrase in user_input:
+        if phrase.lower() in user_input:
             return True
     
     # If the question seems to be asking about health in general
-    general_health_terms = ["health", "healthy", "doctor", "medical", "condition", "symptoms", "treatment"]
+    general_health_terms = [
+        # English
+        "health", "healthy", "doctor", "medical", "condition", "symptoms", "treatment",
+        # Telugu
+        "ఆరోగ్యం", "వైద్యుడు", "వైద్య", "స్థితి", "లక్షణాలు", "చికిత్స",
+        # Hindi
+        "स्वास्थ्य", "स्वस्थ", "डॉक्टर", "चिकित्सा", "स्थिति", "लक्षण", "इलाज",
+        # Kannada
+        "ಆರೋಗ್ಯ", "ಆರೋಗ್ಯಕರ", "ವೈದ್ಯ", "ವೈದ್ಯಕೀಯ", "ಸ್ಥಿತಿ", "ಲಕ್ಷಣಗಳು", "ಚಿಕಿತ್ಸೆ",
+        # Tamil
+        "ஆரோக்கியம்", "ஆரோக்கியமான", "மருத்துவர்", "மருத்துவ", "நிலை", "அறிகுறிகள்", "சிகிச்சை"
+    ]
+    
     if any(term in user_input for term in general_health_terms):
         # For general health questions, be more permissive
         return True
@@ -510,10 +556,15 @@ def chat():
                     'type': 'text'
                 }), 500
 
+            # Detect language and respond appropriately
+            system_prompt = """You are a helpful heart health expert who can communicate in English, Telugu, Hindi, Kannada, and Tamil. 
+            Provide accurate, empathetic, and concise information about heart health topics in the user's preferred language. 
+            Include relevant medical facts when appropriate, but always encourage users to consult healthcare professionals for personalized advice."""
+            
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": "You are a helpful heart health expert. Provide accurate, empathetic, and concise information about heart health topics. Include relevant medical facts when appropriate, but always encourage users to consult healthcare professionals for personalized advice."},
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_input}
                 ],
                 temperature=0.7
