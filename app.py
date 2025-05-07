@@ -9,6 +9,7 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 import json
 from datetime import datetime
+import click
 
 # ------------------ INITIAL SETUP ------------------
 load_dotenv()  # Load environment variables from .env
@@ -219,12 +220,27 @@ def generate_chat_title(user_input):
     except Exception:
         return user_input[:30] + ("..." if len(user_input) > 30 else "")
 
+# ------------------ CLI COMMANDS ------------------
+@app.cli.command("init-db")
+def init_db_command():
+    """Initialize the database."""
+    with app.app_context():
+        db.create_all()
+    click.echo("Initialized the database.")
+
 # ------------------ MIDDLEWARE ------------------
 @app.before_request
 def before_request():
     """Force HTTPS in production"""
     if request.url.startswith('http://') and os.getenv('FLASK_ENV') == 'production':
         return redirect(request.url.replace('http://', 'https://'), 301)
+
+@app.before_first_request
+def before_first_request():
+    """Initialize database before first request if not in production"""
+    if os.getenv('FLASK_ENV') != 'production':
+        with app.app_context():
+            db.create_all()
 
 # ------------------ ROUTES ------------------
 @app.route('/')
