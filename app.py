@@ -52,13 +52,14 @@ google = oauth.register(
     name='google',
     client_id=os.getenv('GOOGLE_CLIENT_ID'),
     client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
-    access_token_url='https://accounts.google.com/o/oauth2/token',
-    authorize_url='https://accounts.google.com/o/oauth2/auth',
-    api_base_url='https://www.googleapis.com/oauth2/v1/',
+    access_token_url='https://oauth2.googleapis.com/token',
+    authorize_url='https://accounts.google.com/o/oauth2/v2/auth',
+    api_base_url='https://www.googleapis.com/oauth2/v3/',
     client_kwargs={
         'scope': 'openid email profile',
-        'prompt': 'select_account'  # Force account selection every time
+        'token_endpoint_auth_method': 'client_secret_post'
     },
+    jwks_uri='https://www.googleapis.com/oauth2/v3/certs',
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration'
 )
 
@@ -285,11 +286,13 @@ def google_authorize():
         if os.getenv('FLASK_ENV') == 'production':
             request.url = request.url.replace('http://', 'https://')
         
+        # Get token with proper issuer verification
         token = google.authorize_access_token()
-        if not token:
+        if not token or 'id_token' not in token:
             return redirect(url_for('login', error_message='Google authentication failed: No token received'))
 
-        user_info = google.get('userinfo').json()
+        # Verify token and get user info
+        user_info = google.parse_id_token(token)
         if not user_info.get('email'):
             return redirect(url_for('login', error_message='Google authentication failed: No email provided'))
 
@@ -299,12 +302,12 @@ def google_authorize():
             user = User(
                 email=user_info['email'],
                 username=user_info.get('name', user_info['email'].split('@')[0]),
-                google_id=user_info['id']
+                google_id=user_info['sub']
             )
             db.session.add(user)
             db.session.commit()
         elif not user.google_id:
-            user.google_id = user_info['id']
+            user.google_id = user_info['sub']
             db.session.commit()
 
         # Set session
