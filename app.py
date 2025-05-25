@@ -53,11 +53,12 @@ google = oauth.register(
     client_id=os.getenv('GOOGLE_CLIENT_ID'),
     client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
     access_token_url='https://accounts.google.com/o/oauth2/token',
-    access_token_params=None,
     authorize_url='https://accounts.google.com/o/oauth2/auth',
-    authorize_params=None,
     api_base_url='https://www.googleapis.com/oauth2/v1/',
-    client_kwargs={'scope': 'openid email profile'},
+    client_kwargs={
+        'scope': 'openid email profile',
+        'prompt': 'select_account'  # Force account selection every time
+    },
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration'
 )
 
@@ -265,34 +266,58 @@ def before_request():
 # ------------------ AUTH ROUTES ------------------
 @app.route('/google-login')
 def google_login():
-    redirect_uri = url_for('google_authorize', _external=True)
+    if 'user_id' in session:
+        return redirect(url_for('home'))
+    
+    # Force HTTPS in production
+    if os.getenv('FLASK_ENV') == 'production':
+        redirect_uri = url_for('google_authorize', _external=True).replace('http://', 'https://')
+    else:
+        redirect_uri = url_for('google_authorize', _external=True)
+    
     return google.authorize_redirect(redirect_uri)
 
+# Updated google-authorize route
 @app.route('/google-authorize')
 def google_authorize():
     try:
+        # Force HTTPS in production
+        if os.getenv('FLASK_ENV') == 'production':
+            request.url = request.url.replace('http://', 'https://')
+        
         token = google.authorize_access_token()
+        if not token:
+            return redirect(url_for('login', error_message='Google authentication failed: No token received'))
+
         user_info = google.get('userinfo').json()
-        
-        # Extract user information
-        email = user_info['email']
-        google_id = user_info['id']
-        name = user_info.get('name', email.split('@')[0])
-        
+        if not user_info.get('email'):
+            return redirect(url_for('login', error_message='Google authentication failed: No email provided'))
+
         # Create or get user
-        user = create_or_get_user(email=email, username=name, google_id=google_id)
-        
-        # Set session variables
+        user = User.query.filter_by(email=user_info['email']).first()
+        if not user:
+            user = User(
+                email=user_info['email'],
+                username=user_info.get('name', user_info['email'].split('@')[0]),
+                google_id=user_info['id']
+            )
+            db.session.add(user)
+            db.session.commit()
+        elif not user.google_id:
+            user.google_id = user_info['id']
+            db.session.commit()
+
+        # Set session
         session.permanent = True
         session['user_id'] = user.id
-        session['username'] = user.username or name
-        session['email'] = email
+        session['username'] = user.username or user_info.get('name', 'User')
+        session['email'] = user_info['email']
         
         return redirect(url_for('home'))
+
     except Exception as e:
         app.logger.error(f"Google OAuth error: {str(e)}")
-        return redirect(url_for('login', error_message="Google login failed. Please try again."))
-
+        return redirect(url_for('login', error_message=f'Google login failed: {str(e)}'))
 # ------------------ ROUTES ------------------
 @app.route('/')
 def home():
