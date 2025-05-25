@@ -65,9 +65,9 @@
             cursor: pointer;
         }
 
-        /* Sidebar styles */
+        /* Sidebar styles - Redesigned to include HR panel */
         .sidebar {
-            width: 280px;
+            width: 320px;
             background: #111;
             border-right: 1px solid #333;
             display: flex;
@@ -87,7 +87,9 @@
         .sidebar.collapsed .sidebar-header-text,
         .sidebar.collapsed .new-chat-btn span,
         .sidebar.collapsed .chat-history-item,
-        .sidebar.collapsed .chat-history-date {
+        .sidebar.collapsed .chat-history-date,
+        .sidebar.collapsed .hr-sidebar-section,
+        .sidebar.collapsed .sidebar-divider {
             display: none;
         }
 
@@ -202,6 +204,113 @@
             padding-left: 10px;
         }
 
+        /* Sidebar divider */
+        .sidebar-divider {
+            height: 1px;
+            background: #333;
+            margin: 10px 15px;
+        }
+
+        /* HR Panel in Sidebar */
+        .hr-sidebar-section {
+            padding: 15px;
+            background: #151515;
+            border-radius: 8px;
+            margin: 10px;
+            border: 1px solid #333;
+        }
+
+        .hr-sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .hr-sidebar-title {
+            color: #00f5f9;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .hr-sidebar-display {
+            font-size: 24px;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        #current-hr-sidebar {
+            font-weight: bold;
+            font-size: 36px;
+        }
+
+        .hr-sidebar-status {
+            font-size: 14px;
+            color: #aaa;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .hr-sidebar-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .hr-sidebar-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 20px;
+            border: none;
+            background: #0082fc;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .hr-sidebar-btn.disconnect {
+            background: #666;
+        }
+
+        .hr-sidebar-btn:hover {
+            opacity: 0.9;
+        }
+
+        .hr-sidebar-btn:active {
+            transform: scale(0.98);
+        }
+
+        .hr-sidebar-history {
+            margin-top: 15px;
+            max-height: 150px;
+            overflow-y: auto;
+            background: #222;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .hr-sidebar-history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 5px;
+            font-size: 13px;
+            border-bottom: 1px solid #333;
+        }
+
+        .hr-sidebar-history-item:last-child {
+            border-bottom: none;
+        }
+
+        .hr-sidebar-history-value {
+            font-weight: bold;
+            color: #ff4444;
+        }
+
         /* Main content area */
         .main-content {
             flex-grow: 1;
@@ -299,19 +408,11 @@
         }
 
         .chat-container {
-            width: 70%;
+            width: 100%;
             height: 100%;
             display: flex;
             flex-direction: column;
             position: relative;
-        }
-
-        .hr-container {
-            width: 30%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
         }
 
         .welcome-message {
@@ -329,7 +430,7 @@
             flex-direction: column;
             gap: 10px;
             scrollbar-width: none;
-            -webkit-overflow-scrolling: touch; /* Enable smooth scrolling on iOS */
+            -webkit-overflow-scrolling: touch;
         }
 
         .message {
@@ -459,212 +560,6 @@
             background: #0056b3;
         }
 
-        /* NEW HR PANEL DESIGN - More compact and integrated */
-        .hr-section {
-            background: #111;
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #333;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .hr-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #333;
-        }
-
-        .hr-title {
-            color: #00f5f9;
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .hr-display-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .hr-display {
-            font-size: 24px;
-            margin-bottom: 5px;
-            color: #00f5f9;
-            text-align: center;
-        }
-
-        #current-hr {
-            font-weight: bold;
-            color: #ff4444;
-            font-size: 36px;
-            margin: 5px 0;
-            transition: color 0.3s;
-        }
-
-        .hr-status {
-            font-size: 14px;
-            color: #aaa;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .hr-actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .hr-btn {
-            background: #0082fc;
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            min-height: 44px;
-        }
-
-        .hr-btn:hover {
-            background: #0066c4;
-        }
-
-        .hr-btn.disconnect {
-            background: #666;
-        }
-
-        .hr-btn.disconnect:hover {
-            background: #444;
-        }
-
-        .hr-btn.analyze {
-            background: #00a854;
-            grid-column: span 2;
-        }
-
-        .hr-btn.analyze:hover {
-            background: #008744;
-        }
-
-        .manual-hr-input {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-            align-items: center;
-            width: 100%;
-        }
-
-        #manual-hr {
-            flex-grow: 1;
-            padding: 12px;
-            border-radius: 20px;
-            border: 1px solid #333;
-            background: #222;
-            color: white;
-            font-size: 16px;
-            outline: none;
-            transition: border-color 0.3s;
-            min-height: 44px;
-        }
-
-        #manual-hr:focus {
-            border-color: #00f5f9;
-            box-shadow: 0 0 0 2px rgba(0, 245, 249, 0.2);
-        }
-
-        #submit-hr {
-            padding: 12px 20px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background 0.3s;
-            white-space: nowrap;
-            min-height: 44px;
-        }
-
-        #submit-hr:hover {
-            background: #0056b3;
-        }
-
-        .bluetooth-note {
-            font-size: 12px;
-            color: #aaa;
-            margin-top: 10px;
-            text-align: center;
-        }
-
-        .hr-history-container {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            margin-top: 15px;
-        }
-
-        .hr-history-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .hr-history-title {
-            color: #00f5f9;
-            font-size: 16px;
-        }
-
-        .clear-history-btn {
-            background: transparent;
-            border: none;
-            color: #aaa;
-            font-size: 12px;
-            cursor: pointer;
-            text-decoration: underline;
-        }
-
-        .hr-history {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 10px;
-            background: #222;
-            border-radius: 8px;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .hr-history-list {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .hr-history-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px;
-            background: #333;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        .hr-history-value {
-            font-weight: bold;
-            color: #ff4444;
-        }
-
         /* Enhanced Text Formatting */
         .bot-message h1, 
         .bot-message h2, 
@@ -770,7 +665,7 @@
         }
 
         .chat-box::-webkit-scrollbar,
-        .hr-history::-webkit-scrollbar,
+        .hr-sidebar-history::-webkit-scrollbar,
         .chat-history::-webkit-scrollbar {
             display: none;
         }
@@ -799,92 +694,30 @@
             z-index: 999;
         }
 
-        /* Mobile HR Section */
-        .mobile-hr-section {
-            display: none;
-            background: #111;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px;
-            border: 1px solid #333;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .hr-display-mobile {
-            font-size: 24px;
-            text-align: center;
-            margin-bottom: 10px;
-            color: #00f5f9;
-        }
-
-        #current-hr-mobile {
-            font-size: 36px;
-            font-weight: bold;
-            color: #ff4444;
-        }
-
-        .hr-status-mobile {
-            font-size: 14px;
-            color: #aaa;
-            margin-bottom: 10px;
-        }
-
-        .hr-actions-mobile {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .hr-actions-mobile button {
-            padding: 10px 20px;
-            border-radius: 20px;
-            border: none;
-            background: #0082fc;
-            color: white;
-            cursor: pointer;
-            min-height: 44px;
-        }
-
-        .hr-actions-mobile button.disconnect {
-            background: #666;
-        }
-
-        .toggle-hr-view {
-            display: none;
-            background: #019396;
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 20px;
-            margin: 0 15px 15px;
-            cursor: pointer;
-            text-align: center;
-            min-height: 44px;
-        }
-
+        /* Mobile HR Section - Removed since we have sidebar HR panel */
+        
         @media (max-width: 768px) {
             .sidebar {
                 position: fixed;
                 top: 0;
-                left: -280px;
+                left: -320px;
                 bottom: 0;
                 z-index: 1000;
-                width: 280px;
+                width: 320px;
                 transition: transform 0.3s ease;
             }
 
             .sidebar.open {
-                transform: translateX(280px);
+                transform: translateX(320px);
             }
 
             .sidebar.collapsed {
-                width: 280px;
-                left: -280px;
+                width: 320px;
+                left: -320px;
             }
 
             .sidebar.collapsed.open {
-                transform: translateX(280px);
+                transform: translateX(320px);
             }
 
             .sidebar-toggle {
@@ -902,7 +735,7 @@
                 padding: 10px;
             }
             
-            .chat-container, .hr-container {
+            .chat-container {
                 width: 100%;
                 height: auto;
             }
@@ -920,23 +753,6 @@
                 display: block;
                 overflow-x: auto;
                 white-space: nowrap;
-            }
-
-            .mobile-hr-section {
-                display: flex;
-            }
-
-            .hr-container {
-                display: none;
-                margin-top: 15px;
-            }
-
-            .hr-container.visible {
-                display: flex;
-            }
-
-            .toggle-hr-view {
-                display: block;
             }
 
             .welcome-message {
@@ -967,6 +783,20 @@
                 overflow-y: scroll;
                 -webkit-overflow-scrolling: touch;
             }
+
+            /* Adjust HR sidebar panel for mobile */
+            .hr-sidebar-section {
+                margin: 5px;
+                padding: 10px;
+            }
+
+            .hr-sidebar-actions {
+                flex-direction: column;
+            }
+
+            .hr-sidebar-btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -981,15 +811,47 @@
     <!-- Overlay for mobile sidebar -->
     <div class="overlay" id="overlay"></div>
 
-    <!-- Sidebar for chat history -->
+    <!-- Sidebar for chat history and HR panel -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-header-text">Chat History</div>
+            <div class="sidebar-header-text">Echo AI</div>
             <button class="collapse-btn" id="collapse-btn">≡</button>
         </div>
+        
+        <!-- Heart Rate Panel in Sidebar -->
+        <div class="hr-sidebar-section">
+            <div class="hr-sidebar-header">
+                <div class="hr-sidebar-title">Heart Rate Monitor</div>
+            </div>
+            
+            <div class="hr-sidebar-display">
+                <div id="current-hr-sidebar">--</div>
+                <div class="hr-sidebar-status" id="hr-sidebar-status">Not connected</div>
+            </div>
+            
+            <div class="hr-sidebar-actions">
+                <button class="hr-sidebar-btn" id="connect-btn-sidebar">
+                    <span>Connect</span>
+                </button>
+                <button class="hr-sidebar-btn disconnect" id="disconnect-btn-sidebar" style="display:none;">
+                    <span>Disconnect</span>
+                </button>
+            </div>
+            
+            <div class="hr-sidebar-history" id="hr-sidebar-history">
+                <div class="hr-sidebar-history-item">
+                    <span>Last Readings</span>
+                </div>
+                <!-- HR history items will be added here -->
+            </div>
+        </div>
+        
+        <div class="sidebar-divider"></div>
+        
         <button class="new-chat-btn" id="new-chat-btn">
             <span>+ New chat</span>
         </button>
+        
         <div class="chat-history" id="chat-history">
             <!-- Chat history items will be populated here -->
             <div class="chat-history-date">Today</div>
@@ -1004,7 +866,7 @@
     <div class="main-content">
         <div class="header">
             <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
-            <div>Echo AI</div>
+            <div>Chat</div>
             <div class="profile-container" id="profile-container">
                 <div class="profile-avatar" id="user-avatar">U</div>
                 <div class="profile-name" id="username-display">User</div>
@@ -1016,20 +878,6 @@
             <p><strong>Email:</strong> <span id="profile-email">user@example.com</span></p>
             <button id="logout-btn">Logout</button>
         </div>
-
-        <!-- Mobile HR Section -->
-        <div class="mobile-hr-section">
-            <div class="hr-display-mobile">
-                <div id="current-hr-mobile">--</div>
-                <div class="hr-status-mobile" id="hr-status-mobile">Not connected</div>
-            </div>
-            <div class="hr-actions-mobile">
-                <button id="connect-btn-mobile">Connect</button>
-                <button id="disconnect-btn-mobile" class="disconnect" style="display:none;">Disconnect</button>
-            </div>
-        </div>
-
-        <button class="toggle-hr-view" id="toggle-hr-view">Show Full Heart Rate Panel</button>
 
         <div class="main-container">
             <div class="chat-container">
@@ -1066,60 +914,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- NEW HR PANEL DESIGN - More compact and better organized -->
-            <div class="hr-container" id="hr-container">
-                <div class="hr-section">
-                    <div class="hr-header">
-                        <div class="hr-title">Heart Rate Monitor</div>
-                        <div class="hr-status" id="hr-status">Not connected</div>
-                    </div>
-
-                    <div class="hr-display-container">
-                        <div class="hr-display">Current Heart Rate</div>
-                        <div id="current-hr">--</div>
-                    </div>
-
-                    <div class="hr-actions">
-                        <button id="connect-btn" class="hr-btn">
-                            <span>Connect</span>
-                        </button>
-                        <button id="disconnect-btn" class="hr-btn disconnect" style="display:none;">
-                            <span>Disconnect</span>
-                        </button>
-                        <button id="analyze-btn" class="hr-btn analyze" disabled>
-                            <span>Analyze Heart Rate</span>
-                        </button>
-                    </div>
-
-                    <div class="manual-hr-input">
-                        <input type="number" id="manual-hr" placeholder="Enter HR (30-250 BPM)" min="30" max="250">
-                        <button id="submit-hr">Submit</button>
-                    </div>
-
-                    <div class="bluetooth-note">(Chrome on Windows/Mac/Android only)</div>
-                    
-                    <div class="hr-history-container">
-                        <div class="hr-history-header">
-                            <div class="hr-history-title">Recent Readings</div>
-                            <button class="clear-history-btn" id="clear-history-btn">Clear</button>
-                        </div>
-                        <div class="hr-history">
-                            <div class="hr-history-list" id="hr-history-list">
-                                <!-- HR history items will be added here -->
-                                <div class="hr-history-item">
-                                    <span>10:30 AM</span>
-                                    <span class="hr-history-value">72 bpm</span>
-                                </div>
-                                <div class="hr-history-item">
-                                    <span>10:15 AM</span>
-                                    <span class="hr-history-value">68 bpm</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -1135,19 +929,8 @@
         // Initialize all event listeners
         function initEventListeners() {
             // Bluetooth buttons
-            document.getElementById('connect-btn').addEventListener('click', () => bluetoothManager.connect());
-            document.getElementById('disconnect-btn').addEventListener('click', () => bluetoothManager.handleDisconnect());
-            document.getElementById('connect-btn-mobile').addEventListener('click', () => bluetoothManager.connect());
-            document.getElementById('disconnect-btn-mobile').addEventListener('click', () => bluetoothManager.handleDisconnect());
-            
-            // Manual HR input
-            document.getElementById('submit-hr').addEventListener('click', updateHRManually);
-            document.getElementById('manual-hr').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') updateHRManually();
-            });
-            
-            // Analyze button
-            document.getElementById('analyze-btn').addEventListener('click', analyzeHeartRate);
+            document.getElementById('connect-btn-sidebar').addEventListener('click', () => bluetoothManager.connect());
+            document.getElementById('disconnect-btn-sidebar').addEventListener('click', () => bluetoothManager.handleDisconnect());
             
             // Pre-prompt buttons
             document.querySelectorAll('.pre-prompt-btn').forEach(button => {
@@ -1189,12 +972,6 @@
             // Close notification button
             document.getElementById('close-notification').addEventListener('click', hideNotification);
 
-            // Toggle HR view button
-            document.getElementById('toggle-hr-view').addEventListener('click', toggleHRView);
-
-            // Clear history button
-            document.getElementById('clear-history-btn').addEventListener('click', clearHRHistory);
-
             // Click outside profile details to close
             document.addEventListener('click', (event) => {
                 const profileDetails = document.getElementById('profile-details');
@@ -1206,25 +983,6 @@
                     profileDetails.style.display = 'none';
                 }
             });
-        }
-
-        // Clear HR history
-        function clearHRHistory() {
-            hrHistory = [];
-            bluetoothManager.updateHistoryUI();
-            localStorage.setItem('hrHistory', JSON.stringify(hrHistory));
-            appendMessage("Heart rate history cleared", 'bot-message');
-        }
-
-        // Toggle HR view on mobile
-        function toggleHRView() {
-            const hrContainer = document.getElementById('hr-container');
-            const toggleBtn = document.getElementById('toggle-hr-view');
-            
-            hrContainer.classList.toggle('visible');
-            toggleBtn.textContent = hrContainer.classList.contains('visible') 
-                ? 'Hide Heart Rate Panel' 
-                : 'Show Full Heart Rate Panel';
         }
 
         // Show notification
@@ -1812,34 +1570,6 @@
             }
         }
 
-        // Manual HR input fallback
-        function updateHRManually() {
-            const hrInput = document.getElementById('manual-hr');
-            const hr = parseInt(hrInput.value);
-            
-            if (isNaN(hr)) {
-                appendMessage("Please enter a valid number", 'error-message');
-                return;
-            }
-            
-            if (hr < 30 || hr > 250) {
-                appendMessage("Please enter a value between 30-250", 'error-message');
-                return;
-            }
-            
-            bluetoothManager.displayHeartRate(hr);
-            bluetoothManager.addToHistory(hr);
-            bluetoothManager.sendToBackend(hr);
-            hrInput.value = '';
-            appendMessage(`Manual HR submitted: ${hr} BPM`, 'bot-message');
-            
-            // Enable analyze button after manual input
-            document.getElementById('analyze-btn').disabled = false;
-            
-            // Check for alerts
-            checkHRAlerts(hr);
-        }
-
         // Check for heart rate alerts
         function checkHRAlerts(hr) {
             const now = new Date();
@@ -2000,16 +1730,12 @@
                     appendMessage("Connected successfully!", 'bot-message');
                     this.isConnected = true;
                     this.updateUI(true);
-                    document.getElementById('analyze-btn').disabled = false;
-                    document.getElementById('hr-status').textContent = "Connected";
-                    document.getElementById('hr-status').style.color = "#00ff00";
-                    document.getElementById('hr-status-mobile').textContent = "Connected";
-                    document.getElementById('hr-status-mobile').style.color = "#00ff00";
+                    document.getElementById('hr-sidebar-status').textContent = "Connected";
+                    document.getElementById('hr-sidebar-status').style.color = "#00ff00";
                     
                 } catch (error) {
                     console.error('Connection error:', error);
                     appendMessage(`Error: ${error.message}`, 'error-message');
-                    appendMessage("Please enter heart rate manually", 'bot-message');
                     this.handleDisconnect();
                 }
             },
@@ -2036,11 +1762,9 @@
             },
 
             displayHeartRate(rate) {
-                const hrElement = document.getElementById('current-hr');
-                const mobileHrElement = document.getElementById('current-hr-mobile');
+                const hrElement = document.getElementById('current-hr-sidebar');
                 
                 hrElement.textContent = rate;
-                if (mobileHrElement) mobileHrElement.textContent = rate;
                 
                 let color;
                 if (rate > 100) {
@@ -2052,7 +1776,6 @@
                 }
                 
                 hrElement.style.color = color;
-                if (mobileHrElement) mobileHrElement.style.color = color;
             },
 
             addToHistory(rate) {
@@ -2078,19 +1801,26 @@
             },
 
             updateHistoryUI() {
-                const historyList = document.getElementById('hr-history-list');
+                const historyList = document.getElementById('hr-sidebar-history');
                 historyList.innerHTML = '';
                 
+                // Add header
+                const header = document.createElement('div');
+                header.className = 'hr-sidebar-history-item';
+                header.innerHTML = '<span>Time</span><span>BPM</span>';
+                historyList.appendChild(header);
+                
+                // Add readings
                 hrHistory.forEach(item => {
                     const itemElement = document.createElement('div');
-                    itemElement.className = 'hr-history-item';
+                    itemElement.className = 'hr-sidebar-history-item';
                     
                     const timeElement = document.createElement('span');
                     timeElement.textContent = item.time;
                     
                     const rateElement = document.createElement('span');
-                    rateElement.className = 'hr-history-value';
-                    rateElement.textContent = `${item.rate} bpm`;
+                    rateElement.className = 'hr-sidebar-history-value';
+                    rateElement.textContent = item.rate;
                     
                     itemElement.appendChild(timeElement);
                     itemElement.appendChild(rateElement);
@@ -2122,23 +1852,15 @@
                 this.isConnected = false;
                 this.updateUI(false);
                 
-                document.getElementById('current-hr').textContent = '--';
-                document.getElementById('current-hr').style.color = '#ff4444';
-                document.getElementById('current-hr-mobile').textContent = '--';
-                document.getElementById('current-hr-mobile').style.color = '#ff4444';
-                
-                document.getElementById('analyze-btn').disabled = true;
-                document.getElementById('hr-status').textContent = "Not connected";
-                document.getElementById('hr-status').style.color = "#ff4444";
-                document.getElementById('hr-status-mobile').textContent = "Not connected";
-                document.getElementById('hr-status-mobile').style.color = "#ff4444";
+                document.getElementById('current-hr-sidebar').textContent = '--';
+                document.getElementById('current-hr-sidebar').style.color = '#ff4444';
+                document.getElementById('hr-sidebar-status').textContent = "Not connected";
+                document.getElementById('hr-sidebar-status').style.color = "#ff4444";
             },
 
             updateUI(connected) {
-                document.getElementById('connect-btn').style.display = connected ? 'none' : 'block';
-                document.getElementById('disconnect-btn').style.display = connected ? 'block' : 'none';
-                document.getElementById('connect-btn-mobile').style.display = connected ? 'none' : 'block';
-                document.getElementById('disconnect-btn-mobile').style.display = connected ? 'block' : 'none';
+                document.getElementById('connect-btn-sidebar').style.display = connected ? 'none' : 'block';
+                document.getElementById('disconnect-btn-sidebar').style.display = connected ? 'block' : 'none';
             }
         };
     </script>
