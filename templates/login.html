@@ -6,6 +6,8 @@
     <title>Login - Heart Health Assistant</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-dark: #000;
@@ -18,6 +20,8 @@
             --card-bg: #111;
             --border-color: #333;
             --input-bg: #222;
+            --google-blue: #4285F4;
+            --google-white: #ffffff;
         }
         
         body {
@@ -26,7 +30,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            font-family: Arial, sans-serif;
+            font-family: 'Roboto', Arial, sans-serif;
             color: var(--text-primary);
         }
         
@@ -106,62 +110,47 @@
             text-decoration: none;
         }
 
-        /* SMS notification toggle */
-        .sms-toggle {
+        /* Google Sign-In Button */
+        .google-btn {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            margin: 15px 0;
-        }
-
-        .sms-toggle label {
-            margin-bottom: 0;
+            justify-content: center;
+            background-color: var(--google-blue);
+            color: var(--google-white);
+            border: none;
+            border-radius: 4px;
+            padding: 12px;
+            font-weight: 500;
+            width: 100%;
+            margin-bottom: 15px;
             cursor: pointer;
+            transition: background-color 0.3s;
         }
 
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 24px;
+        .google-btn:hover {
+            background-color: #357ABD;
         }
 
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
+        .google-icon {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
         }
 
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 24px;
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
         }
 
-        .slider:before {
-            position: absolute;
+        .divider::before,
+        .divider::after {
             content: "";
-            height: 16px;
-            width: 16px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .slider {
-            background-color: var(--primary-accent);
-        }
-
-        input:checked + .slider:before {
-            transform: translateX(26px);
+            flex: 1;
+            border-bottom: 1px solid var(--border-color);
+            margin: 0 10px;
         }
     </style>
 </head>
@@ -171,6 +160,16 @@
     <div class="text-center mb-4">
         <h3>Welcome Back</h3>
         <p class="text-muted">Sign in to continue to your Heart Health Assistant</p>
+    </div>
+    
+    <!-- Google Sign-In Button -->
+    <a href="/google-login" class="google-btn">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google logo" class="google-icon">
+        Continue with Google
+    </a>
+
+    <div class="divider">
+        OR
     </div>
     
     <form method="POST" action="/login">
