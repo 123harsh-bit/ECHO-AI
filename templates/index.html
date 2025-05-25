@@ -459,19 +459,42 @@
             background: #0056b3;
         }
 
+        /* NEW HR PANEL DESIGN - More compact and integrated */
         .hr-section {
             background: #111;
             padding: 15px;
             border-radius: 10px;
             border: 1px solid #333;
-            flex-grow: 1;
             display: flex;
             flex-direction: column;
+            height: 100%;
+        }
+
+        .hr-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+
+        .hr-title {
+            color: #00f5f9;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .hr-display-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 15px;
         }
 
         .hr-display {
             font-size: 24px;
-            margin-bottom: 15px;
+            margin-bottom: 5px;
             color: #00f5f9;
             text-align: center;
         }
@@ -480,6 +503,8 @@
             font-weight: bold;
             color: #ff4444;
             font-size: 36px;
+            margin: 5px 0;
+            transition: color 0.3s;
         }
 
         .hr-status {
@@ -490,8 +515,8 @@
         }
 
         .hr-actions {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 10px;
             margin-bottom: 15px;
         }
@@ -503,7 +528,7 @@
             padding: 12px;
             border-radius: 20px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14px;
             transition: 0.3s ease;
             display: flex;
             align-items: center;
@@ -526,12 +551,13 @@
 
         .hr-btn.analyze {
             background: #00a854;
+            grid-column: span 2;
         }
 
         .hr-btn.analyze:hover {
             background: #008744;
         }
-        
+
         .manual-hr-input {
             display: flex;
             gap: 10px;
@@ -582,14 +608,32 @@
             text-align: center;
         }
 
-        .bluetooth-limitations {
-            font-size: 12px;
+        .hr-history-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            margin-top: 15px;
+        }
+
+        .hr-history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .hr-history-title {
+            color: #00f5f9;
+            font-size: 16px;
+        }
+
+        .clear-history-btn {
+            background: transparent;
+            border: none;
             color: #aaa;
-            margin-top: 10px;
-            text-align: left;
-            padding: 10px;
-            background: #222;
-            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: underline;
         }
 
         .hr-history {
@@ -598,14 +642,7 @@
             padding: 10px;
             background: #222;
             border-radius: 8px;
-            margin-top: 15px;
-            -webkit-overflow-scrolling: touch; /* Enable smooth scrolling on iOS */
-        }
-
-        .hr-history h3 {
-            color: #00f5f9;
-            margin-bottom: 10px;
-            text-align: center;
+            -webkit-overflow-scrolling: touch;
         }
 
         .hr-history-list {
@@ -1030,19 +1067,24 @@
                 </div>
             </div>
 
+            <!-- NEW HR PANEL DESIGN - More compact and better organized -->
             <div class="hr-container" id="hr-container">
                 <div class="hr-section">
-                    <div class="hr-display">
-                        <h3>Current Heart Rate</h3>
-                        <div id="current-hr">--</div>
+                    <div class="hr-header">
+                        <div class="hr-title">Heart Rate Monitor</div>
                         <div class="hr-status" id="hr-status">Not connected</div>
+                    </div>
+
+                    <div class="hr-display-container">
+                        <div class="hr-display">Current Heart Rate</div>
+                        <div id="current-hr">--</div>
                     </div>
 
                     <div class="hr-actions">
                         <button id="connect-btn" class="hr-btn">
-                            <span>Connect Device</span>
+                            <span>Connect</span>
                         </button>
-                        <button id="disconnect-btn" class="hr-btn disconnect">
+                        <button id="disconnect-btn" class="hr-btn disconnect" style="display:none;">
                             <span>Disconnect</span>
                         </button>
                         <button id="analyze-btn" class="hr-btn analyze" disabled>
@@ -1057,29 +1099,25 @@
 
                     <div class="bluetooth-note">(Chrome on Windows/Mac/Android only)</div>
                     
-                    <div class="hr-history">
-                        <h3>Recent Readings</h3>
-                        <div class="hr-history-list" id="hr-history-list">
-                            <!-- HR history items will be added here -->
-                            <div class="hr-history-item">
-                                <span>10:30 AM</span>
-                                <span class="hr-history-value">72 bpm</span>
-                            </div>
-                            <div class="hr-history-item">
-                                <span>10:15 AM</span>
-                                <span class="hr-history-value">68 bpm</span>
+                    <div class="hr-history-container">
+                        <div class="hr-history-header">
+                            <div class="hr-history-title">Recent Readings</div>
+                            <button class="clear-history-btn" id="clear-history-btn">Clear</button>
+                        </div>
+                        <div class="hr-history">
+                            <div class="hr-history-list" id="hr-history-list">
+                                <!-- HR history items will be added here -->
+                                <div class="hr-history-item">
+                                    <span>10:30 AM</span>
+                                    <span class="hr-history-value">72 bpm</span>
+                                </div>
+                                <div class="hr-history-item">
+                                    <span>10:15 AM</span>
+                                    <span class="hr-history-value">68 bpm</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="bluetooth-limitations">
-                    <p><strong>Note:</strong> This feature requires:</p>
-                    <ul>
-                        <li>Chrome browser (Windows/Mac/Android/iOS)</li>
-                        <li>Bluetooth-enabled smartwatch</li>
-                        <li>Device already paired in system settings</li>
-                    </ul>
                 </div>
             </div>
         </div>
@@ -1154,6 +1192,9 @@
             // Toggle HR view button
             document.getElementById('toggle-hr-view').addEventListener('click', toggleHRView);
 
+            // Clear history button
+            document.getElementById('clear-history-btn').addEventListener('click', clearHRHistory);
+
             // Click outside profile details to close
             document.addEventListener('click', (event) => {
                 const profileDetails = document.getElementById('profile-details');
@@ -1165,6 +1206,14 @@
                     profileDetails.style.display = 'none';
                 }
             });
+        }
+
+        // Clear HR history
+        function clearHRHistory() {
+            hrHistory = [];
+            bluetoothManager.updateHistoryUI();
+            localStorage.setItem('hrHistory', JSON.stringify(hrHistory));
+            appendMessage("Heart rate history cleared", 'bot-message');
         }
 
         // Toggle HR view on mobile
