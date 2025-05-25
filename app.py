@@ -11,6 +11,7 @@ import json
 from datetime import datetime
 from authlib.integrations.flask_client import OAuth
 from urllib.parse import urlencode
+import secrets
 
 # ------------------ INITIAL SETUP ------------------
 load_dotenv()  # Load environment variables from .env
@@ -270,46 +271,49 @@ def google_login():
     if 'user_id' in session:
         return redirect(url_for('home'))
     
+    # Generate a secure random nonce
+    nonce = secrets.token_urlsafe(16)
+    session['google_nonce'] = nonce
+    
     # Force HTTPS in production
     if os.getenv('FLASK_ENV') == 'production':
         redirect_uri = url_for('google_authorize', _external=True).replace('http://', 'https://')
     else:
         redirect_uri = url_for('google_authorize', _external=True)
     
-    return google.authorize_redirect(redirect_uri)
+    return google.authorize_redirect(
+        redirect_uri,
+        nonce=nonce
+    )
 
-# Updated google-authorize route
 @app.route('/google-authorize')
 def google_authorize():
     try:
+        # Check if nonce exists in session
+        if 'google_nonce' not in session:
+            return redirect(url_for('login', error_message='Google authentication failed: Missing nonce'))
+        
         # Force HTTPS in production
         if os.getenv('FLASK_ENV') == 'production':
             request.url = request.url.replace('http://', 'https://')
         
-        # Get token with proper issuer verification
+        # Get token with proper nonce verification
         token = google.authorize_access_token()
         if not token or 'id_token' not in token:
             return redirect(url_for('login', error_message='Google authentication failed: No token received'))
-
-        # Verify token and get user info
-        user_info = google.parse_id_token(token)
+        
+        # Verify token with the stored nonce
+        user_info = google.parse_id_token(token, nonce=session.pop('google_nonce', None))
         if not user_info.get('email'):
             return redirect(url_for('login', error_message='Google authentication failed: No email provided'))
-
+        
         # Create or get user
-        user = User.query.filter_by(email=user_info['email']).first()
-        if not user:
-            user = User(
-                email=user_info['email'],
-                username=user_info.get('name', user_info['email'].split('@')[0]),
-                google_id=user_info['sub']
-            )
-            db.session.add(user)
-            db.session.commit()
-        elif not user.google_id:
-            user.google_id = user_info['sub']
-            db.session.commit()
-
+        user = create_or_get_user(
+            email=user_info['email'],
+            username=user_info.get('name', user_info['email'].split('@')[0]),
+            google_id=user_info['sub']
+        )
+        
         # Set session
         session.permanent = True
         session['user_id'] = user.id
@@ -317,10 +321,11 @@ def google_authorize():
         session['email'] = user_info['email']
         
         return redirect(url_for('home'))
-
+    
     except Exception as e:
         app.logger.error(f"Google OAuth error: {str(e)}")
         return redirect(url_for('login', error_message=f'Google login failed: {str(e)}'))
+
 # ------------------ ROUTES ------------------
 @app.route('/')
 def home():
