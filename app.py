@@ -9,6 +9,8 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 import json
 from datetime import datetime
+from authlib.integrations.flask_client import OAuth
+from urllib.parse import urlencode
 
 # ------------------ INITIAL SETUP ------------------
 load_dotenv()  # Load environment variables from .env
@@ -44,13 +46,29 @@ migrate = Migrate(app, db)  # For database migrations
 # OpenAI configuration
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
+# OAuth configuration
+oauth = OAuth(app)
+google = oauth.register(
+    name='google',
+    client_id=os.getenv('GOOGLE_CLIENT_ID'),
+    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
+    access_token_url='https://accounts.google.com/o/oauth2/token',
+    access_token_params=None,
+    authorize_url='https://accounts.google.com/o/oauth2/auth',
+    authorize_params=None,
+    api_base_url='https://www.googleapis.com/oauth2/v1/',
+    client_kwargs={'scope': 'openid email profile'},
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration'
+)
+
 # ------------------ DATABASE MODELS ------------------
 class User(db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(150), unique=True, nullable=False)
+    username = db.Column(db.String(150), unique=True, nullable=True)  # Made nullable for Google users
     email = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
+    password = db.Column(db.String(200), nullable=True)  # Made nullable for Google users
+    google_id = db.Column(db.String(150), unique=True, nullable=True)
     chat_sessions = db.relationship('ChatSession', backref='user', lazy=True)
 
 class ChatSession(db.Model):
@@ -219,12 +237,61 @@ def generate_chat_title(user_input):
     except Exception:
         return user_input[:30] + ("..." if len(user_input) > 30 else "")
 
+def create_or_get_user(email, username=None, google_id=None):
+    """Helper function to create or get user"""
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        # Create new user
+        user = User(
+            email=email,
+            username=username or email.split('@')[0],
+            google_id=google_id
+        )
+        db.session.add(user)
+        db.session.commit()
+    elif google_id and not user.google_id:
+        # Update existing user with Google ID
+        user.google_id = google_id
+        db.session.commit()
+    return user
+
 # ------------------ MIDDLEWARE ------------------
 @app.before_request
 def before_request():
     """Force HTTPS in production"""
     if request.url.startswith('http://') and os.getenv('FLASK_ENV') == 'production':
         return redirect(request.url.replace('http://', 'https://'), 301)
+
+# ------------------ AUTH ROUTES ------------------
+@app.route('/google-login')
+def google_login():
+    redirect_uri = url_for('google_authorize', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+@app.route('/google-authorize')
+def google_authorize():
+    try:
+        token = google.authorize_access_token()
+        user_info = google.get('userinfo').json()
+        
+        # Extract user information
+        email = user_info['email']
+        google_id = user_info['id']
+        name = user_info.get('name', email.split('@')[0])
+        
+        # Create or get user
+        user = create_or_get_user(email=email, username=name, google_id=google_id)
+        
+        # Set session variables
+        session.permanent = True
+        session['user_id'] = user.id
+        session['username'] = user.username or name
+        session['email'] = email
+        
+        return redirect(url_for('home'))
+    except Exception as e:
+        app.logger.error(f"Google OAuth error: {str(e)}")
+        return redirect(url_for('login', error_message="Google login failed. Please try again."))
 
 # ------------------ ROUTES ------------------
 @app.route('/')
