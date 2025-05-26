@@ -561,12 +561,18 @@
             display: none;
         }
 
-        /* Heart Rate Panel Styles - Now inside profile details */
-        .heart-rate-section {
-            margin-top: 20px;
-            width: 100%;
-            border-top: 1px solid #333;
-            padding-top: 15px;
+        /* Heart Rate Panel Styles - Now in top-right corner */
+        .heart-rate-panel {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            background: #111;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            width: 250px;
+            z-index: 1000;
+            border: 1px solid #333;
         }
 
         .heart-rate-header {
@@ -717,6 +723,36 @@
             margin-top: 8px;
         }
 
+        /* User profile button in bottom-left corner */
+        .user-profile-button {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: #019396;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1000;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .user-profile-button:hover {
+            background: #00f5f9;
+            transform: scale(1.1);
+        }
+
+        .user-profile-button i {
+            font-size: 20px;
+        }
+
         /* Mobile responsiveness */
         .sidebar-toggle {
             display: none;
@@ -813,10 +849,21 @@
                 padding: 15px;
             }
 
-            /* Profile details mobile styles */
-            .profile-details {
-                width: 280px;
-                right: 10px;
+            /* Heart rate panel mobile styles */
+            .heart-rate-panel {
+                position: fixed;
+                top: auto;
+                bottom: 80px;
+                right: 20px;
+                width: calc(100% - 40px);
+                max-width: 300px;
+            }
+
+            /* User profile button mobile styles */
+            .user-profile-button {
+                bottom: 80px;
+                left: auto;
+                right: 20px;
             }
 
             /* Fix mobile scrolling */
@@ -867,6 +914,58 @@
         </div>
     </div>
 
+    <!-- Heart Rate Panel in top-right corner -->
+    <div class="heart-rate-panel" id="heart-rate-panel">
+        <div class="heart-rate-header">
+            <h3>Heart Rate Monitor</h3>
+        </div>
+        <div class="heart-rate-content" id="heart-rate-content">
+            <div class="heart-rate-display">
+                <div class="current-hr" id="current-hr">--</div>
+                <div class="hr-status" id="hr-status">Not connected</div>
+            </div>
+            
+            <div class="heart-rate-actions">
+                <button id="connect-btn" class="heart-rate-btn connect">
+                    <span>Connect</span>
+                </button>
+                <button id="disconnect-btn" class="heart-rate-btn disconnect" style="display:none;">
+                    <span>Disconnect</span>
+                </button>
+                <button id="analyze-btn" class="heart-rate-btn analyze" disabled>
+                    <span>Analyze</span>
+                </button>
+            </div>
+            
+            <div class="manual-hr-input">
+                <input type="number" id="manual-hr" placeholder="Enter HR (30-250 BPM)" min="30" max="250">
+                <button id="submit-hr">Submit</button>
+            </div>
+            
+            <div class="hr-history">
+                <h4>Recent Readings</h4>
+                <div class="hr-history-list" id="hr-history-list">
+                    <!-- HR history items will be added here -->
+                    <div class="hr-history-item">
+                        <span>10:30 AM</span>
+                        <span class="hr-history-value">72 bpm</span>
+                    </div>
+                    <div class="hr-history-item">
+                        <span>10:15 AM</span>
+                        <span class="hr-history-value">68 bpm</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bluetooth-note">(Chrome on Windows/Mac/Android only)</div>
+        </div>
+    </div>
+
+    <!-- User Profile Button in bottom-left corner -->
+    <button class="user-profile-button" id="user-profile-button">
+        <i>👤</i>
+    </button>
+
     <!-- Main content -->
     <div class="main-content">
         <div class="header">
@@ -882,53 +981,6 @@
             <p><strong>Username:</strong> <span id="profile-username">User</span></p>
             <p><strong>Email:</strong> <span id="profile-email">user@example.com</span></p>
             <button id="logout-btn">Logout</button>
-            
-            <!-- Heart Rate Section inside Profile Details -->
-            <div class="heart-rate-section">
-                <div class="heart-rate-header">
-                    <h3>Heart Rate Monitor</h3>
-                </div>
-                <div class="heart-rate-content" id="heart-rate-content">
-                    <div class="heart-rate-display">
-                        <div class="current-hr" id="current-hr">--</div>
-                        <div class="hr-status" id="hr-status">Not connected</div>
-                    </div>
-                    
-                    <div class="heart-rate-actions">
-                        <button id="connect-btn" class="heart-rate-btn connect">
-                            <span>Connect</span>
-                        </button>
-                        <button id="disconnect-btn" class="heart-rate-btn disconnect" style="display:none;">
-                            <span>Disconnect</span>
-                        </button>
-                        <button id="analyze-btn" class="heart-rate-btn analyze" disabled>
-                            <span>Analyze</span>
-                        </button>
-                    </div>
-                    
-                    <div class="manual-hr-input">
-                        <input type="number" id="manual-hr" placeholder="Enter HR (30-250 BPM)" min="30" max="250">
-                        <button id="submit-hr">Submit</button>
-                    </div>
-                    
-                    <div class="hr-history">
-                        <h4>Recent Readings</h4>
-                        <div class="hr-history-list" id="hr-history-list">
-                            <!-- HR history items will be added here -->
-                            <div class="hr-history-item">
-                                <span>10:30 AM</span>
-                                <span class="hr-history-value">72 bpm</span>
-                            </div>
-                            <div class="hr-history-item">
-                                <span>10:15 AM</span>
-                                <span class="hr-history-value">68 bpm</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bluetooth-note">(Chrome on Windows/Mac/Android only)</div>
-                </div>
-            </div>
         </div>
 
         <div class="main-container">
@@ -1010,6 +1062,7 @@
             
             // Profile toggle
             document.getElementById('profile-container').addEventListener('click', toggleProfileDetails);
+            document.getElementById('user-profile-button').addEventListener('click', toggleProfileDetails);
             
             // Logout button
             document.getElementById('logout-btn').addEventListener('click', logout);
@@ -1037,10 +1090,12 @@
             document.addEventListener('click', (event) => {
                 const profileDetails = document.getElementById('profile-details');
                 const profileContainer = document.getElementById('profile-container');
+                const profileButton = document.getElementById('user-profile-button');
                 
                 if (profileDetails.style.display === 'flex' && 
                     !profileContainer.contains(event.target) && 
-                    !profileDetails.contains(event.target)) {
+                    !profileDetails.contains(event.target) &&
+                    !profileButton.contains(event.target)) {
                     profileDetails.style.display = 'none';
                 }
             });
