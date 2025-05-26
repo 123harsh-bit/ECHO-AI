@@ -211,18 +211,17 @@
         }
 
         .header {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    font-size: 24px;
-    font-weight: bold;
-    padding: 10px;
-    color: #00f5f9;
-    justify-content: space-between;
-    position: relative;
-    border-bottom: 1px solid #333;
-    z-index: 100; /* Ensure header stays above other content */
-}
+            width: 100%;
+            display: flex;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 10px;
+            color: #00f5f9;
+            justify-content: space-between;
+            position: relative;
+            border-bottom: 1px solid #333;
+        }
 
         .profile-container {
             display: flex;
@@ -251,21 +250,26 @@
             margin-right: 25px;
         }
 
-        .profile-details, .heart-rate-panel {
-    position: absolute;
-    top: 60px;
-    right: 0;
-    background: #111;
-    border: 1px solid #333;
-    border-radius: 15px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    z-index: 1000;
-    transition: all 0.3s ease;
-    overflow: hidden;
-}
+        .profile-details {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            background: #111;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            width: 300px;
+            display: none;
+            flex-direction: column;
+            align-items: flex-start;
+            color: #fff;
+            margin-right: 25px;
+            z-index: 1000;
+            border: 1px solid #333;
+        }
 
         .profile-details p {
-            color: hwb(0 8% 92%);
+            color: #fff;
             margin-bottom: 10px;
             font-size: 14px;
         }
@@ -285,22 +289,6 @@
         .profile-details button:hover {
             background: #00f5f9;
         }
-        .profile-details.active + .heart-rate-panel {
-    top: calc(100% + 10px);
-}
-@media (max-width: 768px) {
-    .heart-rate-panel {
-        width: calc(100% - 40px);
-        right: 20px;
-        left: auto;
-        top: 60px;
-    }
-    
-    .profile-details.active + .heart-rate-panel {
-        top: auto;
-        bottom: 20px;
-    }
-}
 
         .main-container {
             display: flex;
@@ -573,45 +561,31 @@
             display: none;
         }
 
-        /* Heart Rate Panel Styles */
-        .heart-rate-panel {
-    display: none;
-}
-
-        .heart-rate-panel.collapsed {
-            height: 60px;
-            overflow: hidden;
+        /* Heart Rate Panel Styles - Now inside profile details */
+        .heart-rate-section {
+            margin-top: 20px;
+            width: 100%;
+            border-top: 1px solid #333;
+            padding-top: 15px;
         }
 
         .heart-rate-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px;
-            background: #019396;
-            color: white;
-            cursor: pointer;
-            border-radius: 15px 15px 0 0;
+            margin-bottom: 10px;
         }
 
         .heart-rate-header h3 {
             margin: 0;
-            font-size: 18px;
-        }
-
-        .heart-rate-toggle {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 20px;
-            cursor: pointer;
+            font-size: 16px;
+            color: #00f5f9;
         }
 
         .heart-rate-content {
-            padding: 15px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
         }
 
         .heart-rate-display {
@@ -622,34 +596,34 @@
         }
 
         .current-hr {
-            font-size: 36px;
+            font-size: 28px;
             font-weight: bold;
             color: #ff4444;
         }
 
         .hr-status {
-            font-size: 14px;
+            font-size: 12px;
             color: #aaa;
         }
 
         .heart-rate-actions {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             justify-content: center;
         }
 
         .heart-rate-btn {
-            padding: 10px 15px;
+            padding: 8px 12px;
             border-radius: 20px;
             border: none;
             color: white;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 12px;
             transition: 0.3s ease;
-            min-height: 44px;
+            min-height: 36px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 5px;
         }
 
         .heart-rate-btn.connect {
@@ -675,44 +649,45 @@
 
         .manual-hr-input {
             display: flex;
-            gap: 10px;
-            margin-top: 10px;
+            gap: 8px;
+            margin-top: 8px;
         }
 
         #manual-hr {
             flex-grow: 1;
-            padding: 10px;
+            padding: 8px;
             border-radius: 20px;
             border: 1px solid #333;
             background: #222;
             color: white;
-            font-size: 16px;
+            font-size: 14px;
             outline: none;
         }
 
         #submit-hr {
-            padding: 10px 15px;
+            padding: 8px 12px;
             background: #007bff;
             color: white;
             border: none;
             border-radius: 20px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14px;
         }
 
         .hr-history {
-            margin-top: 15px;
-            max-height: 150px;
+            margin-top: 10px;
+            max-height: 100px;
             overflow-y: auto;
             background: #222;
             border-radius: 8px;
-            padding: 10px;
+            padding: 8px;
         }
 
         .hr-history h4 {
             color: #00f5f9;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             text-align: center;
+            font-size: 14px;
         }
 
         .hr-history-list {
@@ -724,10 +699,10 @@
         .hr-history-item {
             display: flex;
             justify-content: space-between;
-            padding: 8px;
+            padding: 6px;
             background: #333;
             border-radius: 5px;
-            font-size: 14px;
+            font-size: 12px;
         }
 
         .hr-history-value {
@@ -736,10 +711,10 @@
         }
 
         .bluetooth-note {
-            font-size: 12px;
+            font-size: 10px;
             color: #aaa;
             text-align: center;
-            margin-top: 10px;
+            margin-top: 8px;
         }
 
         /* Mobile responsiveness */
@@ -838,32 +813,10 @@
                 padding: 15px;
             }
 
-            /* Heart Rate Panel Mobile Styles */
-            .heart-rate-panel {
-                width: calc(100% - 40px);
-                right: 20px;
-                left: 20px;
-                bottom: 20px;
-            }
-
-            .heart-rate-panel.collapsed {
-                width: 120px;
-                height: 50px;
-                right: 20px;
-                left: auto;
-            }
-
-            .heart-rate-header.collapsed {
-                border-radius: 15px;
-                padding: 10px;
-            }
-
-            .heart-rate-header h3.collapsed {
-                display: none;
-            }
-
-            .heart-rate-toggle.collapsed {
-                margin: 0 auto;
+            /* Profile details mobile styles */
+            .profile-details {
+                width: 280px;
+                right: 10px;
             }
 
             /* Fix mobile scrolling */
@@ -929,53 +882,54 @@
             <p><strong>Username:</strong> <span id="profile-username">User</span></p>
             <p><strong>Email:</strong> <span id="profile-email">user@example.com</span></p>
             <button id="logout-btn">Logout</button>
-        </div>
-         <div class="heart-rate-panel" id="heart-rate-panel">
-        <div class="heart-rate-header" id="heart-rate-header">
-            <h3>Heart Rate Monitor</h3>
-            <button class="heart-rate-toggle" id="heart-rate-toggle">−</button>
-        </div>
-        <div class="heart-rate-content" id="heart-rate-content">
-            <div class="heart-rate-display">
-                <div class="current-hr" id="current-hr">--</div>
-                <div class="hr-status" id="hr-status">Not connected</div>
-            </div>
             
-            <div class="heart-rate-actions">
-                <button id="connect-btn" class="heart-rate-btn connect">
-                    <span>Connect</span>
-                </button>
-                <button id="disconnect-btn" class="heart-rate-btn disconnect" style="display:none;">
-                    <span>Disconnect</span>
-                </button>
-                <button id="analyze-btn" class="heart-rate-btn analyze" disabled>
-                    <span>Analyze</span>
-                </button>
-            </div>
-            
-            <div class="manual-hr-input">
-                <input type="number" id="manual-hr" placeholder="Enter HR (30-250 BPM)" min="30" max="250">
-                <button id="submit-hr">Submit</button>
-            </div>
-            
-            <div class="hr-history">
-                <h4>Recent Readings</h4>
-                <div class="hr-history-list" id="hr-history-list">
-                    <!-- HR history items will be added here -->
-                    <div class="hr-history-item">
-                        <span>10:30 AM</span>
-                        <span class="hr-history-value">72 bpm</span>
+            <!-- Heart Rate Section inside Profile Details -->
+            <div class="heart-rate-section">
+                <div class="heart-rate-header">
+                    <h3>Heart Rate Monitor</h3>
+                </div>
+                <div class="heart-rate-content" id="heart-rate-content">
+                    <div class="heart-rate-display">
+                        <div class="current-hr" id="current-hr">--</div>
+                        <div class="hr-status" id="hr-status">Not connected</div>
                     </div>
-                    <div class="hr-history-item">
-                        <span>10:15 AM</span>
-                        <span class="hr-history-value">68 bpm</span>
+                    
+                    <div class="heart-rate-actions">
+                        <button id="connect-btn" class="heart-rate-btn connect">
+                            <span>Connect</span>
+                        </button>
+                        <button id="disconnect-btn" class="heart-rate-btn disconnect" style="display:none;">
+                            <span>Disconnect</span>
+                        </button>
+                        <button id="analyze-btn" class="heart-rate-btn analyze" disabled>
+                            <span>Analyze</span>
+                        </button>
                     </div>
+                    
+                    <div class="manual-hr-input">
+                        <input type="number" id="manual-hr" placeholder="Enter HR (30-250 BPM)" min="30" max="250">
+                        <button id="submit-hr">Submit</button>
+                    </div>
+                    
+                    <div class="hr-history">
+                        <h4>Recent Readings</h4>
+                        <div class="hr-history-list" id="hr-history-list">
+                            <!-- HR history items will be added here -->
+                            <div class="hr-history-item">
+                                <span>10:30 AM</span>
+                                <span class="hr-history-value">72 bpm</span>
+                            </div>
+                            <div class="hr-history-item">
+                                <span>10:15 AM</span>
+                                <span class="hr-history-value">68 bpm</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bluetooth-note">(Chrome on Windows/Mac/Android only)</div>
                 </div>
             </div>
-            
-            <div class="bluetooth-note">(Chrome on Windows/Mac/Android only)</div>
         </div>
-    </div>
 
         <div class="main-container">
             <div class="chat-container">
@@ -1015,9 +969,6 @@
         </div>
     </div>
 
-    <!-- Heart Rate Panel -->
-   
-
     <script>
         // Global variables
         let isLoggedIn = false;
@@ -1029,10 +980,6 @@
 
         // Initialize all event listeners
         function initEventListeners() {
-            // Heart rate panel toggle
-            document.getElementById('heart-rate-toggle').addEventListener('click', toggleHeartRatePanel);
-            document.getElementById('heart-rate-header').addEventListener('click', toggleHeartRatePanel);
-            
             // Bluetooth buttons
             document.getElementById('connect-btn').addEventListener('click', () => bluetoothManager.connect());
             document.getElementById('disconnect-btn').addEventListener('click', () => bluetoothManager.handleDisconnect());
@@ -1099,30 +1046,6 @@
             });
         }
 
-        // Toggle heart rate panel collapse/expand
-        function toggleHeartRatePanel() {
-            const panel = document.getElementById('heart-rate-panel');
-            const content = document.getElementById('heart-rate-content');
-            const toggleBtn = document.getElementById('heart-rate-toggle');
-            const header = document.getElementById('heart-rate-header');
-            
-            panel.classList.toggle('collapsed');
-            
-            if (panel.classList.contains('collapsed')) {
-                toggleBtn.textContent = '+';
-                header.classList.add('collapsed');
-                if (window.innerWidth <= 768) {
-                    header.querySelector('h3').classList.add('collapsed');
-                }
-            } else {
-                toggleBtn.textContent = '−';
-                header.classList.remove('collapsed');
-                if (window.innerWidth <= 768) {
-                    header.querySelector('h3').classList.remove('collapsed');
-                }
-            }
-        }
-
         // Show notification
         function showNotification(message, type = 'warning') {
             const now = Date.now();
@@ -1170,6 +1093,13 @@
             } else {
                 document.body.style.overflow = '';
             }
+        }
+
+        // Toggle Profile Details Visibility
+        function toggleProfileDetails() {
+            const profileDetails = document.getElementById("profile-details");
+            profileDetails.style.display = profileDetails.style.display === "none" || 
+                                         profileDetails.style.display === "" ? "flex" : "none";
         }
 
         // Create a new chat session
@@ -1412,17 +1342,6 @@
             if (isCollapsed && window.innerWidth > 768) {
                 document.getElementById('sidebar').classList.add('collapsed');
             }
-            
-            // Initialize heart rate panel state
-            const hrPanelCollapsed = localStorage.getItem('hrPanelCollapsed') === 'true';
-            if (hrPanelCollapsed) {
-                document.getElementById('heart-rate-panel').classList.add('collapsed');
-                document.getElementById('heart-rate-toggle').textContent = '+';
-                document.getElementById('heart-rate-header').classList.add('collapsed');
-                if (window.innerWidth <= 768) {
-                    document.getElementById('heart-rate-header').querySelector('h3').classList.add('collapsed');
-                }
-            }
         });
 
         // Check if user is logged in
@@ -1474,23 +1393,6 @@
                 console.error('Error loading user data:', error);
             }
         }
-
-        // Toggle Profile Details Visibility
-        // Toggle Profile Details Visibility
-function toggleProfileDetails() {
-    const profileDetails = document.getElementById("profile-details");
-    const hrPanel = document.getElementById("heart-rate-panel");
-    
-    if (profileDetails.style.display === "none" || profileDetails.style.display === "") {
-        profileDetails.style.display = "flex";
-        hrPanel.style.display = "block";
-        profileDetails.classList.add("active");
-    } else {
-        profileDetails.style.display = "none";
-        hrPanel.style.display = "none";
-        profileDetails.classList.remove("active");
-    }
-}
 
         // Send Message Function
         async function sendMessage() {
