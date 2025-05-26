@@ -267,26 +267,6 @@ def before_request():
         return redirect(request.url.replace('http://', 'https://'), 301)
 
 # ------------------ AUTH ROUTES ------------------
-@app.route('/google-login')
-def google_login():
-    if 'user_id' in session:
-        return redirect(url_for('home'))
-    
-    # Generate a secure random nonce
-    nonce = secrets.token_urlsafe(16)
-    session['google_nonce'] = nonce
-    
-    # Force HTTPS in production
-    if os.getenv('FLASK_ENV') == 'production':
-        redirect_uri = url_for('google_authorize', _external=True).replace('http://', 'https://')
-    else:
-        redirect_uri = url_for('google_authorize', _external=True)
-    
-    return google.authorize_redirect(
-        redirect_uri,
-        nonce=nonce
-    )
-
 @app.route('/google-authorize')
 def google_authorize():
     try:
@@ -336,7 +316,6 @@ def google_authorize():
     except Exception as e:
         app.logger.error(f"Google OAuth error: {str(e)}")
         return redirect(url_for('login', error_message=f'Google login failed: {str(e)}'))
-
 # ------------------ ROUTES ------------------
 @app.route('/')
 def home():
@@ -355,7 +334,7 @@ def check_auth():
             'authenticated': True,
             'username': user.username,
             'email': user.email,
-            'profile_picture': user.profile_picture
+            'profile_picture': user.profile_picture or session.get('profile_picture')
         })
     return jsonify({'authenticated': False}), 401
 
