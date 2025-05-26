@@ -72,6 +72,7 @@ class User(db.Model):
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=True)  # Made nullable for Google users
     google_id = db.Column(db.String(150), unique=True, nullable=True)
+    profile_picture = db.Column(db.String(500), nullable=True)  # New field for profile picture
     chat_sessions = db.relationship('ChatSession', backref='user', lazy=True)
 
 class ChatSession(db.Model):
@@ -307,6 +308,10 @@ def google_authorize():
         if not user_info.get('email'):
             return redirect(url_for('login', error_message='Google authentication failed: No email provided'))
         
+        # Get additional user info including profile picture
+        google_user_info = google.get('userinfo').json()
+        profile_picture = google_user_info.get('picture', None)
+        
         # Create or get user
         user = create_or_get_user(
             email=user_info['email'],
@@ -314,11 +319,17 @@ def google_authorize():
             google_id=user_info['sub']
         )
         
+        # Update profile picture if available
+        if profile_picture and not user.profile_picture:
+            user.profile_picture = profile_picture
+            db.session.commit()
+        
         # Set session
         session.permanent = True
         session['user_id'] = user.id
         session['username'] = user.username or user_info.get('name', 'User')
         session['email'] = user_info['email']
+        session['profile_picture'] = user.profile_picture  # Store in session for quick access
         
         return redirect(url_for('home'))
     
@@ -343,7 +354,8 @@ def check_auth():
         return jsonify({
             'authenticated': True,
             'username': user.username,
-            'email': user.email
+            'email': user.email,
+            'profile_picture': user.profile_picture
         })
     return jsonify({'authenticated': False}), 401
 
@@ -522,7 +534,9 @@ def profile():
         return redirect(url_for('login'))
     
     user = User.query.get(session['user_id'])
-    return render_template('profile.html', user=user)
+    return render_template('profile.html', 
+                         user=user,
+                         profile_picture=user.profile_picture or session.get('profile_picture', None))
 
 @app.route('/api/heart-rate', methods=['POST'])
 def handle_heart_rate():
