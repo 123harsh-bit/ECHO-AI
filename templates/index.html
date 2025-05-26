@@ -87,7 +87,8 @@
         .sidebar.collapsed .sidebar-header-text,
         .sidebar.collapsed .new-chat-btn span,
         .sidebar.collapsed .chat-history-item,
-        .sidebar.collapsed .chat-history-date {
+        .sidebar.collapsed .chat-history-date,
+        .sidebar.collapsed .user-profile-section {
             display: none;
         }
 
@@ -202,6 +203,61 @@
             padding-left: 10px;
         }
 
+        /* User profile section in sidebar */
+        .user-profile-section {
+            padding: 15px;
+            border-top: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            background: #0a0a0a;
+        }
+
+        .user-profile-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-weight: bold;
+            text-transform: uppercase;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .user-profile-name {
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .user-profile-email {
+            color: #aaa;
+            font-size: 14px;
+            text-align: center;
+            word-break: break-all;
+        }
+
+        .user-profile-logout {
+            background: #019396;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .user-profile-logout:hover {
+            background: #00f5f9;
+        }
+
         /* Main content area */
         .main-content {
             flex-grow: 1;
@@ -223,71 +279,22 @@
             border-bottom: 1px solid #333;
         }
 
-        .profile-container {
-            display: flex;
-            align-items: center;
+        .heart-rate-button {
+            background: none;
+            border: none;
+            color: #ff4444;
+            font-size: 24px;
             cursor: pointer;
-            position: relative;
-        }
-
-        .profile-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #ddd;
-            margin-right: 10px;
+            padding: 5px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #000;
-            font-weight: bold;
-            text-transform: uppercase;
+            min-height: 44px;
+            min-width: 44px;
         }
 
-        .profile-name {
-            color: hwb(0 100% 0%);
-            font-size: 16px;
-            margin-right: 25px;
-        }
-
-        .profile-details {
-            position: absolute;
-            top: 60px;
-            right: 0;
-            background: #111;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            width: 300px;
-            display: none;
-            flex-direction: column;
-            align-items: flex-start;
-            color: #fff;
-            margin-right: 25px;
-            z-index: 1000;
-            border: 1px solid #333;
-        }
-
-        .profile-details p {
-            color: #fff;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-
-        .profile-details button {
-            background:#019396;
-            color: rgb(255, 255, 255);
-            border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: 0.3s ease;
-            width: 100%;
-            margin-top: 10px;
-        }
-
-        .profile-details button:hover {
-            background: #00f5f9;
+        .heart-rate-button:hover {
+            color: #00f5f9;
         }
 
         .main-container {
@@ -573,6 +580,11 @@
             width: 250px;
             z-index: 1000;
             border: 1px solid #333;
+            display: none;
+        }
+
+        .heart-rate-panel.visible {
+            display: block;
         }
 
         .heart-rate-header {
@@ -723,36 +735,6 @@
             margin-top: 8px;
         }
 
-        /* User profile button in bottom-left corner */
-        .user-profile-button {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: #019396;
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 50%;
-            cursor: pointer;
-            z-index: 1000;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
-        }
-
-        .user-profile-button:hover {
-            background: #00f5f9;
-            transform: scale(1.1);
-        }
-
-        .user-profile-button i {
-            font-size: 20px;
-        }
-
         /* Mobile responsiveness */
         .sidebar-toggle {
             display: none;
@@ -859,13 +841,6 @@
                 max-width: 300px;
             }
 
-            /* User profile button mobile styles */
-            .user-profile-button {
-                bottom: 80px;
-                left: auto;
-                right: 20px;
-            }
-
             /* Fix mobile scrolling */
             body, html {
                 overflow: auto;
@@ -912,12 +887,21 @@
             <div class="chat-history-date">Yesterday</div>
             <div class="chat-history-item">Diet Plan Discussion</div>
         </div>
+        
+        <!-- User profile section in sidebar -->
+        <div class="user-profile-section">
+            <div class="user-profile-avatar" id="user-avatar"></div>
+            <div class="user-profile-name" id="username-display">User</div>
+            <div class="user-profile-email" id="profile-email">user@example.com</div>
+            <button class="user-profile-logout" id="logout-btn">Logout</button>
+        </div>
     </div>
 
     <!-- Heart Rate Panel in top-right corner -->
     <div class="heart-rate-panel" id="heart-rate-panel">
         <div class="heart-rate-header">
             <h3>Heart Rate Monitor</h3>
+            <button class="heart-rate-button" id="close-hr-panel">×</button>
         </div>
         <div class="heart-rate-content" id="heart-rate-content">
             <div class="heart-rate-display">
@@ -961,26 +945,12 @@
         </div>
     </div>
 
-    <!-- User Profile Button in bottom-left corner -->
-    <button class="user-profile-button" id="user-profile-button">
-        <i>👤</i>
-    </button>
-
     <!-- Main content -->
     <div class="main-content">
         <div class="header">
             <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
             <div>Echo AI</div>
-            <div class="profile-container" id="profile-container">
-                <div class="profile-avatar" id="user-avatar">U</div>
-                <div class="profile-name" id="username-display">User</div>
-            </div>
-        </div>
-
-        <div class="profile-details" id="profile-details">
-            <p><strong>Username:</strong> <span id="profile-username">User</span></p>
-            <p><strong>Email:</strong> <span id="profile-email">user@example.com</span></p>
-            <button id="logout-btn">Logout</button>
+            <button class="heart-rate-button" id="heart-rate-button">❤️</button>
         </div>
 
         <div class="main-container">
@@ -1060,9 +1030,9 @@
             });
             document.getElementById('send-btn').addEventListener('click', sendMessage);
             
-            // Profile toggle
-            document.getElementById('profile-container').addEventListener('click', toggleProfileDetails);
-            document.getElementById('user-profile-button').addEventListener('click', toggleProfileDetails);
+            // Heart rate button
+            document.getElementById('heart-rate-button').addEventListener('click', toggleHeartRatePanel);
+            document.getElementById('close-hr-panel').addEventListener('click', toggleHeartRatePanel);
             
             // Logout button
             document.getElementById('logout-btn').addEventListener('click', logout);
@@ -1085,20 +1055,12 @@
 
             // Close notification button
             document.getElementById('close-notification').addEventListener('click', hideNotification);
+        }
 
-            // Click outside profile details to close
-            document.addEventListener('click', (event) => {
-                const profileDetails = document.getElementById('profile-details');
-                const profileContainer = document.getElementById('profile-container');
-                const profileButton = document.getElementById('user-profile-button');
-                
-                if (profileDetails.style.display === 'flex' && 
-                    !profileContainer.contains(event.target) && 
-                    !profileDetails.contains(event.target) &&
-                    !profileButton.contains(event.target)) {
-                    profileDetails.style.display = 'none';
-                }
-            });
+        // Toggle heart rate panel visibility
+        function toggleHeartRatePanel() {
+            const panel = document.getElementById('heart-rate-panel');
+            panel.classList.toggle('visible');
         }
 
         // Show notification
@@ -1148,13 +1110,6 @@
             } else {
                 document.body.style.overflow = '';
             }
-        }
-
-        // Toggle Profile Details Visibility
-        function toggleProfileDetails() {
-            const profileDetails = document.getElementById("profile-details");
-            profileDetails.style.display = profileDetails.style.display === "none" || 
-                                         profileDetails.style.display === "" ? "flex" : "none";
         }
 
         // Create a new chat session
@@ -1436,11 +1391,15 @@
                     
                     if (data.authenticated && data.username) {
                         document.getElementById('username-display').textContent = data.username;
-                        document.getElementById('profile-username').textContent = data.username;
-                        document.getElementById('user-avatar').textContent = data.username.charAt(0).toUpperCase();
+                        document.getElementById('profile-email').textContent = data.email || 'user@example.com';
                         
-                        if (data.email) {
-                            document.getElementById('profile-email').textContent = data.email;
+                        // Set avatar with profile picture if available
+                        const avatar = document.getElementById('user-avatar');
+                        if (data.profile_picture) {
+                            avatar.style.backgroundImage = `url(${data.profile_picture})`;
+                            avatar.textContent = '';
+                        } else {
+                            avatar.textContent = data.username.charAt(0).toUpperCase();
                         }
                     }
                 }
