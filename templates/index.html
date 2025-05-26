@@ -215,19 +215,19 @@
         }
 
         .user-profile-avatar {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: #ddd;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #000;
-            font-weight: bold;
-            text-transform: uppercase;
-            background-size: cover;
-            background-position: center;
-        }
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000;
+    font-weight: bold;
+    text-transform: uppercase;
+    background-size: cover;
+    background-position: center;
+}
 
         .user-profile-name {
             color: #fff;
@@ -1380,33 +1380,33 @@
 
         // Load user data from server
         async function loadUserData() {
-            try {
-                const response = await fetch('/check-auth', {
-                    method: 'GET',
-                    credentials: 'include'
-                });
+    try {
+        const response = await fetch('/check-auth', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.authenticated && data.username) {
+                document.getElementById('username-display').textContent = data.username;
+                document.getElementById('profile-email').textContent = data.email || 'user@example.com';
                 
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                    if (data.authenticated && data.username) {
-                        document.getElementById('username-display').textContent = data.username;
-                        document.getElementById('profile-email').textContent = data.email || 'user@example.com';
-                        
-                        // Set avatar with profile picture if available
-                        const avatar = document.getElementById('user-avatar');
-                        if (data.profile_picture) {
-                            avatar.style.backgroundImage = `url(${data.profile_picture})`;
-                            avatar.textContent = '';
-                        } else {
-                            avatar.textContent = data.username.charAt(0).toUpperCase();
-                        }
-                    }
+                // Set avatar with profile picture if available
+                const avatar = document.getElementById('user-avatar');
+                if (data.profile_picture) {
+                    avatar.style.backgroundImage = `url(${data.profile_picture})`;
+                    avatar.textContent = '';
+                } else {
+                    avatar.textContent = data.username.charAt(0).toUpperCase();
                 }
-            } catch (error) {
-                console.error('Error loading user data:', error);
             }
         }
+    } catch (error) {
+        console.error('Error loading user data:', error);
+    }
+}
 
         // Send Message Function
         async function sendMessage() {
