@@ -211,17 +211,18 @@
         }
 
         .header {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            font-size: 24px;
-            font-weight: bold;
-            padding: 10px;
-            color: #00f5f9;
-            justify-content: space-between;
-            position: relative;
-            border-bottom: 1px solid #333;
-        }
+    width: 100%;
+    display: flex;
+    align-items: center;
+    font-size: 24px;
+    font-weight: bold;
+    padding: 10px;
+    color: #00f5f9;
+    justify-content: space-between;
+    position: relative;
+    border-bottom: 1px solid #333;
+    z-index: 100; /* Ensure header stays above other content */
+}
 
         .profile-container {
             display: flex;
@@ -250,22 +251,18 @@
             margin-right: 25px;
         }
 
-        .profile-details {
-            position: absolute;
-            top: 60px;
-            right: 0;
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px #00f5f9;
-            width: 250px;
-            display: none;
-            flex-direction: column;
-            align-items: flex-start;
-            color: #fff;
-            margin-right: 25px;
-            z-index: 1000;
-        }
+        .profile-details, .heart-rate-panel {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
 
         .profile-details p {
             color: hwb(0 8% 92%);
@@ -288,6 +285,22 @@
         .profile-details button:hover {
             background: #00f5f9;
         }
+        .profile-details.active + .heart-rate-panel {
+    top: calc(100% + 10px);
+}
+@media (max-width: 768px) {
+    .heart-rate-panel {
+        width: calc(100% - 40px);
+        right: 20px;
+        left: auto;
+        top: 60px;
+    }
+    
+    .profile-details.active + .heart-rate-panel {
+        top: auto;
+        bottom: 20px;
+    }
+}
 
         .main-container {
             display: flex;
@@ -562,18 +575,8 @@
 
         /* Heart Rate Panel Styles */
         .heart-rate-panel {
-            position: fixed;
-            right: 20px;
-            bottom: 20px;
-            width: 300px;
-            background: #111;
-            border: 1px solid #333;
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-            z-index: 100;
-            transition: all 0.3s ease;
-            overflow: hidden;
-        }
+    display: none;
+}
 
         .heart-rate-panel.collapsed {
             height: 60px;
@@ -927,47 +930,7 @@
             <p><strong>Email:</strong> <span id="profile-email">user@example.com</span></p>
             <button id="logout-btn">Logout</button>
         </div>
-
-        <div class="main-container">
-            <div class="chat-container">
-                <div class="welcome-message" id="welcome-message">
-                    <h1>AI Heart Health Chatbot</h1>
-                    <p>"Your AI-powered heart health assistant – monitor, analyze, and stay informed."</p>
-                    <div style="margin-top: 20px; font-size: 16px; color: #00f5f9;">
-                        <h3>I specialize in heart health topics including:</h3>
-                        <ul>
-                            <li><strong>Heart disease</strong> - Prevention and management</li>
-                            <li><strong>Blood pressure</strong> - Monitoring and control</li>
-                            <li><strong>Cholesterol</strong> - Understanding levels and impact</li>
-                            <li><strong>Heart-healthy diets</strong> - Nutrition plans</li>
-                            <li><strong>Exercise for heart health</strong> - Recommended routines</li>
-                            <li><strong>Heart rate monitoring</strong> - Interpretation and analysis</li>
-                            <li><strong>Cardiovascular symptoms</strong> - Recognition and response</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="chat-box" id="chat-box"></div>
-
-                <div class="pre-prompts">
-                    <button class="pre-prompt-btn" data-prompt="Best exercises for heart health">🏃 Best Exercises</button>
-                    <button class="pre-prompt-btn" data-prompt="How to maintain healthy blood pressure?">💓 Blood Pressure</button>
-                    <button class="pre-prompt-btn" data-prompt="Indian based Heart-friendly diet plan in tabular format">🥗 Diet Plan</button>
-                    <button class="pre-prompt-btn" data-prompt="Symptoms of heart disease">🫀 Warning Signs</button>
-                </div>
-
-                <div class="input-container">
-                    <div class="input-row">
-                        <input type="text" id="user-input" placeholder="Ask me about heart health..." autofocus>
-                        <button class="send-btn" id="send-btn">Send</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Heart Rate Panel -->
-    <div class="heart-rate-panel" id="heart-rate-panel">
+         <div class="heart-rate-panel" id="heart-rate-panel">
         <div class="heart-rate-header" id="heart-rate-header">
             <h3>Heart Rate Monitor</h3>
             <button class="heart-rate-toggle" id="heart-rate-toggle">−</button>
@@ -1013,6 +976,47 @@
             <div class="bluetooth-note">(Chrome on Windows/Mac/Android only)</div>
         </div>
     </div>
+
+        <div class="main-container">
+            <div class="chat-container">
+                <div class="welcome-message" id="welcome-message">
+                    <h1>AI Heart Health Chatbot</h1>
+                    <p>"Your AI-powered heart health assistant – monitor, analyze, and stay informed."</p>
+                    <div style="margin-top: 20px; font-size: 16px; color: #00f5f9;">
+                        <h3>I specialize in heart health topics including:</h3>
+                        <ul>
+                            <li><strong>Heart disease</strong> - Prevention and management</li>
+                            <li><strong>Blood pressure</strong> - Monitoring and control</li>
+                            <li><strong>Cholesterol</strong> - Understanding levels and impact</li>
+                            <li><strong>Heart-healthy diets</strong> - Nutrition plans</li>
+                            <li><strong>Exercise for heart health</strong> - Recommended routines</li>
+                            <li><strong>Heart rate monitoring</strong> - Interpretation and analysis</li>
+                            <li><strong>Cardiovascular symptoms</strong> - Recognition and response</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="chat-box" id="chat-box"></div>
+
+                <div class="pre-prompts">
+                    <button class="pre-prompt-btn" data-prompt="Best exercises for heart health">🏃 Best Exercises</button>
+                    <button class="pre-prompt-btn" data-prompt="How to maintain healthy blood pressure?">💓 Blood Pressure</button>
+                    <button class="pre-prompt-btn" data-prompt="Indian based Heart-friendly diet plan in tabular format">🥗 Diet Plan</button>
+                    <button class="pre-prompt-btn" data-prompt="Symptoms of heart disease">🫀 Warning Signs</button>
+                </div>
+
+                <div class="input-container">
+                    <div class="input-row">
+                        <input type="text" id="user-input" placeholder="Ask me about heart health..." autofocus>
+                        <button class="send-btn" id="send-btn">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Heart Rate Panel -->
+   
 
     <script>
         // Global variables
@@ -1472,11 +1476,21 @@
         }
 
         // Toggle Profile Details Visibility
-        function toggleProfileDetails() {
-            const profileDetails = document.getElementById("profile-details");
-            profileDetails.style.display = profileDetails.style.display === "none" || 
-                                         profileDetails.style.display === "" ? "flex" : "none";
-        }
+        // Toggle Profile Details Visibility
+function toggleProfileDetails() {
+    const profileDetails = document.getElementById("profile-details");
+    const hrPanel = document.getElementById("heart-rate-panel");
+    
+    if (profileDetails.style.display === "none" || profileDetails.style.display === "") {
+        profileDetails.style.display = "flex";
+        hrPanel.style.display = "block";
+        profileDetails.classList.add("active");
+    } else {
+        profileDetails.style.display = "none";
+        hrPanel.style.display = "none";
+        profileDetails.classList.remove("active");
+    }
+}
 
         // Send Message Function
         async function sendMessage() {
