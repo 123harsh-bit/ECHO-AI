@@ -20,8 +20,8 @@ load_dotenv()  # Load environment variables from .env
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
 # Configure session
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-fallback-secret-key')
-app.config['SESSION_COOKIE_SECURE'] = True
+app.secret_key = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(16))
+app.config['SESSION_COOKIE_SECURE'] = os.getenv('FLASK_ENV') == 'production'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
@@ -37,7 +37,7 @@ db_url = os.getenv('DATABASE_URL')
 if db_url and db_url.startswith('postgres://'):
     db_url = db_url.replace('postgres://', 'postgresql://', 1)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url or 'sqlite:///echoai.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize database
@@ -72,7 +72,7 @@ class User(db.Model):
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=True)  # Made nullable for Google users
     google_id = db.Column(db.String(150), unique=True, nullable=True)
-    profile_picture = db.Column(db.String(500), nullable=True)  # New field for profile picture
+    profile_picture = db.Column(db.String(500), nullable=True)
     chat_sessions = db.relationship('ChatSession', backref='user', lazy=True)
 
 class ChatSession(db.Model):
@@ -241,7 +241,7 @@ def generate_chat_title(user_input):
     except Exception:
         return user_input[:30] + ("..." if len(user_input) > 30 else "")
 
-def create_or_get_user(email, username=None, google_id=None):
+def create_or_get_user(email, username=None, google_id=None, profile_picture=None):
     """Helper function to create or get user"""
     user = User.query.filter_by(email=email).first()
     if not user:
@@ -249,13 +249,16 @@ def create_or_get_user(email, username=None, google_id=None):
         user = User(
             email=email,
             username=username or email.split('@')[0],
-            google_id=google_id
+            google_id=google_id,
+            profile_picture=profile_picture
         )
         db.session.add(user)
         db.session.commit()
     elif google_id and not user.google_id:
         # Update existing user with Google ID
         user.google_id = google_id
+        if profile_picture and not user.profile_picture:
+            user.profile_picture = profile_picture
         db.session.commit()
     return user
 
@@ -267,6 +270,23 @@ def before_request():
         return redirect(request.url.replace('http://', 'https://'), 301)
 
 # ------------------ AUTH ROUTES ------------------
+@app.route('/google-login')
+def google_login():
+    """Initialize Google OAuth flow"""
+    if 'user_id' in session:
+        return redirect(url_for('home'))
+    
+    # Generate a secure nonce
+    nonce = secrets.token_urlsafe(16)
+    session['google_nonce'] = nonce
+    
+    # Force HTTPS in production
+    redirect_uri = url_for('google_authorize', _external=True)
+    if os.getenv('FLASK_ENV') == 'production':
+        redirect_uri = redirect_uri.replace('http://', 'https://')
+    
+    return google.authorize_redirect(redirect_uri, nonce=nonce)
+
 @app.route('/google-authorize')
 def google_authorize():
     try:
@@ -296,13 +316,9 @@ def google_authorize():
         user = create_or_get_user(
             email=user_info['email'],
             username=user_info.get('name', user_info['email'].split('@')[0]),
-            google_id=user_info['sub']
+            google_id=user_info['sub'],
+            profile_picture=profile_picture
         )
-        
-        # Update profile picture if available
-        if profile_picture and not user.profile_picture:
-            user.profile_picture = profile_picture
-            db.session.commit()
         
         # Set session
         session.permanent = True
@@ -316,6 +332,7 @@ def google_authorize():
     except Exception as e:
         app.logger.error(f"Google OAuth error: {str(e)}")
         return redirect(url_for('login', error_message=f'Google login failed: {str(e)}'))
+
 # ------------------ ROUTES ------------------
 @app.route('/')
 def home():
@@ -689,6 +706,10 @@ def chat():
         'type': 'text',
         'chat_session_id': session['current_chat_id']
     })
+
+@app.route('/forgot-password')
+def forgot_password():
+    return render_template('forgot_password.html')
 
 if __name__ == '__main__':
     with app.app_context():
