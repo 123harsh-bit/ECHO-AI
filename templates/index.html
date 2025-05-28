@@ -13,17 +13,27 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        :root {
+            --primary-color: #00f5f9;
+            --secondary-color: #019396;
+            --danger-color: #ff4444;
+            --bg-dark: #111;
+            --bg-darker: #0a0a0a;
+            --text-light: #fff;
+            --text-muted: #aaa;
+            --border-color: #333;
+        }
+
         html, body {
             height: 100%;
             width: 100%;
             overflow: hidden;
             background-color: #000;
-            color: #fff;
+            color: var(--text-light);
         }
 
         body {
             display: flex;
-            flex-direction: column;
             position: fixed;
             top: 0;
             left: 0;
@@ -31,801 +41,584 @@
             bottom: 0;
         }
 
-        /* Notification styles */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #ff4444;
-            color: white;
-            padding: 15px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 2000;
-            transform: translateX(150%);
-            transition: transform 0.3s ease;
-            max-width: 300px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .notification.show {
-            transform: translateX(0);
-        }
-
         /* Sidebar styles */
         .sidebar {
             width: 280px;
-            background: #111;
-            border-right: 1px solid #333;
+            background: var(--bg-dark);
+            border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
             height: 100vh;
             position: fixed;
             z-index: 1000;
-            transition: transform 0.3s ease;
             transform: translateX(-280px);
+            transition: transform 0.3s ease;
         }
 
         .sidebar.open {
             transform: translateX(0);
         }
 
-        .sidebar.collapsed {
-            width: 60px;
-        }
-
-        .sidebar.collapsed .sidebar-header-text,
-        .sidebar.collapsed .new-chat-btn span,
-        .sidebar.collapsed .chat-history-item,
-        .sidebar.collapsed .chat-history-date,
-        .sidebar.collapsed .user-profile-section,
-        .sidebar.collapsed .chat-history-search {
-            display: none;
-        }
-
-        .sidebar.collapsed .new-chat-btn {
-            justify-content: center;
-            padding: 8px;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            margin: 0 auto;
-        }
-
         .sidebar-header {
             padding: 15px;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
             position: sticky;
             top: 0;
-            background: #111;
+            background: var(--bg-dark);
             z-index: 10;
         }
 
         .sidebar-header-text {
             font-weight: bold;
-            color: #00f5f9;
+            color: var(--primary-color);
             font-size: 18px;
         }
 
-        .collapse-btn {
-            background: none;
-            border: none;
-            color: #00f5f9;
-            cursor: pointer;
-            font-size: 20px;
-            padding: 5px;
-        }
-
         .new-chat-btn {
-            background: #019396;
+            background: var(--secondary-color);
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
+            padding: 12px 15px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: 0.3s ease;
+            margin: 15px;
+            font-size: 15px;
+            font-weight: 500;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
-            font-size: 14px;
-            margin: 10px;
+        }
+
+        .new-chat-btn:hover {
+            background: var(--primary-color);
         }
 
         .chat-history-search {
-            display: flex;
-            padding: 10px;
-            border-bottom: 1px solid #333;
-            background: #0a0a0a;
+            padding: 0 15px 15px;
             position: sticky;
             top: 60px;
+            background: var(--bg-dark);
             z-index: 5;
         }
 
         .chat-history-search input {
-            flex: 1;
-            padding: 8px 12px;
+            width: 100%;
+            padding: 10px 15px;
             background: #222;
-            border: 1px solid #333;
-            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
             color: white;
-            outline: none;
             font-size: 14px;
         }
 
         .chat-history {
             flex: 1;
             overflow-y: auto;
-            padding: 10px;
+            padding: 0 15px 15px;
             -webkit-overflow-scrolling: touch;
+        }
+
+        .chat-history-date {
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 500;
+            margin: 20px 0 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .chat-history-item {
             padding: 12px 15px;
             border-radius: 8px;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             cursor: pointer;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
             font-size: 14px;
-            transition: background 0.2s;
-            position: relative;
+            background: rgba(255,255,255,0.05);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .chat-history-item:hover {
-            background: #222;
+            background: rgba(255,255,255,0.1);
         }
 
         .chat-history-item.active {
-            background: #019396;
+            background: var(--secondary-color);
         }
 
-        .chat-history-item .delete-btn {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: transparent;
-            border: none;
-            color: #aaa;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.2s;
+        .chat-history-item .chat-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
         }
 
-        .chat-history-item:hover .delete-btn {
-            opacity: 1;
-        }
-
-        .chat-history-date {
-            color: #666;
-            font-size: 12px;
-            margin-top: 15px;
-            margin-bottom: 5px;
-            padding-left: 10px;
-            position: sticky;
-            top: 0;
-            background: #111;
-        }
-
-        .no-results {
-            color: #666;
-            text-align: center;
-            padding: 20px;
-            font-style: italic;
-        }
-
-        /* User profile section */
         .user-profile-section {
-            padding: 15px;
-            border-top: 1px solid #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            background: #0a0a0a;
+            padding: 20px 15px;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-darker);
             position: sticky;
             bottom: 0;
         }
 
-        .user-profile-avatar {
-            width: 60px;
-            height: 60px;
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #00f5f9, #019396);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-weight: bold;
-            text-transform: uppercase;
-            background-size: cover;
-            background-position: center;
         }
 
-        .user-profile-name {
-            color: #fff;
-            font-size: 16px;
-            font-weight: bold;
+        .user-info {
+            flex: 1;
+            overflow: hidden;
         }
 
-        .user-profile-email {
-            color: #aaa;
+        .username {
+            font-weight: 500;
             font-size: 14px;
-            text-align: center;
-            word-break: break-all;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .user-profile-logout {
-            background: #019396;
-            color: white;
+        .user-email {
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .logout-btn {
+            background: transparent;
             border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
+            color: var(--text-muted);
+            font-size: 24px;
             cursor: pointer;
-            transition: 0.3s ease;
-            width: 100%;
-            margin-top: 10px;
         }
 
-        /* Main content area */
+        /* Main content */
         .main-content {
             flex: 1;
             display: flex;
             flex-direction: column;
             height: 100vh;
-            position: relative;
         }
 
         .header {
-            width: 100%;
+            padding: 15px;
             display: flex;
             align-items: center;
-            font-size: 24px;
-            font-weight: bold;
-            padding: 10px;
-            color: #00f5f9;
             justify-content: space-between;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid var(--border-color);
             position: sticky;
             top: 0;
             background: #000;
             z-index: 10;
         }
 
-        .sidebar-toggle {
+        .menu-toggle {
             background: none;
             border: none;
-            color: #00f5f9;
+            color: var(--primary-color);
             font-size: 24px;
             cursor: pointer;
-            min-height: 44px;
-            min-width: 44px;
         }
 
-        .heart-rate-button {
+        .app-title {
+            font-weight: bold;
+            font-size: 20px;
+            color: var(--primary-color);
+        }
+
+        .heart-rate-btn {
             background: none;
             border: none;
-            color: #ff4444;
+            color: var(--danger-color);
             font-size: 24px;
             cursor: pointer;
-            padding: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 44px;
-            min-width: 44px;
         }
 
         .chat-container {
             flex: 1;
             display: flex;
             flex-direction: column;
-            height: calc(100% - 60px);
-            position: relative;
             overflow: hidden;
         }
 
         .welcome-message {
-            text-align: center;
-            padding: 50px 20px;
-            font-size: 18px;
-            color: #aaa;
             flex: 1;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .welcome-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .welcome-subtitle {
+            font-size: 16px;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            max-width: 600px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .feature-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .feature-card:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .feature-title {
+            font-weight: 500;
+            font-size: 16px;
         }
 
         .chat-box {
             flex: 1;
             overflow-y: auto;
             padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
             -webkit-overflow-scrolling: touch;
         }
 
         .message {
-            padding: 15px;
-            border-radius: 10px;
             max-width: 85%;
-            width: fit-content;
-            word-wrap: break-word;
-            font-size: 16px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            margin-bottom: 12px;
+            font-size: 15px;
             line-height: 1.4;
         }
 
         .user-message {
-            align-self: flex-end;
             background: #007bff;
             color: white;
-            border-radius: 18px 18px 0px 18px;
+            border-radius: 18px 18px 0 18px;
+            margin-left: auto;
         }
 
         .bot-message {
-            align-self: flex-start;
-            background: #000000;
-            color: white;
-            border: 1px solid #333;
-            border-radius: 18px 18px 18px 0px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 18px 18px 18px 0;
+            margin-right: auto;
         }
 
-        .error-message {
-            align-self: flex-start;
-            background: #ff4444;
-            color: white;
-            border-radius: 18px 18px 18px 0px;
-            padding: 10px 15px;
-            max-width: 85%;
-        }
-
-        .typing-indicator {
+        .quick-actions {
             display: flex;
-            align-items: center;
-            color: #aaa;
-            font-style: italic;
-            padding: 15px;
-            border-radius: 18px 18px 18px 0px;
-            background: #000000;
-            border: 1px solid #333;
-            align-self: flex-start;
-            max-width: 85%;
-        }
-
-        .pre-prompts {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-            justify-content: center;
             flex-wrap: wrap;
-            padding: 0 10px;
+            gap: 10px;
+            padding: 0 20px 15px;
+            justify-content: center;
         }
 
-        .pre-prompts button {
-            padding: 12px 15px;
-            border: none;
-            background: #222;
-            color: white;
-            cursor: pointer;
+        .quick-action-btn {
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
             border-radius: 20px;
+            color: white;
             font-size: 14px;
-            transition: 0.3s ease;
-            min-height: 44px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(255,255,255,0.1);
         }
 
         .input-container {
-            padding: 10px;
-            background: #111;
-            border-top: 1px solid #222;
+            padding: 15px;
+            background: var(--bg-dark);
+            border-top: 1px solid var(--border-color);
             position: sticky;
             bottom: 0;
-            z-index: 5;
         }
 
         .input-row {
             display: flex;
             align-items: center;
-            border: 1px solid #333;
-            padding: 8px;
-            border-radius: 30px;
             background: #222;
+            border-radius: 25px;
+            padding: 8px 15px;
         }
 
         #user-input {
             flex: 1;
-            padding: 12px;
             background: transparent;
             border: none;
-            outline: none;
             color: white;
-            font-size: 16px;
-            min-height: 44px;
+            font-size: 15px;
+            padding: 10px 0;
+            outline: none;
         }
 
         .send-btn {
-            padding: 12px 18px;
-            background: #007bff;
+            background: none;
             border: none;
-            color: white;
-            font-size: 16px;
+            color: var(--primary-color);
+            font-size: 24px;
             cursor: pointer;
-            border-radius: 20px;
-            margin-left: 8px;
-            transition: 0.3s ease;
-            min-height: 44px;
+            padding: 5px;
         }
 
-        /* Heart Rate Panel */
-        .heart-rate-panel {
-            position: fixed;
-            bottom: 80px;
-            right: 20px;
-            background: #111;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            width: calc(100% - 40px);
-            max-width: 300px;
-            z-index: 1000;
-            border: 1px solid #333;
-            display: none;
-        }
-
-        .heart-rate-panel.visible {
-            display: block;
-        }
-
-        .heart-rate-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .heart-rate-header h3 {
-            margin: 0;
-            font-size: 16px;
-            color: #00f5f9;
-        }
-
-        .heart-rate-content {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .heart-rate-display {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .current-hr {
-            font-size: 28px;
-            font-weight: bold;
-            color: #ff4444;
-        }
-
-        .hr-status {
-            font-size: 12px;
-            color: #aaa;
-        }
-
-        .heart-rate-actions {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .heart-rate-btn {
-            padding: 8px 12px;
-            border-radius: 20px;
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-size: 12px;
-            transition: 0.3s ease;
-            min-height: 36px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .manual-hr-input {
-            display: flex;
-            gap: 8px;
-            margin-top: 8px;
-        }
-
-        #manual-hr {
-            flex-grow: 1;
-            padding: 8px;
-            border-radius: 20px;
-            border: 1px solid #333;
-            background: #222;
-            color: white;
-            font-size: 14px;
-            outline: none;
-        }
-
-        #submit-hr {
-            padding: 8px 12px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .hr-history {
-            margin-top: 10px;
-            max-height: 100px;
-            overflow-y: auto;
-            background: #222;
-            border-radius: 8px;
-            padding: 8px;
-        }
-
-        .hr-history h4 {
-            color: #00f5f9;
-            margin-bottom: 8px;
-            text-align: center;
-            font-size: 14px;
-        }
-
-        .hr-history-list {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .hr-history-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 6px;
-            background: #333;
-            border-radius: 5px;
-            font-size: 12px;
-        }
-
-        .hr-history-value {
-            font-weight: bold;
-            color: #ff4444;
-        }
-
-        .bluetooth-note {
-            font-size: 10px;
-            color: #aaa;
-            text-align: center;
-            margin-top: 8px;
-        }
-
-        /* Overlay for mobile sidebar */
+        /* Overlay */
         .overlay {
-            display: none;
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
             z-index: 999;
+            display: none;
         }
 
         .overlay.active {
             display: block;
         }
 
-        /* Mobile-specific styles */
+        /* Responsive adjustments */
         @media (min-width: 769px) {
             .sidebar {
                 position: relative;
                 transform: translateX(0);
             }
-
-            .sidebar.collapsed {
-                width: 60px;
-            }
-
-            .overlay {
-                display: none !important;
-            }
-
-            .sidebar-toggle {
+            
+            .menu-toggle {
                 display: none;
             }
-
-            .heart-rate-panel {
-                top: 70px;
-                bottom: auto;
-                right: 20px;
+            
+            .overlay {
+                display: none !important;
             }
         }
 
         @media (max-width: 768px) {
-            .sidebar.collapsed {
-                width: 280px;
-            }
-
-            .pre-prompts {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .pre-prompts button {
-                width: 100%;
-            }
-
             .message {
                 max-width: 90%;
             }
-
+            
             .welcome-message {
-                padding: 30px 15px;
+                padding: 20px;
             }
-
-            .input-container {
-                padding-bottom: max(10px, env(safe-area-inset-bottom));
-            }
-        }
-
-        /* iOS safe area insets */
-        @supports (padding: max(0px)) {
-            .header, .input-container {
-                padding-left: max(10px, env(safe-area-inset-left));
-                padding-right: max(10px, env(safe-area-inset-right));
+            
+            .features-grid {
+                grid-template-columns: 1fr 1fr;
             }
             
             .input-container {
-                padding-bottom: max(10px, env(safe-area-inset-bottom));
+                padding-bottom: max(15px, env(safe-area-inset-bottom));
+            }
+        }
+
+        @media (max-width: 480px) {
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .quick-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .quick-action-btn {
+                width: 100%;
+            }
+        }
+
+        /* iOS safe areas */
+        @supports (padding: max(0px)) {
+            .header, .input-container {
+                padding-left: max(15px, env(safe-area-inset-left));
+                padding-right: max(15px, env(safe-area-inset-right));
+            }
+            
+            .input-container {
+                padding-bottom: max(15px, env(safe-area-inset-bottom));
             }
         }
     </style>
 </head>
 <body>
-    <!-- Notification Container -->
-    <div class="notification" id="hr-notification">
-        <span class="icon">⚠️</span>
-        <span class="message" id="notification-message"></span>
-        <button class="close-btn" id="close-notification">×</button>
-    </div>
-
     <!-- Overlay for mobile sidebar -->
     <div class="overlay" id="overlay"></div>
 
-    <!-- Sidebar for chat history -->
+    <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-header-text">Chat History</div>
-            <button class="collapse-btn" id="collapse-btn">≡</button>
-        </div>
-        <button class="new-chat-btn" id="new-chat-btn">
-            <span>+ New chat</span>
-        </button>
-        <div class="chat-history-search">
-            <input type="text" id="chat-history-search" placeholder="Search chats...">
-            <button id="search-btn">🔍</button>
-        </div>
-        <div class="chat-history" id="chat-history">
-            <!-- Chat history items will be populated here -->
-            <div class="chat-history-date">Today</div>
-            <div class="chat-history-item active">Heart Health Basics</div>
-            <div class="chat-history-item">Exercise Recommendations</div>
-            <div class="chat-history-date">Yesterday</div>
-            <div class="chat-history-item">Diet Plan Discussion</div>
+            <button class="collapse-btn" id="collapse-btn">×</button>
         </div>
         
-        <!-- User profile section in sidebar -->
+        <button class="new-chat-btn" id="new-chat-btn">
+            <svg class="chat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            New chat
+        </button>
+        
+        <div class="chat-history-search">
+            <input type="text" id="chat-history-search" placeholder="Search chats...">
+        </div>
+        
+        <div class="chat-history" id="chat-history">
+            <div class="chat-history-date">Today</div>
+            <div class="chat-history-item active">
+                <svg class="chat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                who are you
+            </div>
+            
+            <div class="chat-history-date">Yesterday</div>
+            <div class="chat-history-item">
+                <svg class="chat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Symptoms of heart disease
+            </div>
+            
+            <div class="chat-history-item">
+                <svg class="chat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Best exercises for heart health
+            </div>
+        </div>
+        
         <div class="user-profile-section">
-            <div class="user-profile-avatar" id="user-avatar"></div>
-            <div class="user-profile-name" id="username-display">User</div>
-            <div class="user-profile-email" id="profile-email">user@example.com</div>
-            <button class="user-profile-logout" id="logout-btn">Logout</button>
-        </div>
-    </div>
-
-    <!-- Heart Rate Panel -->
-    <div class="heart-rate-panel" id="heart-rate-panel">
-        <div class="heart-rate-header">
-            <h3>Heart Rate Monitor</h3>
-            <button class="heart-rate-button" id="close-hr-panel">×</button>
-        </div>
-        <div class="heart-rate-content" id="heart-rate-content">
-            <div class="heart-rate-display">
-                <div class="current-hr" id="current-hr">--</div>
-                <div class="hr-status" id="hr-status">Not connected</div>
-            </div>
-            
-            <div class="heart-rate-actions">
-                <button id="connect-btn" class="heart-rate-btn connect">
-                    <span>Connect</span>
-                </button>
-                <button id="disconnect-btn" class="heart-rate-btn disconnect" style="display:none;">
-                    <span>Disconnect</span>
-                </button>
-                <button id="analyze-btn" class="heart-rate-btn analyze" disabled>
-                    <span>Analyze</span>
-                </button>
-            </div>
-            
-            <div class="manual-hr-input">
-                <input type="number" id="manual-hr" placeholder="Enter HR (30-250 BPM)" min="30" max="250">
-                <button id="submit-hr">Submit</button>
-            </div>
-            
-            <div class="hr-history">
-                <h4>Recent Readings</h4>
-                <div class="hr-history-list" id="hr-history-list">
-                    <!-- HR history items will be added here -->
-                    <div class="hr-history-item">
-                        <span>10:30 AM</span>
-                        <span class="hr-history-value">72 bpm</span>
-                    </div>
-                    <div class="hr-history-item">
-                        <span>10:15 AM</span>
-                        <span class="hr-history-value">68 bpm</span>
-                    </div>
+            <div class="user-profile">
+                <div class="user-avatar" id="user-avatar">MS</div>
+                <div class="user-info">
+                    <div class="username" id="username-display">memersoftsec</div>
+                    <div class="user-email" id="profile-email">memersoftsec@gmail.com</div>
                 </div>
+                <button class="logout-btn" id="logout-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                </button>
             </div>
-            
-            <div class="bluetooth-note">(Chrome on Windows/Mac/Android only)</div>
         </div>
     </div>
 
     <!-- Main content -->
     <div class="main-content">
         <div class="header">
-            <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
-            <div>Echo AI</div>
-            <button class="heart-rate-button" id="heart-rate-button">❤️</button>
+            <button class="menu-toggle" id="sidebar-toggle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <div class="app-title">Echo AI</div>
+            <button class="heart-rate-btn" id="heart-rate-button">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
+                </svg>
+            </button>
         </div>
-
+        
         <div class="chat-container">
             <div class="welcome-message" id="welcome-message">
-                <h1>AI Heart Health Chatbot</h1>
-                <p>"Your AI-powered heart health assistant – monitor, analyze, and stay informed."</p>
-                <div style="margin-top: 20px; font-size: 16px; color: #00f5f9;">
-                    <h3>I specialize in heart health topics including:</h3>
-                    <ul>
-                        <li><strong>Heart disease</strong> - Prevention and management</li>
-                        <li><strong>Blood pressure</strong> - Monitoring and control</li>
-                        <li><strong>Cholesterol</strong> - Understanding levels and impact</li>
-                        <li><strong>Heart-healthy diets</strong> - Nutrition plans</li>
-                        <li><strong>Exercise for heart health</strong> - Recommended routines</li>
-                        <li><strong>Heart rate monitoring</strong> - Interpretation and analysis</li>
-                        <li><strong>Cardiovascular symptoms</strong> - Recognition and response</li>
-                    </ul>
+                <h1 class="welcome-title">Echo AI Heart Health Assistant</h1>
+                <p class="welcome-subtitle">Your AI-powered heart health companion - providing personalized guidance and insights to help you maintain optimal cardiovascular health.</p>
+                
+                <div class="features-grid">
+                    <div class="feature-card" data-prompt="Best exercises for heart health">
+                        <div class="feature-icon">🏃</div>
+                        <div class="feature-title">Best Exercises</div>
+                    </div>
+                    
+                    <div class="feature-card" data-prompt="How to maintain healthy blood pressure?">
+                        <div class="feature-icon">💓</div>
+                        <div class="feature-title">Blood Pressure</div>
+                    </div>
+                    
+                    <div class="feature-card" data-prompt="Indian based Heart-friendly diet plan in tabular format">
+                        <div class="feature-icon">🥗</div>
+                        <div class="feature-title">Diet Plan</div>
+                    </div>
+                    
+                    <div class="feature-card" data-prompt="Symptoms of heart disease">
+                        <div class="feature-icon">🫀</div>
+                        <div class="feature-title">Warning Signs</div>
+                    </div>
                 </div>
             </div>
-
+            
             <div class="chat-box" id="chat-box"></div>
-
-            <div class="pre-prompts">
-                <button class="pre-prompt-btn" data-prompt="Best exercises for heart health">🏃 Best Exercises</button>
-                <button class="pre-prompt-btn" data-prompt="How to maintain healthy blood pressure?">💓 Blood Pressure</button>
-                <button class="pre-prompt-btn" data-prompt="Indian based Heart-friendly diet plan in tabular format">🥗 Diet Plan</button>
-                <button class="pre-prompt-btn" data-prompt="Symptoms of heart disease">🫀 Warning Signs</button>
+            
+            <div class="quick-actions">
+                <button class="quick-action-btn" data-prompt="Best exercises for heart health">🏃 Best Exercises</button>
+                <button class="quick-action-btn" data-prompt="How to maintain healthy blood pressure?">💓 Blood Pressure</button>
+                <button class="quick-action-btn" data-prompt="Indian based Heart-friendly diet plan in tabular format">🥗 Diet Plan</button>
+                <button class="quick-action-btn" data-prompt="Symptoms of heart disease">🫀 Warning Signs</button>
             </div>
-
+            
             <div class="input-container">
                 <div class="input-row">
                     <input type="text" id="user-input" placeholder="Ask me about heart health..." autofocus>
-                    <button class="send-btn" id="send-btn">Send</button>
+                    <button class="send-btn" id="send-btn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
+
 
         // Global variables
         let isLoggedIn = false;
