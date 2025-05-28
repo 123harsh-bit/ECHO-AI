@@ -2,23 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Echo AI - Heart Health Chatbot</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
 
-        body {
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
             background-color: #000;
             color: #fff;
+        }
+
+        body {
             display: flex;
-            height: 100vh;
-            overflow: hidden;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
         }
 
         /* Notification styles */
@@ -44,27 +54,6 @@
             transform: translateX(0);
         }
 
-        .notification.warning {
-            background: #ff9800;
-        }
-
-        .notification.info {
-            background: #2196F3;
-        }
-
-        .notification .icon {
-            font-size: 24px;
-        }
-
-        .notification .close-btn {
-            margin-left: auto;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
         /* Sidebar styles */
         .sidebar {
             width: 280px;
@@ -73,15 +62,18 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            position: relative;
+            position: fixed;
             z-index: 1000;
+            transition: transform 0.3s ease;
+            transform: translateX(-280px);
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
         }
 
         .sidebar.collapsed {
             width: 60px;
-            overflow: hidden;
         }
 
         .sidebar.collapsed .sidebar-header-text,
@@ -102,16 +94,16 @@
             margin: 0 auto;
         }
 
-        .sidebar.collapsed .sidebar-header {
-            justify-content: center;
-        }
-
         .sidebar-header {
             padding: 15px;
             border-bottom: 1px solid #333;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: sticky;
+            top: 0;
+            background: #111;
+            z-index: 10;
         }
 
         .sidebar-header-text {
@@ -144,15 +136,14 @@
             margin: 10px;
         }
 
-        .new-chat-btn:hover {
-            background: #00f5f9;
-        }
-
         .chat-history-search {
             display: flex;
             padding: 10px;
             border-bottom: 1px solid #333;
             background: #0a0a0a;
+            position: sticky;
+            top: 60px;
+            z-index: 5;
         }
 
         .chat-history-search input {
@@ -163,22 +154,14 @@
             border-radius: 20px;
             color: white;
             outline: none;
-        }
-
-        .chat-history-search button {
-            background: none;
-            border: none;
-            color: #00f5f9;
-            cursor: pointer;
-            padding: 0 8px;
-            font-size: 16px;
+            font-size: 14px;
         }
 
         .chat-history {
-            flex-grow: 1;
+            flex: 1;
             overflow-y: auto;
             padding: 10px;
-            position: relative;
+            -webkit-overflow-scrolling: touch;
         }
 
         .chat-history-item {
@@ -219,16 +202,15 @@
             opacity: 1;
         }
 
-        .chat-history-item .delete-btn:hover {
-            color: #ff4444;
-        }
-
         .chat-history-date {
             color: #666;
             font-size: 12px;
             margin-top: 15px;
             margin-bottom: 5px;
             padding-left: 10px;
+            position: sticky;
+            top: 0;
+            background: #111;
         }
 
         .no-results {
@@ -238,7 +220,7 @@
             font-style: italic;
         }
 
-        /* User profile section in sidebar */
+        /* User profile section */
         .user-profile-section {
             padding: 15px;
             border-top: 1px solid #333;
@@ -247,6 +229,8 @@
             align-items: center;
             gap: 10px;
             background: #0a0a0a;
+            position: sticky;
+            bottom: 0;
         }
 
         .user-profile-avatar {
@@ -289,16 +273,13 @@
             margin-top: 10px;
         }
 
-        .user-profile-logout:hover {
-            background: #00f5f9;
-        }
-
         /* Main content area */
         .main-content {
-            flex-grow: 1;
+            flex: 1;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            height: 100vh;
+            position: relative;
         }
 
         .header {
@@ -310,8 +291,21 @@
             padding: 10px;
             color: #00f5f9;
             justify-content: space-between;
-            position: relative;
             border-bottom: 1px solid #333;
+            position: sticky;
+            top: 0;
+            background: #000;
+            z-index: 10;
+        }
+
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            color: #00f5f9;
+            font-size: 24px;
+            cursor: pointer;
+            min-height: 44px;
+            min-width: 44px;
         }
 
         .heart-rate-button {
@@ -328,51 +322,43 @@
             min-width: 44px;
         }
 
-        .heart-rate-button:hover {
-            color: #00f5f9;
-        }
-
-        .main-container {
-            display: flex;
-            width: 100%;
-            height: calc(100vh - 60px);
-            gap: 20px;
-            padding: 15px;
-            overflow: hidden;
-        }
-
         .chat-container {
-            width: 100%;
-            height: 100%;
+            flex: 1;
             display: flex;
             flex-direction: column;
+            height: calc(100% - 60px);
             position: relative;
+            overflow: hidden;
         }
 
         .welcome-message {
             text-align: center;
-            padding: 50px;
-            font-size: 20px;
+            padding: 50px 20px;
+            font-size: 18px;
             color: #aaa;
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .chat-box {
-            flex-grow: 1;
+            flex: 1;
             overflow-y: auto;
             padding: 20px;
             display: flex;
             flex-direction: column;
             gap: 10px;
-            scrollbar-width: none;
             -webkit-overflow-scrolling: touch;
         }
 
         .message {
             padding: 15px;
             border-radius: 10px;
-            max-width: 80%;
+            max-width: 85%;
             width: fit-content;
             word-wrap: break-word;
+            font-size: 16px;
+            line-height: 1.4;
         }
 
         .user-message {
@@ -396,7 +382,7 @@
             color: white;
             border-radius: 18px 18px 18px 0px;
             padding: 10px 15px;
-            max-width: 80%;
+            max-width: 85%;
         }
 
         .typing-indicator {
@@ -404,32 +390,12 @@
             align-items: center;
             color: #aaa;
             font-style: italic;
-        }
-
-        .typing-indicator::after {
-            content: '';
-            display: inline-block;
-            width: 4px;
-            height: 4px;
-            margin-left: 5px;
-            border-radius: 50%;
-            background-color: #aaa;
-            animation: blink 1.5s infinite ease-in-out;
-        }
-
-        @keyframes blink {
-            0%, 100% { box-shadow: 8px 0 0 0 #aaa, 16px 0 0 0 #aaa; }
-            33% { box-shadow: 8px 0 0 0 transparent, 16px 0 0 0 #aaa; }
-            66% { box-shadow: 8px 0 0 0 #aaa, 16px 0 0 0 transparent; }
-        }
-
-        .input-container {
-            display: flex;
-            flex-direction: column;
-            padding: 10px;
-            background: #111;
-            border-top: 1px solid #222;
-            border-radius: 15px;
+            padding: 15px;
+            border-radius: 18px 18px 18px 0px;
+            background: #000000;
+            border: 1px solid #333;
+            align-self: flex-start;
+            max-width: 85%;
         }
 
         .pre-prompts {
@@ -438,6 +404,7 @@
             margin-bottom: 10px;
             justify-content: center;
             flex-wrap: wrap;
+            padding: 0 10px;
         }
 
         .pre-prompts button {
@@ -452,20 +419,25 @@
             min-height: 44px;
         }
 
-        .pre-prompts button:hover {
-            background: #007bff;
+        .input-container {
+            padding: 10px;
+            background: #111;
+            border-top: 1px solid #222;
+            position: sticky;
+            bottom: 0;
+            z-index: 5;
         }
 
         .input-row {
             display: flex;
             align-items: center;
             border: 1px solid #333;
-            padding: 10px;
+            padding: 8px;
             border-radius: 30px;
             background: #222;
         }
 
-        input {
+        #user-input {
             flex: 1;
             padding: 12px;
             background: transparent;
@@ -473,11 +445,10 @@
             outline: none;
             color: white;
             font-size: 16px;
-            border-radius: 20px;
             min-height: 44px;
         }
 
-        button.send-btn {
+        .send-btn {
             padding: 12px 18px;
             background: #007bff;
             border: none;
@@ -485,134 +456,22 @@
             font-size: 16px;
             cursor: pointer;
             border-radius: 20px;
-            margin-left: 10px;
+            margin-left: 8px;
             transition: 0.3s ease;
             min-height: 44px;
         }
 
-        button.send-btn:hover {
-            background: #0056b3;
-        }
-
-        /* Enhanced Text Formatting */
-        .bot-message h1, 
-        .bot-message h2, 
-        .bot-message h3, 
-        .bot-message h4 {
-            color: #00f5f9;
-            margin: 15px 0 10px 0;
-        }
-
-        .bot-message h1 {
-            font-size: 22px;
-            border-bottom: 1px solid #333;
-            padding-bottom: 8px;
-        }
-
-        .bot-message h2 {
-            font-size: 20px;
-        }
-
-        .bot-message h3 {
-            font-size: 18px;
-        }
-
-        .bot-message h4 {
-            font-size: 16px;
-        }
-
-        .bot-message strong {
-            color: #00f5f9;
-            font-weight: bold;
-        }
-
-        .bot-message em {
-            font-style: italic;
-            color: #aaa;
-        }
-
-        .bot-message p {
-            margin: 10px 0;
-            line-height: 1.5;
-        }
-
-        .bot-message blockquote {
-            border-left: 3px solid #019396;
-            padding-left: 15px;
-            margin: 15px 0;
-            color: #aaa;
-            font-style: italic;
-        }
-
-        /* Professional Table Styling */
-        .bot-message table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 15px 0;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
-        .bot-message th {
-            background-color: #019396;
-            color: white;
-            font-weight: bold;
-            padding: 12px 15px;
-            text-align: left;
-        }
-        
-        .bot-message td {
-            padding: 12px 15px;
-            border: 1px solid #333;
-            text-align: left;
-        }
-        
-        .bot-message tr:nth-child(even) {
-            background-color: #1a1a1a;
-        }
-        
-        .bot-message tr:nth-child(odd) {
-            background-color: #222;
-        }
-        
-        .bot-message tr:hover {
-            background-color: #2a2a2a;
-        }
-        
-        .bot-message ul, .bot-message ol {
-            margin: 15px 0;
-            padding-left: 25px;
-        }
-        
-        .bot-message li {
-            margin-bottom: 8px;
-            line-height: 1.5;
-        }
-        
-        .bot-message ul li {
-            list-style-type: disc;
-        }
-        
-        .bot-message ol li {
-            list-style-type: decimal;
-        }
-
-        .chat-box::-webkit-scrollbar,
-        .chat-history::-webkit-scrollbar {
-            display: none;
-        }
-
-        /* Heart Rate Panel Styles - Now in top-right corner */
+        /* Heart Rate Panel */
         .heart-rate-panel {
-            position: absolute;
-            top: 70px;
+            position: fixed;
+            bottom: 80px;
             right: 20px;
             background: #111;
             padding: 15px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            width: 250px;
+            width: calc(100% - 40px);
+            max-width: 300px;
             z-index: 1000;
             border: 1px solid #333;
             display: none;
@@ -663,6 +522,7 @@
             display: flex;
             gap: 8px;
             justify-content: center;
+            flex-wrap: wrap;
         }
 
         .heart-rate-btn {
@@ -677,27 +537,6 @@
             display: flex;
             align-items: center;
             gap: 5px;
-        }
-
-        .heart-rate-btn.connect {
-            background: #0082fc;
-        }
-
-        .heart-rate-btn.disconnect {
-            background: #666;
-        }
-
-        .heart-rate-btn.analyze {
-            background: #00a854;
-        }
-
-        .heart-rate-btn:hover {
-            opacity: 0.9;
-        }
-
-        .heart-rate-btn:disabled {
-            background: #444;
-            cursor: not-allowed;
         }
 
         .manual-hr-input {
@@ -770,19 +609,7 @@
             margin-top: 8px;
         }
 
-        /* Mobile responsiveness */
-        .sidebar-toggle {
-            display: none;
-            background: none;
-            border: none;
-            color: #00f5f9;
-            font-size: 24px;
-            cursor: pointer;
-            margin-right: 15px;
-            min-height: 44px;
-            min-width: 44px;
-        }
-
+        /* Overlay for mobile sidebar */
         .overlay {
             display: none;
             position: fixed;
@@ -794,102 +621,72 @@
             z-index: 999;
         }
 
-        @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                top: 0;
-                left: -280px;
-                bottom: 0;
-                z-index: 1000;
-                width: 280px;
-                transition: transform 0.3s ease;
-            }
+        .overlay.active {
+            display: block;
+        }
 
-            .sidebar.open {
-                transform: translateX(280px);
+        /* Mobile-specific styles */
+        @media (min-width: 769px) {
+            .sidebar {
+                position: relative;
+                transform: translateX(0);
             }
 
             .sidebar.collapsed {
-                width: 280px;
-                left: -280px;
+                width: 60px;
             }
 
-            .sidebar.collapsed.open {
-                transform: translateX(280px);
+            .overlay {
+                display: none !important;
             }
 
             .sidebar-toggle {
-                display: block;
+                display: none;
             }
 
-            .overlay.active {
-                display: block;
+            .heart-rate-panel {
+                top: 70px;
+                bottom: auto;
+                right: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar.collapsed {
+                width: 280px;
             }
 
-            .main-container {
-                flex-direction: column;
-                height: auto;
-                width: 100%;
-                padding: 10px;
-            }
-            
-            .chat-container {
-                width: 100%;
-                height: auto;
-            }
-            
             .pre-prompts {
                 flex-direction: column;
-                align-items: center;
+                align-items: stretch;
             }
-            
+
             .pre-prompts button {
                 width: 100%;
-            }
-
-            .bot-message table {
-                display: block;
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-
-            .welcome-message {
-                padding: 30px 15px;
-                font-size: 18px;
             }
 
             .message {
                 max-width: 90%;
             }
 
+            .welcome-message {
+                padding: 30px 15px;
+            }
+
             .input-container {
-                padding: 15px;
+                padding-bottom: max(10px, env(safe-area-inset-bottom));
             }
+        }
 
-            /* Heart rate panel mobile styles */
-            .heart-rate-panel {
-                position: fixed;
-                top: auto;
-                bottom: 80px;
-                right: 20px;
-                width: calc(100% - 40px);
-                max-width: 300px;
+        /* iOS safe area insets */
+        @supports (padding: max(0px)) {
+            .header, .input-container {
+                padding-left: max(10px, env(safe-area-inset-left));
+                padding-right: max(10px, env(safe-area-inset-right));
             }
-
-            /* Fix mobile scrolling */
-            body, html {
-                overflow: auto;
-                height: 100%;
-            }
-
-            .main-content {
-                overflow: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-
-            .chat-box {
-                overflow-y: scroll;
-                -webkit-overflow-scrolling: touch;
+            
+            .input-container {
+                padding-bottom: max(10px, env(safe-area-inset-bottom));
             }
         }
     </style>
@@ -936,7 +733,7 @@
         </div>
     </div>
 
-    <!-- Heart Rate Panel in top-right corner -->
+    <!-- Heart Rate Panel -->
     <div class="heart-rate-panel" id="heart-rate-panel">
         <div class="heart-rate-header">
             <h3>Heart Rate Monitor</h3>
@@ -992,45 +789,49 @@
             <button class="heart-rate-button" id="heart-rate-button">❤️</button>
         </div>
 
-        <div class="main-container">
-            <div class="chat-container">
-                <div class="welcome-message" id="welcome-message">
-                    <h1>AI Heart Health Chatbot</h1>
-                    <p>"Your AI-powered heart health assistant – monitor, analyze, and stay informed."</p>
-                    <div style="margin-top: 20px; font-size: 16px; color: #00f5f9;">
-                        <h3>I specialize in heart health topics including:</h3>
-                        <ul>
-                            <li><strong>Heart disease</strong> - Prevention and management</li>
-                            <li><strong>Blood pressure</strong> - Monitoring and control</li>
-                            <li><strong>Cholesterol</strong> - Understanding levels and impact</li>
-                            <li><strong>Heart-healthy diets</strong> - Nutrition plans</li>
-                            <li><strong>Exercise for heart health</strong> - Recommended routines</li>
-                            <li><strong>Heart rate monitoring</strong> - Interpretation and analysis</li>
-                            <li><strong>Cardiovascular symptoms</strong> - Recognition and response</li>
-                        </ul>
-                    </div>
+        <div class="chat-container">
+            <div class="welcome-message" id="welcome-message">
+                <h1>AI Heart Health Chatbot</h1>
+                <p>"Your AI-powered heart health assistant – monitor, analyze, and stay informed."</p>
+                <div style="margin-top: 20px; font-size: 16px; color: #00f5f9;">
+                    <h3>I specialize in heart health topics including:</h3>
+                    <ul>
+                        <li><strong>Heart disease</strong> - Prevention and management</li>
+                        <li><strong>Blood pressure</strong> - Monitoring and control</li>
+                        <li><strong>Cholesterol</strong> - Understanding levels and impact</li>
+                        <li><strong>Heart-healthy diets</strong> - Nutrition plans</li>
+                        <li><strong>Exercise for heart health</strong> - Recommended routines</li>
+                        <li><strong>Heart rate monitoring</strong> - Interpretation and analysis</li>
+                        <li><strong>Cardiovascular symptoms</strong> - Recognition and response</li>
+                    </ul>
                 </div>
+            </div>
 
-                <div class="chat-box" id="chat-box"></div>
+            <div class="chat-box" id="chat-box"></div>
 
-                <div class="pre-prompts">
-                    <button class="pre-prompt-btn" data-prompt="Best exercises for heart health">🏃 Best Exercises</button>
-                    <button class="pre-prompt-btn" data-prompt="How to maintain healthy blood pressure?">💓 Blood Pressure</button>
-                    <button class="pre-prompt-btn" data-prompt="Indian based Heart-friendly diet plan in tabular format">🥗 Diet Plan</button>
-                    <button class="pre-prompt-btn" data-prompt="Symptoms of heart disease">🫀 Warning Signs</button>
-                </div>
+            <div class="pre-prompts">
+                <button class="pre-prompt-btn" data-prompt="Best exercises for heart health">🏃 Best Exercises</button>
+                <button class="pre-prompt-btn" data-prompt="How to maintain healthy blood pressure?">💓 Blood Pressure</button>
+                <button class="pre-prompt-btn" data-prompt="Indian based Heart-friendly diet plan in tabular format">🥗 Diet Plan</button>
+                <button class="pre-prompt-btn" data-prompt="Symptoms of heart disease">🫀 Warning Signs</button>
+            </div>
 
-                <div class="input-container">
-                    <div class="input-row">
-                        <input type="text" id="user-input" placeholder="Ask me about heart health..." autofocus>
-                        <button class="send-btn" id="send-btn">Send</button>
-                    </div>
+            <div class="input-container">
+                <div class="input-row">
+                    <input type="text" id="user-input" placeholder="Ask me about heart health..." autofocus>
+                    <button class="send-btn" id="send-btn">Send</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
+        // [All your existing JavaScript code remains exactly the same]
+        // Just copy the entire <script> section from your previous code here
+        // It will work perfectly with these new responsive styles
+    </script>
+</body>
+</html>
         // Global variables
         let isLoggedIn = false;
         let hrHistory = [];
