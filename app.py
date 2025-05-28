@@ -254,10 +254,11 @@ def create_or_get_user(email, username=None, google_id=None, profile_picture=Non
         )
         db.session.add(user)
         db.session.commit()
-    elif google_id and not user.google_id:
-        # Update existing user with Google ID
-        user.google_id = google_id
-        if profile_picture and not user.profile_picture:
+    else:
+        # Update existing user with Google ID and profile picture
+        if google_id and not user.google_id:
+            user.google_id = google_id
+        if profile_picture and (not user.profile_picture or user.profile_picture != profile_picture):
             user.profile_picture = profile_picture
         db.session.commit()
     return user
@@ -310,9 +311,9 @@ def google_authorize():
         
         # Get additional user info including profile picture
         google_user_info = google.get('userinfo').json()
-        profile_picture = google_user_info.get('picture', None)
+        profile_picture = google_user_info.get('picture')
         
-        # Create or get user
+        # Create or get user with profile picture
         user = create_or_get_user(
             email=user_info['email'],
             username=user_info.get('name', user_info['email'].split('@')[0]),
@@ -320,12 +321,11 @@ def google_authorize():
             profile_picture=profile_picture
         )
         
-        # Set session
+        # Set session - don't store profile picture in session
         session.permanent = True
         session['user_id'] = user.id
         session['username'] = user.username or user_info.get('name', 'User')
         session['email'] = user_info['email']
-        session['profile_picture'] = user.profile_picture  # Store in session for quick access
         
         return redirect(url_for('home'))
     
@@ -351,7 +351,7 @@ def check_auth():
             'authenticated': True,
             'username': user.username,
             'email': user.email,
-            'profile_picture': user.profile_picture or session.get('profile_picture')
+            'profile_picture': user.profile_picture  # Always get from database
         })
     return jsonify({'authenticated': False}), 401
 
