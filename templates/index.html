@@ -202,6 +202,38 @@
             margin-bottom: 5px;
             padding-left: 10px;
         }
+        .chat-history-search {
+    display: flex;
+    padding: 10px;
+    border-bottom: 1px solid #333;
+    background: #0a0a0a;
+}
+
+.chat-history-search input {
+    flex: 1;
+    padding: 8px 12px;
+    background: #222;
+    border: 1px solid #333;
+    border-radius: 20px;
+    color: white;
+    outline: none;
+}
+
+.chat-history-search button {
+    background: none;
+    border: none;
+    color: #00f5f9;
+    cursor: pointer;
+    padding: 0 8px;
+    font-size: 16px;
+}
+
+.no-results {
+    color: #666;
+    text-align: center;
+    padding: 20px;
+    font-style: italic;
+}
 
         /* User profile section in sidebar */
         .user-profile-section {
@@ -857,45 +889,6 @@
                 -webkit-overflow-scrolling: touch;
             }
         }
-        .chat-history-search {
-    display: flex;
-    padding: 10px;
-    border-bottom: 1px solid #333;
-    background: #0a0a0a;
-}
-
-.chat-history-search input {
-    flex: 1;
-    padding: 8px 12px;
-    background: #222;
-    border: 1px solid #333;
-    border-radius: 20px;
-    color: white;
-    outline: none;
-}
-
-.chat-history-search button {
-    background: none;
-    border: none;
-    color: #00f5f9;
-    cursor: pointer;
-    padding: 0 8px;
-    font-size: 16px;
-}
-
-/* Make sure chat history takes remaining space */
-.chat-history {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 10px;
-    position: relative;
-}
-    .no-results {
-    color: #666;
-    text-align: center;
-    padding: 20px;
-    font-style: italic;
-}
     </style>
 </head>
 <body>
@@ -1042,122 +1035,7 @@
         let chatSessions = [];
         let lastNotificationTime = 0;
         const NOTIFICATION_COOLDOWN = 30000; // 30 seconds
-        // Initialize search functionality
-function initSearch() {
-    const searchInput = document.getElementById('chat-history-search');
-    const searchBtn = document.getElementById('search-btn');
-    
-    searchInput.addEventListener('input', () => filterChatHistory(searchInput.value));
-    searchBtn.addEventListener('click', () => filterChatHistory(searchInput.value));
-}
 
-// Filter chat history based on search query
-function filterChatHistory(query) {
-    const historyItems = document.querySelectorAll('.chat-history-item');
-    const dateHeaders = document.querySelectorAll('.chat-history-date');
-    
-    if (!query.trim()) {
-        // Show all if query is empty
-        historyItems.forEach(item => item.style.display = '');
-        dateHeaders.forEach(header => header.style.display = '');
-        return;
-    }
-    
-    const lowerQuery = query.toLowerCase();
-    let hasMatches = false;
-    
-    // First hide all
-    historyItems.forEach(item => item.style.display = 'none');
-    dateHeaders.forEach(header => header.style.display = 'none');
-    
-    // Show matching items
-    historyItems.forEach(item => {
-        if (item.textContent.toLowerCase().includes(lowerQuery)) {
-            item.style.display = '';
-            hasMatches = true;
-            
-            // Show the date header for this item if it exists
-            let prevElement = item.previousElementSibling;
-            while (prevElement) {
-                if (prevElement.classList.contains('chat-history-date')) {
-                    prevElement.style.display = '';
-                    break;
-                }
-                prevElement = prevElement.previousElementSibling;
-            }
-        }
-    });
-    
-    if (!hasMatches) {
-        const noResults = document.createElement('div');
-        noResults.className = 'no-results';
-        noResults.textContent = 'No matching chats found';
-        
-        const historyContainer = document.getElementById('chat-history');
-        
-        // Remove previous no-results if exists
-        const existingNoResults = historyContainer.querySelector('.no-results');
-        if (existingNoResults) {
-            historyContainer.removeChild(existingNoResults);
-        }
-        
-        historyContainer.appendChild(noResults);
-    } else {
-        const noResults = document.getElementById('chat-history').querySelector('.no-results');
-        if (noResults) {
-            noResults.remove();
-        }
-    }
-}
-
-// Enhanced date grouping for chat history
-function groupChatSessionsByDate(sessions) {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const sevenDaysAgo = new Date(today);
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const thirtyDaysAgo = new Date(today);
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    return sessions.reduce((groups, session) => {
-        const sessionDate = new Date(session.created_at);
-        
-        if (sessionDate >= today) {
-            groups.today.push(session);
-        } else if (sessionDate >= yesterday) {
-            groups.yesterday.push(session);
-        } else if (sessionDate >= sevenDaysAgo) {
-            groups.last7Days.push(session);
-        } else if (sessionDate >= thirtyDaysAgo) {
-            groups.last30Days.push(session);
-        } else {
-            groups.older.push(session);
-        }
-        
-        return groups;
-    }, {
-        today: [],
-        yesterday: [],
-        last7Days: [],
-        last30Days: [],
-        older: []
-    });
-}
-
-// Check if should start new chat (based on last activity)
-function shouldStartNewChat() {
-    const lastActive = localStorage.getItem('lastActiveTime');
-    if (!lastActive) return true;
-    
-    const lastActiveTime = new Date(parseInt(lastActive));
-    const now = new Date();
-    const hoursSinceLastActive = (now - lastActiveTime) / (1000 * 60 * 60);
-    
-    // Start new chat if last activity was more than 1 hour ago
-    return hoursSinceLastActive > 1;
-}
         // Initialize all event listeners
         function initEventListeners() {
             // Bluetooth buttons
@@ -1301,7 +1179,49 @@ function shouldStartNewChat() {
                 
                 // Save to localStorage
                 saveChatSessions();
-                
+document.addEventListener('DOMContentLoaded', async () => {
+    await checkLoginStatus();
+    await loadUserData();
+    initEventListeners();
+    initSearch(); // Initialize search functionality
+    bluetoothManager.updateUI(false);
+    
+    // Load chat sessions from localStorage
+    loadChatSessions();
+    
+    // If we have no sessions, create a new one
+    if (chatSessions.length === 0) {
+        await createNewChat();
+    } else {
+        // Check if we should start a new chat
+        if (shouldStartNewChat()) {
+            await createNewChat();
+        } else {
+            // Otherwise load the most recent session
+            currentChatId = chatSessions[0].id;
+            await loadChatSession(currentChatId);
+        }
+    }
+    
+    // Update chat history UI
+    updateChatHistoryUI();
+    
+    // Load any existing HR history from local storage
+    const savedHistory = localStorage.getItem('hrHistory');
+    if (savedHistory) {
+        hrHistory = JSON.parse(savedHistory);
+        bluetoothManager.updateHistoryUI();
+    }
+    
+    // Load sidebar collapsed state
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    if (isCollapsed && window.innerWidth > 768) {
+        document.getElementById('sidebar').classList.add('collapsed');
+    }
+    
+    // Store current time as last active time
+    localStorage.setItem('lastActiveTime', Date.now());
+});
             } catch (error) {
                 console.error('Error creating new chat:', error);
                 appendMessage('Failed to create new chat. Please try again.', 'error-message');
@@ -1376,43 +1296,122 @@ function shouldStartNewChat() {
         });
     }
 }
+        // Initialize search functionality
+function initSearch() {
+    const searchInput = document.getElementById('chat-history-search');
+    const searchBtn = document.getElementById('search-btn');
+    
+    searchInput.addEventListener('input', () => filterChatHistory(searchInput.value));
+    searchBtn.addEventListener('click', () => filterChatHistory(searchInput.value));
+}
+
+// Filter chat history based on search query
+function filterChatHistory(query) {
+    const historyItems = document.querySelectorAll('.chat-history-item');
+    const dateHeaders = document.querySelectorAll('.chat-history-date');
+    
+    if (!query.trim()) {
+        // Show all if query is empty
+        historyItems.forEach(item => item.style.display = '');
+        dateHeaders.forEach(header => header.style.display = '');
+        return;
+    }
+    
+    const lowerQuery = query.toLowerCase();
+    let hasMatches = false;
+    
+    // First hide all
+    historyItems.forEach(item => item.style.display = 'none');
+    dateHeaders.forEach(header => header.style.display = 'none');
+    
+    // Show matching items
+    historyItems.forEach(item => {
+        if (item.textContent.toLowerCase().includes(lowerQuery)) {
+            item.style.display = '';
+            hasMatches = true;
             
-            // Render today's sessions
-            if (todaySessions.length > 0) {
-                const dateHeader = document.createElement('div');
-                dateHeader.className = 'chat-history-date';
-                dateHeader.textContent = 'Today';
-                historyContainer.appendChild(dateHeader);
-                
-                todaySessions.forEach(session => {
-                    addChatSessionToHistory(session, historyContainer);
-                });
-            }
-            
-            // Render yesterday's sessions
-            if (yesterdaySessions.length > 0) {
-                const dateHeader = document.createElement('div');
-                dateHeader.className = 'chat-history-date';
-                dateHeader.textContent = 'Yesterday';
-                historyContainer.appendChild(dateHeader);
-                
-                yesterdaySessions.forEach(session => {
-                    addChatSessionToHistory(session, historyContainer);
-                });
-            }
-            
-            // Render older sessions
-            if (olderSessions.length > 0) {
-                const dateHeader = document.createElement('div');
-                dateHeader.className = 'chat-history-date';
-                dateHeader.textContent = 'Older';
-                historyContainer.appendChild(dateHeader);
-                
-                olderSessions.forEach(session => {
-                    addChatSessionToHistory(session, historyContainer);
-                });
+            // Show the date header for this item if it exists
+            let prevElement = item.previousElementSibling;
+            while (prevElement) {
+                if (prevElement.classList.contains('chat-history-date')) {
+                    prevElement.style.display = '';
+                    break;
+                }
+                prevElement = prevElement.previousElementSibling;
             }
         }
+    });
+    
+    if (!hasMatches) {
+        const noResults = document.createElement('div');
+        noResults.className = 'no-results';
+        noResults.textContent = 'No matching chats found';
+        
+        const historyContainer = document.getElementById('chat-history');
+        
+        // Remove previous no-results if exists
+        const existingNoResults = historyContainer.querySelector('.no-results');
+        if (existingNoResults) {
+            historyContainer.removeChild(existingNoResults);
+        }
+        
+        historyContainer.appendChild(noResults);
+    } else {
+        const noResults = document.getElementById('chat-history').querySelector('.no-results');
+        if (noResults) {
+            noResults.remove();
+        }
+    }
+}
+
+// Enhanced date grouping for chat history
+function groupChatSessionsByDate(sessions) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    return sessions.reduce((groups, session) => {
+        const sessionDate = new Date(session.created_at);
+        
+        if (sessionDate >= today) {
+            groups.today.push(session);
+        } else if (sessionDate >= yesterday) {
+            groups.yesterday.push(session);
+        } else if (sessionDate >= sevenDaysAgo) {
+            groups.last7Days.push(session);
+        } else if (sessionDate >= thirtyDaysAgo) {
+            groups.last30Days.push(session);
+        } else {
+            groups.older.push(session);
+        }
+        
+        return groups;
+    }, {
+        today: [],
+        yesterday: [],
+        last7Days: [],
+        last30Days: [],
+        older: []
+    });
+}
+
+// Check if should start new chat (based on last activity)
+function shouldStartNewChat() {
+    const lastActive = localStorage.getItem('lastActiveTime');
+    if (!lastActive) return true;
+    
+    const lastActiveTime = new Date(parseInt(lastActive));
+    const now = new Date();
+    const hoursSinceLastActive = (now - lastActiveTime) / (1000 * 60 * 60);
+    
+    // Start new chat if last activity was more than 1 hour ago
+    return hoursSinceLastActive > 1;
+}
 
         // Add a chat session to the history sidebar
         function addChatSessionToHistory(session, container) {
