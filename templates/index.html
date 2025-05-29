@@ -1052,73 +1052,122 @@
             backdrop-filter: blur(5px);
         }
 
-        @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                top: 0;
-                left: -280px;
-                bottom: 0;
-                z-index: 1000;
-                width: 280px;
-                transition: transform 0.3s ease;
-                box-shadow: 2px 0 10px rgba(0,0,0,0.3);
-            }
+       /* User Profile Section - New Design */
+.user-profile-section {
+    padding: 15px;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-darkest);
+    position: relative;
+    margin-top: auto; /* Pushes to bottom */
+}
 
-            .sidebar.open {
-                transform: translateX(280px);
-            }
+.user-profile-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
 
-            .sidebar.collapsed {
-                width: 280px;
-                left: -280px;
-            }
+.user-profile-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+}
 
-            .sidebar.collapsed.open {
-                transform: translateX(280px);
-            }
+.user-profile-info {
+    flex: 1;
+    overflow: hidden;
+}
 
-            .sidebar-toggle {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
+.user-profile-name {
+    color: var(--text-light);
+    font-size: 16px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
-            .overlay.active {
-                display: block;
-            }
+.user-profile-email {
+    color: var(--text-muted);
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
-            .main-container {
-                flex-direction: column;
-                height: auto;
-                width: 100%;
-                padding: 10px;
-                padding-bottom: calc(10px + var(--safe-area-inset-bottom));
-            }
-            
-            .chat-container {
-                width: 100%;
-                height: calc(100vh - 60px - var(--safe-area-inset-top) - var(--safe-area-inset-bottom));
-            }
-            
-            .pre-prompts {
-                flex-direction: row;
-                align-items: center;
-                justify-content: flex-start;
-                overflow-x: auto;
-                padding-bottom: 10px;
-                scrollbar-width: none;
-                -webkit-overflow-scrolling: touch;
-            }
+.user-profile-logout {
+    background: var(--primary-dark);
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    min-height: 44px;
+}
 
-            .pre-prompts::-webkit-scrollbar {
-                display: none;
-            }
-            
-            .pre-prompts button {
-                width: auto;
-                white-space: nowrap;
-                flex-shrink: 0;
-            }
+.user-profile-logout:hover {
+    background: var(--primary-color);
+}
+
+/* Mobile Specific Styles */
+@media (max-width: 768px) {
+    .user-profile-section {
+        padding-bottom: calc(15px + env(safe-area-inset-bottom));
+    }
+    
+    .user-profile-container {
+        gap: 12px;
+    }
+    
+    .user-profile-avatar {
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+    }
+    
+    .pre-prompts {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 15px;
+        padding: 10px 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    
+    .pre-prompts::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .pre-prompts button {
+        background: var(--primary-dark);
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 20px;
+        font-size: 14px;
+        min-height: 44px;
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+}
 
             .bot-message table {
                 display: block;
@@ -1255,15 +1304,22 @@
         </div>
         
         <!-- User profile section in sidebar -->
-        <div class="user-profile-section">
-            <div class="user-profile-avatar" id="user-avatar"></div>
+       <!-- User profile section in sidebar -->
+<div class="user-profile-section">
+    <div class="user-profile-container">
+        <div class="user-profile-avatar" id="user-avatar">
+            <!-- Avatar content will be filled by JavaScript -->
+        </div>
+        <div class="user-profile-info">
             <div class="user-profile-name" id="username-display">User</div>
             <div class="user-profile-email" id="profile-email">user@example.com</div>
-            <button class="user-profile-logout" id="logout-btn">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Logout</span>
-            </button>
         </div>
+    </div>
+    <button class="user-profile-logout" id="logout-btn">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Logout</span>
+    </button>
+</div>
     </div>
 
     <!-- Heart Rate Panel in top-right corner -->
@@ -1935,37 +1991,61 @@
         }
 
         // Load user data from server
-        async function loadUserData() {
-            try {
-                const response = await fetch('/check-auth', {
-                    method: 'GET',
-                    credentials: 'include'
-                });
+        // Update loadUserData function to handle profile better
+async function loadUserData() {
+    try {
+        const response = await fetch('/check-auth', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.authenticated && data.username) {
+                document.getElementById('username-display').textContent = data.username;
+                document.getElementById('profile-email').textContent = data.email || 'user@example.com';
                 
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                    if (data.authenticated && data.username) {
-                        document.getElementById('username-display').textContent = data.username;
-                        document.getElementById('profile-email').textContent = data.email || 'user@example.com';
-                        
-                        // Set avatar with profile picture if available
-                        const avatar = document.getElementById('user-avatar');
-                        if (data.profile_picture) {
-                            avatar.style.backgroundImage = `url(${data.profile_picture})`;
-                            avatar.textContent = '';
-                        } else {
-                            // Fallback to initials
-                            const initials = data.username.split(' ').map(n => n[0]).join('').toUpperCase();
-                            avatar.textContent = initials.substring(0, 2);
-                        }
-                    }
+                // Set avatar with profile picture if available
+                const avatar = document.getElementById('user-avatar');
+                if (data.profile_picture) {
+                    avatar.style.backgroundImage = `url(${data.profile_picture})`;
+                    avatar.textContent = '';
+                } else {
+                    // Fallback to initials
+                    const initials = data.username.split(' ').map(n => n[0]).join('').toUpperCase();
+                    avatar.textContent = initials.substring(0, 2);
                 }
-            } catch (error) {
-                console.error('Error loading user data:', error);
             }
         }
+    } catch (error) {
+        console.error('Error loading user data:', error);
+    }
+}
 
+// Add mobile layout handler
+function handleMobileLayout() {
+    if (window.innerWidth <= 768) {
+        // Ensure pre-prompts are visible
+        const prePrompts = document.querySelector('.pre-prompts');
+        if (prePrompts) {
+            prePrompts.style.display = 'flex';
+        }
+        
+        // Ensure logout button is visible
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.style.display = 'flex';
+        }
+    }
+}
+
+// Add these event listeners
+window.addEventListener('load', () => {
+    loadUserData();
+    handleMobileLayout();
+});
+window.addEventListener('resize', handleMobileLayout);
         // Send Message Function
         async function sendMessage() {
             const userInput = document.getElementById("user-input").value.trim();
