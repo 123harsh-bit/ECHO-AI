@@ -1086,6 +1086,60 @@
             .overlay.active {
                 display: block;
             }
+            .pre-prompts {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 15px;
+        padding: 10px 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        width: 100%;
+    }
+
+    .pre-prompts::-webkit-scrollbar {
+        display: none;
+    }
+
+    .pre-prompts button {
+        background: var(--primary-dark);
+        color: white;
+        border: none;
+        padding: 12px 15px;
+        border-radius: 20px;
+        font-size: 14px;
+        min-height: 44px;
+        flex-shrink: 0;
+        white-space: nowrap;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* Logout button styling */
+    .user-profile-logout {
+        background: var(--primary-dark);
+        color: white;
+        border: none;
+        padding: 12px 15px;
+        border-radius: 20px;
+        font-size: 14px;
+        min-height: 44px;
+        width: calc(100% - 30px);
+        margin: 10px 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* Sidebar positioning */
+    .user-profile-section {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
 
             .main-container {
                 flex-direction: column;
@@ -2202,7 +2256,27 @@
                 chatBox.scrollTop = chatBox.scrollHeight;
             }
         }
+// Add this to your JavaScript to ensure proper mobile behavior
+function handleMobileLayout() {
+    if (window.innerWidth <= 768) {
+        // Make sure the logout button is always visible in the sidebar
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.style.display = 'flex';
+        }
 
+        // Ensure pre-prompt buttons are visible
+        const prePrompts = document.querySelector('.pre-prompts');
+        if (prePrompts) {
+            prePrompts.style.display = 'flex';
+        }
+    }
+}
+
+// Call this function on load and resize
+window.addEventListener('load', handleMobileLayout);
+window.addEventListener('resize', handleMobileLayout);
+        
         // Manual HR input fallback
         function updateHRManually() {
             const hrInput = document.getElementById('manual-hr');
