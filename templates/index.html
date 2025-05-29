@@ -38,6 +38,9 @@
 
         /* Light theme variables */
         [data-theme="light"] {
+            --primary-color: #007bff;
+            --primary-dark: #0056b3;
+            --secondary-color: #00f5f9;
             --bg-dark: #f5f5f5;
             --bg-darker: #e0e0e0;
             --bg-darkest: #ffffff;
@@ -48,7 +51,7 @@
             --user-message-bg: #007bff;
             --bot-message-bg: #ffffff;
             --bot-message-border: #ddd;
-            --table-header-bg: #019396;
+            --table-header-bg: #0056b3;
             --table-row-even: #f9f9f9;
             --table-row-odd: #ffffff;
             --table-row-hover: #f0f0f0;
@@ -525,49 +528,27 @@
             color: var(--text-light);
         }
 
-        .theme-toggle {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 24px;
+        .theme-selector {
+            display: flex;
+            gap: 10px;
         }
 
-        .theme-toggle input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .theme-slider {
-            position: absolute;
+        .theme-option {
+            padding: 8px 12px;
+            border-radius: 8px;
             cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .theme-option:hover {
             background-color: var(--bg-darker);
-            transition: .4s;
-            border-radius: 24px;
         }
 
-        .theme-slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .theme-slider {
+        .theme-option.active {
             background-color: var(--primary-dark);
-        }
-
-        input:checked + .theme-slider:before {
-            transform: translateX(26px);
+            color: white;
+            border-color: var(--primary-color);
         }
 
         /* Main content area */
@@ -1473,7 +1454,7 @@
             <!-- Profile label with circular avatar -->
             <div class="profile-label-container" id="profile-menu-btn">
                 <div class="profile-avatar" id="user-avatar"></div>
-                <div class="profile-label">My Profile</div>
+                <div class="profile-label" id="profile-label">My Profile</div>
             </div>
             
             <!-- Profile menu with dropdown -->
@@ -1503,11 +1484,11 @@
             <button class="settings-close-btn" id="settings-close-btn"><i class="fas fa-times"></i></button>
         </div>
         <div class="settings-option">
-            <div class="settings-option-label">Dark Mode</div>
-            <label class="theme-toggle">
-                <input type="checkbox" id="theme-toggle">
-                <span class="theme-slider"></span>
-            </label>
+            <div class="settings-option-label">Theme</div>
+            <div class="theme-selector">
+                <div class="theme-option" data-theme="dark">Dark</div>
+                <div class="theme-option" data-theme="light">Light</div>
+            </div>
         </div>
     </div>
 
@@ -1678,8 +1659,12 @@
             document.getElementById('settings-close-btn').addEventListener('click', hideSettings);
             document.getElementById('settings-overlay').addEventListener('click', hideSettings);
             
-            // Theme toggle
-            document.getElementById('theme-toggle').addEventListener('change', toggleTheme);
+            // Theme selector
+            document.querySelectorAll('.theme-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    setTheme(option.dataset.theme);
+                });
+            });
             
             // New chat button
             document.getElementById('new-chat-btn').addEventListener('click', createNewChat);
@@ -1714,6 +1699,27 @@
             window.addEventListener('resize', handleResize);
         }
 
+        // Set theme (dark/light)
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            
+            // Update active state in theme selector
+            document.querySelectorAll('.theme-option').forEach(option => {
+                if (option.dataset.theme === theme) {
+                    option.classList.add('active');
+                } else {
+                    option.classList.remove('active');
+                }
+            });
+        }
+
+        // Initialize theme from localStorage
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            setTheme(savedTheme);
+        }
+
         // Toggle profile menu
         function toggleProfileMenu(e) {
             e.stopPropagation();
@@ -1731,21 +1737,6 @@
         function hideSettings() {
             document.getElementById('settings-dropdown').classList.remove('show');
             document.getElementById('settings-overlay').classList.remove('active');
-        }
-
-        // Toggle between dark and light theme
-        function toggleTheme() {
-            const themeToggle = document.getElementById('theme-toggle');
-            const isDarkMode = themeToggle.checked;
-            document.documentElement.setAttribute('data-theme', isDarkMode ? 'light' : 'dark');
-            localStorage.setItem('theme', isDarkMode ? 'light' : 'dark');
-        }
-
-        // Initialize theme from localStorage
-        function initTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            document.getElementById('theme-toggle').checked = savedTheme === 'light';
         }
 
         // Handle window resize
@@ -2247,7 +2238,7 @@
         // Load user data from server
         async function loadUserData() {
             try {
-                const response = await fetch('/check-auth', {
+                const response = await fetch('/api/user', {
                     method: 'GET',
                     credentials: 'include'
                 });
@@ -2255,38 +2246,14 @@
                 if (response.ok) {
                     const data = await response.json();
                     
-                    if (data.authenticated && data.username) {
-                        document.getElementById('username-display').textContent = data.username;
-                        document.getElementById('profile-email').textContent = data.email || 'user@example.com';
+                    if (data.username) {
+                        document.getElementById('profile-label').textContent = data.username;
                         
                         // Set avatar with profile picture if available
                         const avatar = document.getElementById('user-avatar');
                         if (data.profile_picture) {
-                            // If we have a direct URL from Google
                             avatar.style.backgroundImage = `url(${data.profile_picture})`;
                             avatar.textContent = '';
-                        } else if (data.google_id) {
-                            // If user logged in with Google but we don't have the picture URL
-                            // Fetch from Google API (requires proper authentication)
-                            try {
-                                const googlePicResponse = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${data.google_access_token}`);
-                                if (googlePicResponse.ok) {
-                                    const googleData = await googlePicResponse.json();
-                                    if (googleData.picture) {
-                                        avatar.style.backgroundImage = `url(${googleData.picture})`;
-                                        avatar.textContent = '';
-                                    } else {
-                                        // Fallback to initials
-                                        const initials = data.username.split(' ').map(n => n[0]).join('').toUpperCase();
-                                        avatar.textContent = initials.substring(0, 2);
-                                    }
-                                }
-                            } catch (googleError) {
-                                console.error('Error fetching Google profile:', googleError);
-                                // Fallback to initials
-                                const initials = data.username.split(' ').map(n => n[0]).join('').toUpperCase();
-                                avatar.textContent = initials.substring(0, 2);
-                            }
                         } else {
                             // Fallback to initials
                             const initials = data.username.split(' ').map(n => n[0]).join('').toUpperCase();
