@@ -1451,30 +1451,30 @@
         
         <!-- User profile section in sidebar -->
         <div class="user-profile-section">
-            <!-- Profile label with circular avatar -->
-            <div class="profile-label-container" id="profile-menu-btn">
-                <div class="profile-avatar" id="user-avatar"></div>
-                <div class="profile-label" id="profile-label">My Profile</div>
-            </div>
-            
-            <!-- Profile menu with dropdown -->
-            <div class="user-profile-menu">
-                <div class="profile-menu-dropdown" id="profile-menu-dropdown">
-                    <button class="profile-menu-item" id="settings-btn">
-                        <i class="fas fa-cog"></i>
-                        <span>Settings</span>
-                    </button>
-                    <button class="profile-menu-item" id="contact-btn">
-                        <i class="fas fa-envelope"></i>
-                        <span>Contact Us</span>
-                    </button>
-                    <button class="profile-menu-item" id="logout-btn">
-                        <i class="fas fa-sign-out-alt"></i>
-                        <span>Logout</span>
-                    </button>
-                </div>
+        <!-- Profile label with circular avatar -->
+        <div class="profile-label-container" id="profile-menu-btn">
+            <div class="profile-avatar" id="user-avatar"></div>
+            <div class="profile-label" id="profile-label">Loading...</div>
+        </div>
+        
+        <!-- Profile menu with dropdown -->
+        <div class="user-profile-menu">
+            <div class="profile-menu-dropdown" id="profile-menu-dropdown">
+                <button class="profile-menu-item" id="settings-btn">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </button>
+                <button class="profile-menu-item" id="contact-btn">
+                    <i class="fas fa-envelope"></i>
+                    <span>Contact Us</span>
+                </button>
+                <button class="profile-menu-item" id="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- Settings Dropdown -->
@@ -2238,33 +2238,61 @@
         // Load user data from server
         async function loadUserData() {
             try {
-                const response = await fetch('/api/user', {
+                const response = await fetch('/api/user/profile', {
                     method: 'GET',
-                    credentials: 'include'
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
                 });
                 
-                if (response.ok) {
-                    const data = await response.json();
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user data');
+                }
+
+                const data = await response.json();
+                
+                if (data && data.username) {
+                    // Update profile label
+                    const profileLabel = document.getElementById('profile-label');
+                    profileLabel.textContent = data.username;
                     
-                    if (data.username) {
-                        document.getElementById('profile-label').textContent = data.username;
-                        
-                        // Set avatar with profile picture if available
-                        const avatar = document.getElementById('user-avatar');
-                        if (data.profile_picture) {
-                            avatar.style.backgroundImage = `url(${data.profile_picture})`;
-                            avatar.textContent = '';
-                        } else {
-                            // Fallback to initials
-                            const initials = data.username.split(' ').map(n => n[0]).join('').toUpperCase();
-                            avatar.textContent = initials.substring(0, 2);
-                        }
+                    // Update avatar
+                    const avatar = document.getElementById('user-avatar');
+                    
+                    if (data.profile_picture) {
+                        // If we have a profile picture URL
+                        avatar.style.backgroundImage = `url(${data.profile_picture})`;
+                        avatar.textContent = '';
+                    } else {
+                        // Fallback to initials
+                        const initials = data.username.split(' ')
+                            .map(n => n[0])
+                            .join('')
+                            .toUpperCase();
+                        avatar.textContent = initials.substring(0, 2);
+                        avatar.style.backgroundImage = 'none';
                     }
+
+                    // Update profile menu items if needed
+                    const emailItem = document.createElement('div');
+                    emailItem.className = 'profile-menu-item';
+                    emailItem.innerHTML = `
+                        <i class="fas fa-envelope"></i>
+                        <span>${data.email || 'user@example.com'}</span>
+                    `;
+                    document.getElementById('profile-menu-dropdown').prepend(emailItem);
                 }
             } catch (error) {
                 console.error('Error loading user data:', error);
+                // Set default values if there's an error
+                document.getElementById('profile-label').textContent = 'User';
+                const avatar = document.getElementById('user-avatar');
+                avatar.textContent = 'U';
+                avatar.style.backgroundImage = 'none';
             }
         }
+
 
         // Send Message Function
         async function sendMessage() {
