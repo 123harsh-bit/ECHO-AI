@@ -1026,77 +1026,6 @@
             margin-top: 10px;
             line-height: 1.4;
         }
-        .user-profile-menu {
-    width: 100%;
-    position: relative;
-    margin-top: 10px;
-}
-
-.profile-menu-btn {
-    width: 100%;
-    background: var(--primary-dark);
-    color: white;
-    border: none;
-    padding: 12px 15px;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 44px;
-}
-
-.profile-menu-btn:hover {
-    background: var(--primary-color);
-    transform: translateY(-1px);
-}
-
-.profile-menu-dropdown {
-    display: none;
-    position: absolute;
-    bottom: 100%;
-    left: 0;
-    width: 100%;
-    background: var(--bg-darkest);
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    padding: 10px;
-    margin-bottom: 10px;
-    z-index: 10;
-    border: 1px solid var(--border-color);
-}
-
-.profile-menu-dropdown.show {
-    display: block;
-}
-
-.profile-menu-item {
-    width: 100%;
-    background: transparent;
-    color: var(--text-light);
-    border: none;
-    padding: 10px 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-align: left;
-    min-height: 44px;
-}
-
-.profile-menu-item:hover {
-    background: var(--bg-darker);
-}
-
-.profile-menu-item i {
-    width: 20px;
-    text-align: center;
-}
-
 
         /* Mobile responsiveness */
         .sidebar-toggle {
@@ -1172,25 +1101,24 @@
             }
             
             .pre-prompts {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        scrollbar-width: none; /* Hide scrollbar */
-        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-    }
-            .pre-prompts::-webkit-scrollbar {
-        display: none; /* Hide scrollbar on WebKit browsers */
-    }
+                flex-direction: row;
+                align-items: center;
+                justify-content: flex-start;
+                overflow-x: auto;
+                padding-bottom: 10px;
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+            }
 
-    .pre-prompts button {
-        scroll-snap-align: start;
-        flex: 0 0 auto;
-        width: 80%;
-        white-space: nowrap;
-    }
+            .pre-prompts::-webkit-scrollbar {
+                display: none;
+            }
+            
+            .pre-prompts button {
+                width: auto;
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
 
             .bot-message table {
                 display: block;
@@ -1244,24 +1172,6 @@
                 -webkit-overflow-scrolling: touch;
                 padding-bottom: 20px;
             }
-            profile-menu-dropdown {
-        position: static;
-        margin-top: 10px;
-        box-shadow: none;
-        border: none;
-        padding: 0;
-        background: transparent;
-    }
-    
-    .profile-menu-item {
-        padding: 12px 15px;
-        border-radius: 0;
-        border-bottom: 1px solid var(--border-color);
-    }
-    
-    .profile-menu-item:last-child {
-        border-bottom: none;
-    }
 
             /* Adjust for iOS notch */
             @supports (padding-top: env(safe-area-inset-top)) {
@@ -1345,27 +1255,17 @@
         </div>
         
         <!-- User profile section in sidebar -->
-<!-- Replace the user-profile-logout button in the sidebar with this: -->
-<div class="user-profile-menu">
-    <button class="profile-menu-btn" id="profile-menu-btn">
-        <i class="fas fa-user"></i>
-        <span>My Profile</span>
-    </button>
-    <div class="profile-menu-dropdown" id="profile-menu-dropdown">
-        <button class="profile-menu-item" id="settings-btn">
-            <i class="fas fa-cog"></i>
-            <span>Settings</span>
-        </button>
-        <button class="profile-menu-item" id="contact-btn">
-            <i class="fas fa-envelope"></i>
-            <span>Contact Us</span>
-        </button>
-        <button class="profile-menu-item" id="logout-btn">
-            <i class="fas fa-sign-out-alt"></i>
-            <span>Logout</span>
-        </button>
+        <div class="user-profile-section">
+            <div class="user-profile-avatar" id="user-avatar"></div>
+            <div class="user-profile-name" id="username-display">User</div>
+            <div class="user-profile-email" id="profile-email">user@example.com</div>
+            <button class="user-profile-logout" id="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </button>
+        </div>
     </div>
-</div>
+
     <!-- Heart Rate Panel in top-right corner -->
     <div class="heart-rate-panel" id="heart-rate-panel">
         <div class="heart-rate-header">
@@ -1538,23 +1438,6 @@
             
             // Handle window resize
             window.addEventListener('resize', handleResize);
-            // Add to initEventListeners()
-document.getElementById('profile-menu-btn').addEventListener('click', toggleProfileMenu);
-
-// Close menu when clicking outside
-document.addEventListener('click', (e) => {
-    const profileMenu = document.getElementById('profile-menu-dropdown');
-    const profileBtn = document.getElementById('profile-menu-btn');
-    
-    if (!profileMenu.contains(e.target) && !profileBtn.contains(e.target)) {
-        profileMenu.classList.remove('show');
-    }
-});
-
-// Toggle profile menu
-function toggleProfileMenu() {
-    document.getElementById('profile-menu-dropdown').classList.toggle('show');
-}
         }
 
         // Handle window resize
