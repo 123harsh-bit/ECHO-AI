@@ -271,6 +271,21 @@ def before_request():
         return redirect(request.url.replace('http://', 'https://'), 301)
 
 # ------------------ AUTH ROUTES ------------------
+@app.route('/api/user/profile', methods=['GET'])
+def get_user_profile():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    user = User.query.get(session['user_id'])
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    return jsonify({
+        'username': user.username,
+        'email': user.email,
+        'profile_picture': user.profile_picture,
+        'google_id': user.google_id
+    })
 @app.route('/google-login')
 def google_login():
     """Initialize Google OAuth flow"""
@@ -318,7 +333,7 @@ def google_authorize():
             email=user_info['email'],
             username=user_info.get('name', user_info['email'].split('@')[0]),
             google_id=user_info['sub'],
-            profile_picture=profile_picture
+            profile_picture=profile_picture  # This is the key addition
         )
         
         # Set session - don't store profile picture in session
@@ -347,14 +362,18 @@ def home():
 def check_auth():
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
+        if not user:
+            return jsonify({'authenticated': False}), 401
+            
         return jsonify({
             'authenticated': True,
             'username': user.username,
             'email': user.email,
-            'profile_picture': user.profile_picture  # Always get from database
+            'profile_picture': user.profile_picture,
+            'google_id': user.google_id
         })
     return jsonify({'authenticated': False}), 401
-
+    
 @app.route('/api/chat-sessions', methods=['GET'])
 def get_chat_sessions():
     if 'user_id' not in session:
