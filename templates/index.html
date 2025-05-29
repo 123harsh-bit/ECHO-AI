@@ -1692,7 +1692,7 @@
         }
 
         // Check if should start new chat (based on last activity)
-        functionshouldStartNewChat() {
+        function shouldStartNewChat() {
 const lastActive = localStorage.getItem('lastActiveTime');
 if (!lastActive) return true;
         const lastActiveTime = new Date(parseInt(lastActive));
