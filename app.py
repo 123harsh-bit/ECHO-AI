@@ -518,6 +518,10 @@ def login():
         identifier = request.form.get('username_or_email', '').strip()
         password = request.form.get('password', '').strip()
 
+        # Validate inputs
+        if not identifier or not password:
+            return render_template('login.html', error_message="Username/email and password are required.")
+
         # Find user by username or email
         user = None
         if '@' in identifier:
@@ -526,18 +530,18 @@ def login():
             user = User.query.filter_by(username=identifier).first()
 
         # Validate credentials
-       if not user or user.password is None or not check_password_hash(user.password, password):
-            return render_template('login.html', error_message="Invalid credentials.")
+        if not user or not user.password or not check_password_hash(user.password, password):
+            flash("Invalid credentials.", "error")  # Using flash messages is often better
+            return redirect(url_for('login'))  # Redirect instead of render to avoid form resubmission
 
         # Set session variables
         session.permanent = True
         session['user_id'] = user.id
         session['username'] = user.username
-
-        return redirect(url_for('home'), code=303)
+        flash("Logged in successfully!", "success")
+        return redirect(url_for('home'))
 
     return render_template('login.html')
-
 @app.route('/logout', methods=['POST'])
 def logout():
     session.clear()
