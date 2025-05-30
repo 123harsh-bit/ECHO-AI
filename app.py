@@ -544,7 +544,7 @@ def login():
         session['user_id'] = user.id
         session['username'] = user.username
 
-        return redirect(url_for('home'), 303  # Added explicit status code
+        return redirect(url_for('home'), 303) # Added explicit status code
 
     return render_template('login.html')
     
