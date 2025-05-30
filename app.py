@@ -526,7 +526,7 @@ def login():
             user = User.query.filter_by(username=identifier).first()
 
         # Validate credentials
-        if not user or not check_password_hash(user.password, password):
+       if not user or user.password is None or not check_password_hash(user.password, password):
             return render_template('login.html', error_message="Invalid credentials.")
 
         # Set session variables
