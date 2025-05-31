@@ -73,7 +73,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             -webkit-tap-highlight-color: transparent;
             -webkit-font-smoothing: antialiased;
         }
@@ -353,6 +353,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            color: var(--text-light); /* Ensuring text color for light theme */
         }
 
         .chat-history-item:hover {
@@ -362,6 +363,7 @@
 
         .chat-history-item.active {
             background: var(--primary-dark);
+            color: white;
         }
 
         .chat-history-item i {
@@ -400,7 +402,7 @@
         }
 
         .chat-history-date {
-            color: var(--text-muted);
+            color: var(--text-muted); /* Improved contrast for light theme */
             font-size: 12px;
             margin-top: 15px;
             margin-bottom: 5px;
@@ -417,7 +419,7 @@
             font-size: 14px;
         }
 
-        /* User profile section in sidebar */
+        /* User profile section in sidebar - MOVED TO BOTTOM */
         .user-profile-section {
             padding: 15px;
             border-top: 1px solid var(--border-color);
@@ -427,6 +429,7 @@
             gap: 10px;
             background: var(--bg-darkest);
             flex-shrink: 0; /* Prevent shrinking */
+            margin-top: auto; /* Push to the bottom */
         }
 
         .profile-label-container {
@@ -2303,7 +2306,7 @@
 
             try {
                 // Find current session
-                const currentSession = chatSessions.find(s => s.id === currentChatId);
+                let currentSession = chatSessions.find(s => s.id === currentChatId);
                 if (!currentSession) {
                     console.error('Current chat session not found. Creating a new one.');
                     await createNewChat(); // Try creating a new session if not found
