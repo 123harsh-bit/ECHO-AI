@@ -7,31 +7,31 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            /* New Dark Theme Palette: Deep Violet / Plum Base */
-            --primary-color: #A366FF; /* Vibrant Medium Violet - Accent/Highlight */
-            --primary-dark: #7A3FFF; /* Deep Violet - Brand Color, Primary Buttons, Active Sidebar */
-            --secondary-color: #FF8C66; /* Soft Terracotta/Coral - Interactive/Complementary */
-            --error-color: #FF6B6B; /* Softer Red for errors */
-            --warning-color: #FFD700; /* Gold Yellow for warnings */
-            --success-color: #66BB6A; /* Calm Green for success */
+            /* New Color Palette: Cyan Base - Dark Theme */
+            --primary-color: #00F0FF; /* Bright Cyan - Accent/Highlight */
+            --primary-dark: #00A9BE; /* Main Cyan-Blue - Brand Color, Primary Buttons, Active Sidebar */
+            --secondary-color: #FFD700; /* Gold/Yellow - A warm accent for special elements (e.g. send button) */
+            --error-color: #FF4D4D; /* Red for errors */
+            --warning-color: #FFAA00; /* Orange for warnings */
+            --success-color: #38A3A5; /* Teal for success */
             --info-color: #64B5F6; /* Soft Blue for info */
 
-            --bg-dark: #1C1C2C; /* Very Dark Plum-Grey - Main background */
-            --bg-darker: #28283D; /* Dark Plum-Grey - Sidebar, Input Container */
-            --bg-darkest: #3A3A52; /* Muted Purple-Grey - Panels, Cards, Bot Messages */
-            --text-light: #EAEAEA; /* Off-White - Primary text on dark backgrounds */
-            --text-muted: #B5B5C5; /* Light Grey-Purple - Secondary text, timestamps */
-            --text-dark: #C0C0C0; /* Medium Grey - Fallback/subtle dark text */
-            --border-color: #4F4F6A; /* Medium Purple-Grey - Subtle borders */
+            --bg-dark: #1A202C; /* Dark Blue-Grey - Main background */
+            --bg-darker: #2C3E50; /* Mid-Dark Blue-Grey - Sidebar, Input Container */
+            --bg-darkest: #34495E; /* Slightly Lighter Blue-Grey - Panels, Cards, Bot Messages */
+            --text-light: #F0F4F8; /* Off-White - Primary text on dark backgrounds */
+            --text-muted: #A0AEC0; /* Light Blue-Grey - Secondary text, timestamps */
+            --text-dark: #D9D9D9; /* Fallback/subtle dark text on very light elements (less common in dark mode) */
+            --border-color: #4A5568; /* Muted Blue-Grey - Subtle borders */
 
-            --user-message-bg: var(--primary-dark); /* User messages match brand violet */
+            --user-message-bg: var(--primary-dark); /* User messages match brand cyan-blue */
             --bot-message-bg: var(--bg-darkest); /* Bot messages clearly separated from main bg */
             --bot-message-border: var(--border-color); /* Bot message border matches general border */
 
             --table-header-bg: var(--primary-dark);
-            --table-row-even: #242435; /* Slightly lighter than deepest bg */
-            --table-row-odd: #2D2D44; /* Between darker and darkest bg */
-            --table-row-hover: #484865; /* Noticeable hover state for tables */
+            --table-row-even: #212B3B; /* Slightly lighter than deepest bg */
+            --table-row-odd: #2A384A; /* Between darker and darkest bg */
+            --table-row-hover: #3A4D62; /* Noticeable hover state for tables */
 
             --sidebar-width: 280px;
             --sidebar-collapsed: 60px;
@@ -39,34 +39,40 @@
             --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
             --safe-area-inset-left: env(safe-area-inset-left, 0px);
             --safe-area-inset-right: env(safe-area-inset-right, 0px);
+
+            --active-chat-bg: rgba(0, 240, 255, 0.1); /* Subtle cyan tint for active chat background */
+            --active-chat-border: var(--primary-color); /* Cyan border for active chat */
         }
 
-        /* New Light Theme Palette: Deep Violet / Plum Base */
+        /* New Color Palette: Cyan Base - Light Theme */
         [data-theme="light"] {
-            --primary-color: #7A3FFF; /* Deep Violet - Main interactive color */
-            --primary-dark: #5D2DBF; /* Even Deeper Violet - Darker accents */
-            --secondary-color: #FF8C66; /* Soft Terracotta/Coral - Consistent secondary */
+            --primary-color: #00A9BE; /* Main Cyan-Blue - Main interactive color */
+            --primary-dark: #007D8C; /* Darker Cyan-Blue - Darker accents */
+            --secondary-color: #FFC107; /* Amber - A warm accent for special elements */
             --error-color: #DC3545; /* Standard Red */
             --warning-color: #FFC107; /* Standard Yellow */
             --success-color: #28A745; /* Standard Green */
             --info-color: #17A2B8; /* Standard Info Blue */
 
-            --bg-dark: #F8F8FD; /* Very Light Lavender-Grey - Main background */
-            --bg-darker: #F0F0F7; /* Slightly darker, almost white - Sidebar, Input Container */
+            --bg-dark: #EBF5F9; /* Very Light Blue-Grey - Main background */
+            --bg-darker: #DAE7EF; /* Light Blue-Grey - Sidebar, Input Container */
             --bg-darkest: #FFFFFF; /* Pure White - Panels, Cards, Bot Messages */
-            --text-light: #333345; /* Dark Plum-Grey - Primary text on light backgrounds */
-            --text-muted: #7A7A8F; /* Mid-Grey - Secondary text, timestamps */
-            --text-dark: #20202F; /* Very Dark Plum-Grey - Highest contrast text */
-            --border-color: #D0D0E0; /* Soft Grey-Violet - Subtle borders */
+            --text-light: #2D3748; /* Dark Blue-Grey - Primary text on light backgrounds */
+            --text-muted: #718096; /* Mid-Blue-Grey - Secondary text, timestamps */
+            --text-dark: #20202F; /* Very Dark Blue-Grey - Highest contrast text */
+            --border-color: #CBD5E0; /* Light Blue-Grey - Subtle borders */
 
             --user-message-bg: var(--primary-color);
             --bot-message-bg: var(--bg-darkest);
             --bot-message-border: var(--border-color);
 
             --table-header-bg: var(--primary-dark);
-            --table-row-even: #FDFDFE; /* Almost white */
+            --table-row-even: #F0F8FC; /* Almost white */
             --table-row-odd: #FFFFFF; /* Pure white */
-            --table-row-hover: #EAEAF2; /* Light hover state for tables */
+            --table-row-hover: #E0EFF5; /* Light hover state for tables */
+
+            --active-chat-bg: rgba(0, 169, 190, 0.1); /* Even more subtle cyan for active chat */
+            --active-chat-border: var(--primary-color); /* Cyan border for active chat */
         }
 
         * {
@@ -341,22 +347,21 @@
             border-radius: 8px;
             margin-bottom: 5px;
             cursor: pointer;
-            display: flex; /* Ensure flex for icon + text */
+            display: flex;
             align-items: center;
             gap: 8px;
-            color: var(--text-light);
+            color: var(--text-light); /* Default text color */
             position: relative;
-            /* No direct overflow/text-overflow here, it's on the span */
+            transition: all 0.2s ease;
         }
 
         .chat-history-item span {
-            flex-grow: 1; /* Allow text to grow and take available space */
-            overflow: hidden; /* Hide overflowing text */
-            text-overflow: ellipsis; /* Add ellipsis for overflowed text */
-            white-space: nowrap; /* Prevent text from wrapping */
-            min-width: 0; /* Crucial: Allow the flex item to shrink below its content size */
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0; /* Crucial: Allows text to shrink */
         }
-
 
         .chat-history-item:hover {
             background: var(--bg-darker);
@@ -364,18 +369,20 @@
         }
 
         .chat-history-item.active {
-            background: var(--primary-dark);
-            color: white;
+            background: var(--active-chat-bg); /* Use the new active chat background color */
+            color: var(--text-light); /* Keep text light for dark theme, dark for light theme */
+            border-left: 3px solid var(--active-chat-border); /* Use the new active chat border color */
+            padding-left: 12px; /* Adjust padding due to border */
         }
 
         .chat-history-item i {
             font-size: 14px;
             color: var(--text-muted);
-            flex-shrink: 0; /* Prevent icon from shrinking */
+            flex-shrink: 0;
         }
 
         .chat-history-item.active i {
-            color: white;
+            color: var(--primary-color); /* Icon matches primary color when active */
         }
 
         .chat-history-item .delete-btn {
@@ -394,7 +401,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0; /* Prevent delete button from shrinking */
+            flex-shrink: 0;
         }
 
         .chat-history-item:hover .delete-btn {
@@ -413,7 +420,7 @@
             padding-left: 10px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            flex-shrink: 0; /* Ensure date header doesn't shrink */
+            flex-shrink: 0;
         }
 
         .no-results {
@@ -455,11 +462,11 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            background: var(--primary-color); /* Updated to new primary color */
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            color: var(--bg-dark); /* Contrast color for text on avatar */
             font-weight: bold;
             text-transform: uppercase;
             background-size: cover;
@@ -726,7 +733,7 @@
         }
 
         .message {
-            padding: 15px;
+            padding: 15px; /* Base padding for message content area */
             border-radius: 18px;
             max-width: 85%;
             width: fit-content;
@@ -734,14 +741,14 @@
             line-height: 1.5;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             transition: all 0.2s ease;
-            display: flex; /* Use flex to align content and timestamp */
-            flex-direction: column; /* Stack content and timestamp */
+            display: flex; /* Use flex for internal layout */
+            flex-direction: column; /* Default for messages: content + timestamp */
         }
 
         .user-message {
             align-self: flex-end;
             background: var(--user-message-bg);
-            color: white;
+            color: var(--text-light); /* User messages should have light text on primary-dark background */
             border-radius: 18px 18px 0 18px;
         }
 
@@ -751,38 +758,37 @@
             color: var(--text-light);
             border: 1px solid var(--bot-message-border);
             border-radius: 18px 18px 18px 0;
-            display: flex; /* Adjust to accommodate bot avatar */
-            flex-direction: row; /* Align avatar and message content horizontally */
-            align-items: flex-start; /* Align items to the top */
-            gap: 10px; /* Space between avatar and message */
-            max-width: 85%; /* Keep max-width */
-            width: fit-content; /* Keep fit-content */
-            padding: 15px; /* Padding for the entire message bubble */
+            display: flex;
+            flex-direction: row; /* Avatar and message content side-by-side */
+            align-items: flex-start;
+            gap: 10px;
+            max-width: 85%;
+            width: fit-content;
+            padding: 10px; /* Adjust padding due to avatar */
         }
 
         .bot-avatar {
             width: 30px;
             height: 30px;
             border-radius: 50%;
-            background: var(--primary-dark);
+            background: var(--primary-color); /* Bright cyan for avatar background */
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            color: var(--bg-dark); /* Dark text on bright avatar */
             font-size: 14px;
             font-weight: bold;
-            flex-shrink: 0; /* Prevent avatar from shrinking */
-            margin-top: 0; /* Align with text baseline, no extra margin here */
+            flex-shrink: 0;
+            text-transform: uppercase; /* Ensure AI is capitalized */
         }
 
         .bot-message-content {
             flex-grow: 1;
-            /* No padding here, it's applied to the .bot-message container */
-            /* Ensure content inside doesn't overflow the message bubble itself */
-            overflow-wrap: break-word; /* Allows long words to break */
-            min-width: 0; /* Allows content to shrink within flex container */
+            /* Actual message content is inside this div, padding handled by .bot-message */
+            overflow-wrap: break-word;
+            min-width: 0;
+            padding-right: 5px; /* Small right padding to ensure content doesn't touch the edge */
         }
-
 
         .error-message {
             align-self: flex-start;
@@ -798,40 +804,60 @@
             align-items: center;
             color: var(--text-muted);
             font-style: italic;
-            padding: 15px;
+            padding: 10px 15px;
             align-self: flex-start;
         }
 
-        .typing-indicator::after {
-            content: '';
-            display: inline-block;
-            width: 4px;
-            height: 4px;
-            margin-left: 5px;
-            border-radius: 50%;
-            background-color: var(--text-muted);
-            animation: blink 1.5s infinite ease-in-out;
+        /* Hide the previous 'Echo AI is typing' text from JS */
+        .typing-indicator::before {
+            content: 'Echo AI is typing'; /* Keep content as visual text part */
+            margin-right: 8px;
         }
 
-        @keyframes blink {
-            0%, 100% { box-shadow: 8px 0 0 0 var(--text-muted), 16px 0 0 0 var(--text-muted); }
-            33% { box-shadow: 8px 0 0 0 transparent, 16px 0 0 0 var(--text-muted); }
-            66% { box-shadow: 8px 0 0 0 var(--text-muted), 16px 0 0 0 transparent; }
+        .typing-dots {
+            display: inline-flex;
+            gap: 4px; /* Space between dots */
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--primary-color); /* Dots use primary color */
+            border-radius: 50%;
+            opacity: 0.3; /* Start subtle */
+            animation: typing-animation 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing-animation {
+            0%, 80%, 100% {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+            40% {
+                opacity: 1;
+                transform: scale(1.1);
+            }
         }
 
         .message-timestamp {
             font-size: 10px;
-            color: var(--text-muted);
+            color: var(--text-muted); /* Default muted text */
             align-self: flex-end; /* Align timestamp to the right within the message bubble */
             margin-top: 5px; /* Space between message content and timestamp */
             opacity: 0.8;
-            flex-shrink: 0; /* Prevent timestamp from shrinking */
+            flex-shrink: 0;
         }
+        /* Specific colors for timestamps within user/bot messages based on background contrast */
         .user-message .message-timestamp {
-            color: rgba(255, 255, 255, 0.7); /* Lighter for user messages */
+            color: rgba(255, 255, 255, 0.7); /* Lighter white for user messages on dark blue */
         }
-        /* Bot message timestamp is within the bot-message flex container now */
-
+        [data-theme="light"] .user-message .message-timestamp {
+            color: rgba(255, 255, 255, 0.7); /* Keep light for user messages in light mode too, as user message bg is still primary-color */
+        }
 
         .input-container {
             display: flex;
@@ -869,10 +895,16 @@
         }
 
         .pre-prompts button:hover {
-            background: var(--secondary-color);
+            background: var(--primary-dark); /* Hover uses primary-dark */
+            color: white; /* Ensure text is white on primary-dark */
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
+        [data-theme="light"] .pre-prompts button:hover {
+            background: var(--primary-color); /* Light theme uses primary-color for hover */
+            color: white;
+        }
+
 
         .pre-prompts button i {
             font-size: 16px;
@@ -890,7 +922,7 @@
 
         .input-row:focus-within {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(0, 245, 249, 0.2);
+            box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2); /* Adjust shadow color to primary */
         }
 
         textarea { /* Changed from input to textarea */
@@ -912,9 +944,9 @@
 
         button.send-btn {
             padding: 10px 16px;
-            background: var(--secondary-color);
+            background: var(--secondary-color); /* Send button uses secondary color */
             border: none;
-            color: white;
+            color: var(--bg-dark); /* Dark text on secondary color */
             font-size: 16px;
             cursor: pointer;
             border-radius: 20px;
@@ -928,7 +960,8 @@
         }
 
         button.send-btn:hover {
-            background: var(--primary-dark); /* Use primary-dark for hover consistency */
+            background: var(--primary-color); /* Hover to primary color */
+            color: var(--bg-dark); /* Keep dark text on hover */
             transform: translateY(-1px);
         }
 
@@ -1157,7 +1190,7 @@
         }
 
         .heart-rate-btn.connect {
-            background: var(--secondary-color);
+            background: var(--primary-dark); /* Connect uses primary-dark */
         }
 
         .heart-rate-btn.disconnect {
@@ -1203,12 +1236,12 @@
 
         #manual-hr:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(0, 245, 249, 0.2);
+            box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2);
         }
 
         #submit-hr {
             padding: 10px 15px;
-            background: var(--secondary-color);
+            background: var(--primary-dark); /* Submit uses primary-dark */
             color: white;
             border: none;
             border-radius: 20px;
@@ -1220,7 +1253,7 @@
         }
 
         #submit-hr:hover {
-            background: var(--primary-dark); /* Use primary-dark for hover consistency */
+            background: var(--primary-color); /* Hover to primary color */
             transform: translateY(-1px);
         }
 
@@ -1791,6 +1824,11 @@
         // Set theme (dark/light)
         function setTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
+            // Also update the body class for theme-specific styles
+            document.body.classList.remove('light-theme'); // Remove previous theme class
+            if (theme === 'light') {
+                document.body.classList.add('light-theme');
+            }
             localStorage.setItem('theme', theme);
             
             // Update active state in theme selector
@@ -2474,77 +2512,42 @@
             // Common message classes
             message.classList.add("message", className);
             
-            const messageContentWrapper = document.createElement("div");
-            messageContentWrapper.classList.add("message-content-wrapper");
-
-            // For bot messages, add an avatar and special wrapper for content
-            if (className === 'bot-message') {
-                const botAvatar = document.createElement('div');
-                botAvatar.classList.add('bot-avatar');
-                botAvatar.textContent = 'AI'; // You can replace 'AI' with an icon like `<i class="fas fa-robot"></i>`
-                message.appendChild(botAvatar);
-                
-                // The actual content goes inside this div, which is then appended to the message
-                const contentDiv = document.createElement('div');
-                contentDiv.classList.add('bot-message-text-content'); // New class for bot text specific styling if needed
-                messageContentWrapper.appendChild(contentDiv); // Append contentDiv to wrapper
-            }
-
-            // Determine where to put the formatted text
-            let contentTargetElement = (className === 'bot-message' && messageContentWrapper.querySelector('.bot-message-text-content')) ? messageContentWrapper.querySelector('.bot-message-text-content') : messageContentWrapper;
-
-            // Apply markdown formatting
-            if (className === 'bot-message' && text.includes('|') && text.includes('\n')) {
-                formatBotResponse(text, contentTargetElement);
-            } else {
-                contentTargetElement.innerHTML = formatTextResponse(text);
-            }
-            
-            // If it's a bot message, messageContentWrapper already contains the contentDiv
-            // For user messages, messageContentWrapper directly holds the formatted text.
-            if (className === 'user-message') {
-                message.appendChild(messageContentWrapper);
-            }
-            // If it's a bot message, messageContentWrapper (which contains bot-avatar + bot-message-text-content)
-            // is already appended to the message. No, the structure should be:
-            // .message (flex column for user, flex row for bot)
-            //   - .bot-avatar (if bot)
-            //   - .message-content-wrapper (holds the actual text and timestamp if timestamp is inside bubble)
-            //     - text content (p, h1, ul, table etc.)
-            //     - timestamp (if inside)
-
-            // Let's re-think the message structure to correctly integrate avatar and timestamp.
-            // A more robust structure:
-            // <div class="message user-message/bot-message">
-            //   <div class="bot-avatar">AI</div> //   <div class="message-body"> //     <div class="message-text">...formatted text...</div>
-            //     <div class="message-timestamp">...</div>
-            //   </div>
-            // </div>
-
-            // Remove existing message content before rebuilding for clarity in this function
-            message.innerHTML = ''; 
-
-            if (className === 'bot-message') {
-                const botAvatar = document.createElement('div');
-                botAvatar.classList.add('bot-avatar');
-                botAvatar.textContent = 'AI';
-                message.appendChild(botAvatar);
-            }
-
+            // Create a wrapper for the message's main content (text + timestamp)
             const messageBody = document.createElement('div');
             messageBody.classList.add('message-body');
             
-            const messageText = document.createElement('div');
-            messageText.classList.add('message-text');
+            // Create a div specifically for the formatted text content
+            const messageTextContent = document.createElement('div');
+            messageTextContent.classList.add('message-text-content');
 
-            // Apply markdown formatting to messageText
-            if (className === 'bot-message' && text.includes('|') && text.includes('\n')) {
-                formatBotResponse(text, messageText);
+            // Add bot avatar if it's a bot message
+            if (className === 'bot-message') {
+                const botAvatar = document.createElement('div');
+                botAvatar.classList.add('bot-avatar');
+                botAvatar.textContent = 'AI'; 
+                message.appendChild(botAvatar);
+                
+                // For bot messages, messageBody should contain the actual content and timestamp
+                // and it needs flex-grow to take up remaining space
+                messageBody.style.flexGrow = '1'; 
             } else {
-                messageText.innerHTML = formatTextResponse(text);
+                // For user messages, messageBody directly is the main content area
+                messageBody.style.alignSelf = 'flex-end'; // Users messages align to end
+            }
+
+            // Apply markdown formatting to messageTextContent
+            if (text.includes('|') && text.includes('\n')) {
+                // Assuming only bot messages can have tables or complex markdown that needs specific handling
+                // if (!className.includes('bot-message')) { // If not a bot message, format as plain text or simpler markdown
+                //     messageTextContent.innerHTML = formatTextResponse(text);
+                // } else {
+                    formatBotResponse(text, messageTextContent);
+                // }
+            } else {
+                messageTextContent.innerHTML = formatTextResponse(text);
             }
             
-            messageBody.appendChild(messageText);
+            messageBody.appendChild(messageTextContent);
 
             // Add timestamp
             const timestamp = document.createElement('div');
@@ -2553,7 +2556,8 @@
             timestamp.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             messageBody.appendChild(timestamp);
 
-            message.appendChild(messageBody); // Append the whole messageBody to the message div
+            // Append messageBody to the main message div
+            message.appendChild(messageBody);
 
             chatBox.appendChild(message);
             chatBox.scrollTop = chatBox.scrollHeight;
@@ -2641,7 +2645,14 @@
             const chatBox = document.getElementById("chat-box");
             const typingIndicator = document.createElement("div");
             typingIndicator.classList.add("message", "typing-indicator");
-            typingIndicator.innerText = "Echo AI is typing";
+            // Remove innerText from JS, let CSS handle the "Echo AI is typing" text with ::before
+            
+            // Add dots for animation
+            const typingDots = document.createElement('div');
+            typingDots.classList.add('typing-dots');
+            typingDots.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+            typingIndicator.appendChild(typingDots);
+
             chatBox.appendChild(typingIndicator);
             chatBox.scrollTop = chatBox.scrollHeight;
             return typingIndicator;
@@ -2827,6 +2838,13 @@
                     
                     // Save sessions again
                     saveChatSessions();
+                    
+                    // Add flying animation to paper plane icon
+                    const sendBtn = document.getElementById('send-btn');
+                    sendBtn.classList.add('clicked');
+                    setTimeout(() => {
+                        sendBtn.classList.remove('clicked');
+                    }, 500);
                 }
                 
             } catch (error) {
@@ -2953,7 +2971,7 @@
                 if (rate > 100) {
                     color = 'var(--error-color)'; // Red for high
                 } else if (rate < 60) {
-                    color = '#ffff00'; // Yellow for low
+                    color = '#FFAA00'; // Orange for low (changed from yellow for better contrast)
                 } else {
                     color = '#00ff00'; // Green for normal
                 }
@@ -2998,7 +3016,7 @@
                     rateElement.className = 'hr-history-value';
                     rateElement.textContent = `${item.rate} bpm`;
                     rateElement.style.color = item.rate > 100 ? 'var(--error-color)' : 
-                                                 item.rate < 60 ? '#ffff00' : '#00ff00';
+                                                 item.rate < 60 ? '#FFAA00' : '#00ff00'; /* Use orange for low HR */
                     
                     itemElement.appendChild(timeElement);
                     itemElement.appendChild(rateElement);
