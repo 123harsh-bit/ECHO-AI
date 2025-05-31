@@ -159,18 +159,16 @@
         .sidebar.collapsed {
             width: var(--sidebar-collapsed);
             overflow: hidden;
-            /* New: Adjust overflow for collapsed state to hide content */
-            padding-bottom: 0; /* Ensure no extra padding pushes content out */
+            padding-bottom: 0;
         }
 
         .sidebar.collapsed .sidebar-header-text,
         .sidebar.collapsed .chat-history-search,
         .sidebar.collapsed .chat-history,
-        .sidebar.collapsed .profile-label { /* Hide profile label */
+        .sidebar.collapsed .profile-label {
             display: none;
         }
         
-        /* Ensure these remain flexible to center content */
         .sidebar.collapsed .new-chat-btn span,
         .sidebar.collapsed .chat-history-item span,
         .sidebar.collapsed .chat-history-date,
@@ -186,7 +184,7 @@
             width: 40px;
             height: 40px;
             margin: 10px auto;
-            flex-shrink: 0; /* Prevent shrinking */
+            flex-shrink: 0;
         }
 
         .sidebar.collapsed .sidebar-header {
@@ -200,35 +198,34 @@
             justify-content: center;
         }
 
-        /* Make sure profile section is visible but condensed */
         .sidebar.collapsed .user-profile-section {
-            padding: 10px; /* Adjust padding for compact look */
+            padding: 10px;
             border-top: 1px solid var(--border-color);
             display: flex;
-            flex-direction: column; /* Still column, but main content centered */
-            align-items: center; /* Center items horizontally */
-            justify-content: center; /* Center items vertically */
-            gap: 0; /* Remove gap */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
             background: var(--bg-darkest);
-            flex-shrink: 0; /* Prevent shrinking */
+            flex-shrink: 0;
         }
 
         .sidebar.collapsed .profile-label-container {
-            width: auto; /* Allow it to shrink */
-            padding: 0; /* Remove padding */
-            justify-content: center; /* Center the avatar */
-            border-radius: 50%; /* Make it round */
-            height: 40px; /* Match avatar height */
-            margin: 0 auto; /* Center it */
-            flex-direction: column; /* Stack avatar and (hidden) label */
+            width: auto;
+            padding: 0;
+            justify-content: center;
+            border-radius: 50%;
+            height: 40px;
+            margin: 0 auto;
+            flex-direction: column;
         }
 
         .sidebar.collapsed .profile-avatar {
-            margin-right: 0; /* Remove margin */
+            margin-right: 0;
         }
 
         .sidebar.collapsed .profile-menu-dropdown {
-            display: none; /* Keep dropdown hidden until clicked */
+            display: none;
         }
 
         .sidebar-header {
@@ -238,7 +235,7 @@
             justify-content: space-between;
             align-items: center;
             min-height: 60px;
-            flex-shrink: 0; /* Prevent shrinking */
+            flex-shrink: 0;
         }
 
         .sidebar-header-text {
@@ -275,7 +272,7 @@
             font-size: 14px;
             margin: 10px;
             min-height: 44px;
-            flex-shrink: 0; /* Prevent shrinking */
+            flex-shrink: 0;
         }
 
         .new-chat-btn:hover {
@@ -292,7 +289,7 @@
             padding: 10px;
             border-bottom: 1px solid var(--border-color);
             background: var(--bg-darkest);
-            flex-shrink: 0; /* Prevent shrinking */
+            flex-shrink: 0;
         }
 
         .chat-history-search input {
@@ -344,17 +341,26 @@
             border-radius: 8px;
             margin-bottom: 5px;
             cursor: pointer;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-size: 14px;
-            transition: all 0.2s ease;
-            position: relative;
-            display: flex;
+            /* Changed for truncation fix */
+            display: flex; /* Ensure flex for icon + text */
             align-items: center;
             gap: 8px;
-            color: var(--text-light); /* Ensuring text color for light theme */
+            color: var(--text-light);
+            position: relative;
+            /* Ensure it respects parent width */
+            overflow: hidden; /* Crucial for text-overflow to work on inner span */
+            text-overflow: ellipsis; /* Fallback, applied to container for edge cases */
+            white-space: nowrap; /* Fallback, applied to container for edge cases */
         }
+
+        .chat-history-item span {
+            flex-grow: 1; /* Allow text to grow and take available space */
+            overflow: hidden; /* Hide overflowing text */
+            text-overflow: ellipsis; /* Add ellipsis for overflowed text */
+            white-space: nowrap; /* Prevent text from wrapping */
+            min-width: 0; /* Allow the flex item to shrink below its content size */
+        }
+
 
         .chat-history-item:hover {
             background: var(--bg-darker);
@@ -369,6 +375,7 @@
         .chat-history-item i {
             font-size: 14px;
             color: var(--text-muted);
+            flex-shrink: 0; /* Prevent icon from shrinking */
         }
 
         .chat-history-item.active i {
@@ -391,6 +398,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0; /* Prevent delete button from shrinking */
         }
 
         .chat-history-item:hover .delete-btn {
@@ -402,13 +410,14 @@
         }
 
         .chat-history-date {
-            color: var(--text-muted); /* Improved contrast for light theme */
+            color: var(--text-muted);
             font-size: 12px;
             margin-top: 15px;
             margin-bottom: 5px;
             padding-left: 10px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            flex-shrink: 0; /* Ensure date header doesn't shrink */
         }
 
         .no-results {
@@ -428,7 +437,7 @@
             align-items: center;
             gap: 10px;
             background: var(--bg-darkest);
-            flex-shrink: 0; /* Prevent shrinking */
+            flex-shrink: 0;
             margin-top: auto; /* Push to the bottom */
         }
 
