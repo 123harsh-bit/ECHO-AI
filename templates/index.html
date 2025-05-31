@@ -7,27 +7,32 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #00f5f9;
-            --primary-dark: #019396;
-            --secondary-color: #007bff;
-            --error-color: #ff4444;
-            --warning-color: #ff9800;
-            --success-color: #00a854;
-            --info-color: #2196F3;
-            --bg-dark: #000;
-            --bg-darker: #111;
-            --bg-darkest: #0a0a0a;
-            --text-light: #fff;
-            --text-muted: #aaa;
-            --text-dark: #333;
-            --border-color: #333;
-            --user-message-bg: #007bff;
-            --bot-message-bg: #000;
-            --bot-message-border: #333;
-            --table-header-bg: #019396;
-            --table-row-even: #1a1a1a;
-            --table-row-odd: #222;
-            --table-row-hover: #2a2a2a;
+            /* Dark Theme */
+            --primary-color: #00e5e8; /* Slightly less neon cyan for a softer feel */
+            --primary-dark: #00878a; /* Deeper, richer teal */
+            --secondary-color: #4CAF50; /* Changed to a calming green for better contrast and less blue dominance */
+            --error-color: #FF6B6B; /* Softer red for errors */
+            --warning-color: #FFCC00; /* Warm, clear yellow for warnings */
+            --success-color: #4CAF50; /* Calming green for success */
+            --info-color: #2196F3; /* Consistent light blue for info */
+
+            --bg-dark: #121212; /* Off-black for a softer dark mode background */
+            --bg-darker: #1E1E1E; /* Slightly lighter off-black for elements */
+            --bg-darkest: #2C2C2C; /* Darker grey for card backgrounds/panels */
+            --text-light: #E0E0E0; /* Soft white for primary text */
+            --text-muted: #B0B0B0; /* Lighter grey for muted text */
+            --text-dark: #CCCCCC; /* Used for subtle dark text on very light elements if needed (less common in dark mode) */
+            --border-color: #3A3A3A; /* Slightly lighter border for better visibility */
+
+            --user-message-bg: #007bff; /* Keep blue for user messages, as it's a strong identifier */
+            --bot-message-bg: #2C2C2C; /* Matches --bg-darkest for clear differentiation from main chat background */
+            --bot-message-border: #3A3A3A; /* Matches border-color */
+
+            --table-header-bg: var(--primary-dark); /* Uses primary-dark */
+            --table-row-even: #212121; /* Slightly lighter than bg-dark */
+            --table-row-odd: #1A1A1A; /* Slightly darker than bg-darker */
+            --table-row-hover: #383838; /* Noticeable hover state */
+
             --sidebar-width: 280px;
             --sidebar-collapsed: 60px;
             --safe-area-inset-top: env(safe-area-inset-top, 0px);
@@ -38,23 +43,30 @@
 
         /* Light theme variables */
         [data-theme="light"] {
-            --primary-color: #007bff;
-            --primary-dark: #0056b3;
-            --secondary-color: #00f5f9;
-            --bg-dark: #f5f5f5;
-            --bg-darker: #e0e0e0;
-            --bg-darkest: #ffffff;
-            --text-light: #333;
-            --text-muted: #666;
-            --text-dark: #111;
-            --border-color: #ddd;
-            --user-message-bg: #007bff;
-            --bot-message-bg: #ffffff;
-            --bot-message-border: #ddd;
-            --table-header-bg: #0056b3;
-            --table-row-even: #f9f9f9;
-            --table-row-odd: #ffffff;
-            --table-row-hover: #f0f0f0;
+            --primary-color: #007bff; /* Main blue */
+            --primary-dark: #0056b3; /* Deeper blue for accents */
+            --secondary-color: #28a745; /* Green for secondary actions/accents (matches dark theme's secondary tone) */
+            --error-color: #DC3545; /* Standard red */
+            --warning-color: #FFC107; /* Standard yellow */
+            --success-color: #28a745; /* Standard green */
+            --info-color: #17A2B8; /* Standard info blue */
+
+            --bg-dark: #F0F2F5; /* Very light grey for background */
+            --bg-darker: #E9ECEF; /* Slightly darker grey for elements */
+            --bg-darkest: #FFFFFF; /* Pure white for cards/panels */
+            --text-light: #212529; /* Dark charcoal for primary text */
+            --text-muted: #6C757D; /* Medium grey for muted text */
+            --text-dark: #343A40; /* Darker charcoal */
+            --border-color: #DEE2E6; /* Light grey for borders */
+
+            --user-message-bg: #007bff; /* Consistent blue */
+            --bot-message-bg: #FFFFFF; /* Pure white */
+            --bot-message-border: #DEE2E6; /* Light grey */
+
+            --table-header-bg: var(--primary-dark);
+            --table-row-even: #F8F9FA; /* Off-white */
+            --table-row-odd: #FFFFFF; /* Pure white */
+            --table-row-hover: #EBEFF3; /* Light hover state */
         }
 
         * {
@@ -821,7 +833,7 @@
         }
 
         button.send-btn:hover {
-            background: #0056b3;
+            background: #0056b3; /* Using the old blue here for consistency, can be updated to secondary-dark if preferred */
             transform: translateY(-1px);
         }
 
@@ -1113,7 +1125,7 @@
         }
 
         #submit-hr:hover {
-            background: #0056b3;
+            background: #0056b3; /* Using the old blue here for consistency, can be updated to secondary-dark if preferred */
             transform: translateY(-1px);
         }
 
@@ -1401,20 +1413,16 @@
     </style>
 </head>
 <body>
-    <!-- Notification Container -->
     <div class="notification" id="hr-notification">
         <span class="icon"><i class="fas fa-exclamation-circle"></i></span>
         <span class="message" id="notification-message"></span>
         <button class="close-btn" id="close-notification" aria-label="Close notification"><i class="fas fa-times"></i></button>
     </div>
 
-    <!-- Overlay for mobile sidebar -->
     <div class="overlay" id="overlay"></div>
 
-    <!-- Overlay for settings -->
     <div class="settings-overlay" id="settings-overlay"></div>
 
-    <!-- Sidebar for chat history -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-header-text">Chat History</div>
@@ -1429,7 +1437,6 @@
             <button id="search-btn" aria-label="Search"><i class="fas fa-search"></i></button>
         </div>
         <div class="chat-history" id="chat-history">
-            <!-- Chat history items will be populated here -->
             <div class="chat-history-date">Today</div>
             <div class="chat-history-item active">
                 <i class="fas fa-heart"></i>
@@ -1449,15 +1456,12 @@
             </div>
         </div>
         
-        <!-- User profile section in sidebar -->
         <div class="user-profile-section">
-        <!-- Profile label with circular avatar -->
         <div class="profile-label-container" id="profile-menu-btn">
             <div class="profile-avatar" id="user-avatar"></div>
             <div class="profile-label" id="profile-label">Loading...</div>
         </div>
         
-        <!-- Profile menu with dropdown -->
         <div class="user-profile-menu">
             <div class="profile-menu-dropdown" id="profile-menu-dropdown">
                 <button class="profile-menu-item" id="settings-btn">
@@ -1477,7 +1481,6 @@
     </div>
     </div>
 
-    <!-- Settings Dropdown -->
     <div class="settings-dropdown" id="settings-dropdown">
         <div class="settings-header">
             <div class="settings-title">Settings</div>
@@ -1492,7 +1495,6 @@
         </div>
     </div>
 
-    <!-- Heart Rate Panel in top-right corner -->
     <div class="heart-rate-panel" id="heart-rate-panel">
         <div class="heart-rate-header">
             <h3><i class="fas fa-heartbeat"></i> Heart Rate Monitor</h3>
@@ -1527,7 +1529,6 @@
             <div class="hr-history">
                 <h4>Recent Readings</h4>
                 <div class="hr-history-list" id="hr-history-list">
-                    <!-- HR history items will be added here -->
                     <div class="hr-history-item">
                         <span>10:30 AM</span>
                         <span class="hr-history-value">72 bpm</span>
@@ -1543,7 +1544,6 @@
         </div>
     </div>
 
-    <!-- Main content -->
     <div class="main-content">
         <div class="header">
             <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
@@ -2393,7 +2393,7 @@
             message.classList.add("message", className);
             
             // Check if the message contains markdown tables
-            if (text.includes('|') && text.includes('\n')) {
+            if (text.includes('|') && text.includes('\n') && className === 'bot-message') {
                 formatBotResponse(text, message);
             } else {
                 // Format headings, bold text, etc.
@@ -2416,17 +2416,32 @@
             text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
             
             // Convert markdown lists to HTML
-            text = text.replace(/^\s*\*\s(.*$)/gm, '<li>$1</li>');
-            text = text.replace(/^\s*-\s(.*$)/gm, '<li>$1</li>');
-            text = text.replace(/^\s*\+\s(.*$)/gm, '<li>$1</li>');
+            // Note: This simple regex for lists might not handle nested lists or complex cases perfectly,
+            // but it works for basic lists generated by the AI model.
+            text = text.replace(/^\s*[\*\-]\s(.*$)/gm, '<li>$1</li>'); // For unordered lists
+            text = text.replace(/(<li>.*<\/li>(\n<li>.*<\/li>)*)/g, '<ul>$1</ul>'); // Wrap in ul if detected list items
+            text = text.replace(/<\/ul>\n<ul>/g, ''); // Fix for multiple <ul> tags
+
+            text = text.replace(/^\s*\d+\.\s(.*$)/gm, '<li>$1</li>'); // For ordered lists (numbered)
+            text = text.replace(/(<li>.*<\/li>(\n<li>.*<\/li>)*)/g, (match) => {
+                // Check if it's an ordered list that wasn't caught by the previous ul wrap
+                if (match.match(/^\s*\d+\./m)) {
+                    return `<ol>${match}</ol>`;
+                }
+                return match;
+            });
+            text = text.replace(/<\/ol>\n<ol>/g, ''); // Fix for multiple <ol> tags
             
             // Convert newlines to paragraphs where appropriate
-            text = text.replace(/\n\n/g, '</p><p>');
-            
-            // Wrap in paragraph tags if not already wrapped
-            if (!text.startsWith('<h') && !text.startsWith('<p') && !text.startsWith('<ul') && !text.startsWith('<li')) {
-                text = '<p>' + text + '</p>';
-            }
+            text = text.split('\n\n').map(paragraph => {
+                if (!paragraph.startsWith('<h') && !paragraph.startsWith('<ul') && !paragraph.startsWith('<ol') && !paragraph.startsWith('<table>') && !paragraph.startsWith('<blockquote>')) {
+                    return `<p>${paragraph.trim()}</p>`;
+                }
+                return paragraph.trim();
+            }).join('');
+
+            // Remove empty paragraph tags that might be generated by splitting
+            text = text.replace(/<p>\s*<\/p>/g, '');
             
             return text;
         }
@@ -2451,80 +2466,46 @@
                 message.classList.add("message", "bot-message");
             }
 
-            if (response.includes('|') && response.includes('\n')) { 
-                // Create container for scrollable tables on mobile
-                const tableContainer = document.createElement("div");
-                tableContainer.style.overflowX = "auto";
-                tableContainer.style.margin = "15px 0";
+            // Regular expression to find Markdown tables
+            const tableRegex = /^\|.*?\|\r?\n\|---.*?\|\r?\n((?:\|.*?\|\r?\n)*)/gm;
+            let formattedResponse = response;
+            let match;
+
+            while ((match = tableRegex.exec(response)) !== null) {
+                const markdownTable = match[0];
+                const rows = markdownTable.trim().split('\n').filter(row => row.includes('|'));
                 
-                // Create the table element
-                const table = document.createElement("table");
-                table.style.width = "100%";
-                table.style.borderCollapse = "collapse";
-                table.style.borderRadius = "8px";
-                table.style.overflow = "hidden";
-                table.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
-                
-                // Split response into rows
-                const rows = response.trim().split('\n').filter(row => row.includes('|'));
-                
+                let htmlTable = `<table>`;
                 rows.forEach((row, rowIndex) => {
-                    const tr = document.createElement("tr");
-                    
-                    // Alternate row colors
-                    if (rowIndex % 2 === 0) {
-                        tr.style.backgroundColor = "var(--table-row-even)";
-                    } else {
-                        tr.style.backgroundColor = "var(--table-row-odd)";
+                    // Skip the separator line (e.g., |---|---|)
+                    if (row.trim().match(/^\|[-=\s]+\|/)) {
+                        return;
                     }
+                    const tag = rowIndex === 0 ? 'th' : 'td';
+                    const cells = row.split('|').map(cell => cell.trim()).filter(cell => cell !== '');
                     
-                    // Header row styling
-                    if (rowIndex === 0) {
-                        tr.style.backgroundColor = "var(--table-header-bg)";
-                        tr.style.color = "white";
-                        tr.style.fontWeight = "bold";
-                    }
-                    
-                    // Split cells and handle bullet points
-                    const cells = row.split('|').filter(cell => cell.trim());
-                    
-                    cells.forEach((cell, cellIndex) => {
-                        const td = document.createElement(rowIndex === 0 ? "th" : "td");
-                        
-                        // Check for bullet points
-                        if (cell.includes('-') && rowIndex > 0) {
-                            const listItems = cell.split('-').filter(item => item.trim());
-                            const ul = document.createElement("ul");
-                            listItems.forEach(item => {
-                                const li = document.createElement("li");
-                                li.textContent = item.trim();
-                                ul.appendChild(li);
-                            });
-                            td.appendChild(ul);
-                        } else {
-                            td.innerHTML = formatTextResponse(cell.trim());
+                    htmlTable += `<tr>`;
+                    cells.forEach(cell => {
+                        let cellContent = formatTextResponse(cell); // Apply general formatting to cell content
+                        // Check for bullet points within table cells
+                        if (cellContent.startsWith('<ul>') || cellContent.startsWith('<ol>')) {
+                            // Already formatted as a list
+                        } else if (cellContent.includes('\n- ') || cellContent.includes('\n* ')) {
+                            // Convert newline separated items to a list
+                            cellContent = '<ul>' + cellContent.split('\n').map(item => `<li>${item.replace(/[\-\*]\s*/, '').trim()}</li>`).join('') + '</ul>';
                         }
-                        
-                        td.style.padding = "12px 15px";
-                        td.style.border = "1px solid var(--border-color)";
-                        td.style.textAlign = "left";
-                        
-                        // First column styling
-                        if (cellIndex === 0) {
-                            td.style.fontWeight = rowIndex === 0 ? "bold" : "600";
-                        }
-                        
-                        tr.appendChild(td);
+                        htmlTable += `<${tag}>${cellContent}</${tag}>`;
                     });
-                    
-                    table.appendChild(tr);
+                    htmlTable += `</tr>`;
                 });
-                
-                tableContainer.appendChild(table);
-                message.appendChild(tableContainer);
-            } else {
-                message.innerHTML = formatTextResponse(response);
+                htmlTable += `</table>`;
+
+                // Replace the Markdown table with the HTML table
+                formattedResponse = formattedResponse.replace(markdownTable, htmlTable);
             }
+            
+            // Apply general text formatting for the rest of the content
+            message.innerHTML = formatTextResponse(formattedResponse);
             
             if (!container) {
                 chatBox.appendChild(message);
@@ -2538,12 +2519,12 @@
             const hr = parseInt(hrInput.value);
             
             if (isNaN(hr)) {
-                appendMessage("Please enter a valid number", 'error-message');
+                showNotification("Please enter a valid number", 'error');
                 return;
             }
             
             if (hr < 30 || hr > 250) {
-                appendMessage("Please enter a value between 30-250", 'error-message');
+                showNotification("Please enter a value between 30-250", 'error');
                 return;
             }
             
@@ -2815,7 +2796,7 @@
                     rateElement.className = 'hr-history-value';
                     rateElement.textContent = `${item.rate} bpm`;
                     rateElement.style.color = item.rate > 100 ? 'var(--error-color)' : 
-                                              item.rate < 60 ? '#ffff00' : '#00ff00';
+                                                 item.rate < 60 ? '#ffff00' : '#00ff00';
                     
                     itemElement.appendChild(timeElement);
                     itemElement.appendChild(rateElement);
