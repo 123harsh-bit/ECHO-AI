@@ -12,7 +12,6 @@ from datetime import datetime
 from authlib.integrations.flask_client import OAuth
 from urllib.parse import urlencode
 import secrets
-from flask_socketio import SocketIO, emit # New import for real-time communication
 
 # ------------------ INITIAL SETUP ------------------
 load_dotenv()  # Load environment variables from .env
@@ -64,9 +63,6 @@ google = oauth.register(
     jwks_uri='https://www.googleapis.com/oauth2/v3/certs',
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration'
 )
-
-# Initialize Flask-SocketIO for real-time communication
-socketio = SocketIO(app, cors_allowed_origins="*")
 
 # ------------------ DATABASE MODELS ------------------
 class User(db.Model):
@@ -230,7 +226,6 @@ def generate_chat_title(user_input):
     """Generate a title for the chat session based on the first user message"""
     try:
         if not openai.api_key:
-            # Fallback title if API key is missing
             return user_input[:30] + ("..." if len(user_input) > 30 else "")
             
         response = openai.ChatCompletion.create(
@@ -244,7 +239,6 @@ def generate_chat_title(user_input):
         )
         return response['choices'][0]['message']['content'].strip('"\'')
     except Exception:
-        # Fallback title on API error
         return user_input[:30] + ("..." if len(user_input) > 30 else "")
 
 def create_or_get_user(email, username=None, google_id=None, profile_picture=None):
@@ -292,7 +286,6 @@ def get_user_profile():
         'profile_picture': user.profile_picture,
         'google_id': user.google_id
     })
-
 @app.route('/google-login')
 def google_login():
     """Initialize Google OAuth flow"""
@@ -533,7 +526,7 @@ def login():
             user = User.query.filter_by(username=identifier).first()
 
         # Validate credentials
-        if not user or not user.password or not check_password_hash(user.password, password):
+        if not user or not check_password_hash(user.password, password):
             return render_template('login.html', error_message="Invalid credentials.")
 
         # Set session variables
@@ -557,8 +550,8 @@ def profile():
     
     user = User.query.get(session['user_id'])
     return render_template('profile.html', 
-                           user=user,
-                           profile_picture=user.profile_picture) # Removed session.get('profile_picture') as it's not stored there
+                         user=user,
+                         profile_picture=user.profile_picture or session.get('profile_picture', None))
 
 @app.route('/api/heart-rate', methods=['POST'])
 def handle_heart_rate():
@@ -583,8 +576,7 @@ def test_openai():
         if not openai.api_key:
             return jsonify({
                 'status': 'error',
-                'message': 'OpenAI API key is missing. Please set the OPENAI_API_KEY environment variable.',
-                'type': 'text'
+                'message': 'OpenAI API key is missing.'
             }), 500
 
         response = openai.ChatCompletion.create(
@@ -602,10 +594,9 @@ def test_openai():
             'response': response['choices'][0]['message']['content']
         })
     except Exception as e:
-        app.logger.error(f"OpenAI API error: {str(e)}")
         return jsonify({
             'status': 'error',
-            'message': f'Error: {str(e)}. Please check your OpenAI API key and network connection.'
+            'message': f'Error: {str(e)}'
         }), 500
 
 @app.route('/chat', methods=['POST'])
@@ -653,7 +644,7 @@ def chat():
         # Get current chat session
         chat_session = ChatSession.query.get(session['current_chat_id'])
         if not chat_session:
-            # Session was deleted or doesn't exist, create a new one
+            # Session was deleted or doesn't exist
             chat_title = generate_chat_title(user_input)
             new_session = ChatSession(
                 user_id=session['user_id'],
@@ -662,25 +653,17 @@ def chat():
             db.session.add(new_session)
             db.session.commit()
             session['current_chat_id'] = new_session.id
-        # else: chat_session is already loaded if it existed
 
-    # Save user message to database immediately
+    # Save user message to database
     user_message = ChatMessage(
         session_id=session['current_chat_id'],
         content=user_input,
         is_user=True
     )
     db.session.add(user_message)
-    db.session.commit() # Commit user message now so it's persisted
-
-    # Emit typing indicator to the specific client that sent the message
-    # Frontend should listen for 'bot_typing' event
-    socketio.emit('bot_typing', {'session_id': session['current_chat_id']}, room=request.sid)
 
     # Handle predefined queries with specific responses
     lower_input = user_input.lower().strip()
-    
-    bot_response = None # Initialize bot_response
     
     # Custom responses
     if lower_input in ["who are you?", "who are you", "what is your name?", "who is this?", "what is echo ai?"]:
@@ -693,107 +676,55 @@ def chat():
         bot_response = "I was created by a dedicated team of developers. Our team includes Guru Prasad, Harshavardhan Reddy, Ranjith, and Giri. We are working to provide reliable heart health assistance through AI."
     elif not is_heart_related(user_input):
         bot_response = "I'm specially designed to answer heart health-related questions. Could you please ask me something related to heart health, cardiac care, or general health concerns?"
-    
-    if bot_response:
-        # For predefined responses, send complete response immediately
-        socketio.emit('bot_response_complete', {'session_id': session['current_chat_id'], 'content': bot_response, 'is_user': False}, room=request.sid)
-        socketio.emit('bot_stop_typing', {'session_id': session['current_chat_id']}, room=request.sid)
-        
-        # Save bot response to database
-        bot_message = ChatMessage(
-            session_id=session['current_chat_id'],
-            content=bot_response,
-            is_user=False
-        )
-        db.session.add(bot_message)
-        
-        # Update chat session title if it's the first message
-        chat_session = ChatSession.query.get(session['current_chat_id'])
-        if len(chat_session.messages) <= 2: # User message + bot response
-            chat_session.title = generate_chat_title(user_input)
-            
-        db.session.commit()
-        return jsonify({
-            'status': 'success',
-            'chat_session_id': session['current_chat_id']
-        })
     else:
-        # OpenAI streaming logic for heart-related questions
         try:
             if not openai.api_key:
-                socketio.emit('bot_stop_typing', {'session_id': session['current_chat_id']}, room=request.sid)
                 return jsonify({
                     'status': 'error',
-                    'message': 'OpenAI API key is missing. Please configure it.',
+                    'message': 'OpenAI API key is missing.',
                     'type': 'text'
                 }), 500
 
+            # Detect language and respond appropriately
             system_prompt = """You are a helpful heart health expert who can communicate in English, Telugu, Hindi, Kannada, and Tamil. 
             Provide accurate, empathetic, and concise information about heart health topics in the user's preferred language. 
             Include relevant medical facts when appropriate, but always encourage users to consult healthcare professionals for personalized advice."""
             
-            full_bot_response = ""
-            for chunk in openai.ChatCompletion.create(
+            response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_input}
                 ],
-                temperature=0.7,
-                stream=True # Enable streaming
-            ):
-                content = chunk['choices'][0].get('delta', {}).get('content')
-                if content:
-                    full_bot_response += content
-                    # Emit each chunk of the response
-                    socketio.emit('bot_response_chunk', {'session_id': session['current_chat_id'], 'content': content}, room=request.sid)
-                    socketio.sleep(0.05) # Small delay to simulate typing effect (optional)
-
-            # After the streaming is complete, send a 'complete' event
-            socketio.emit('bot_response_complete', {'session_id': session['current_chat_id'], 'content': full_bot_response, 'is_user': False}, room=request.sid)
-            socketio.emit('bot_stop_typing', {'session_id': session['current_chat_id']}, room=request.sid)
-
-            # Save the full bot response to the database
-            bot_message = ChatMessage(
-                session_id=session['current_chat_id'],
-                content=full_bot_response,
-                is_user=False
+                temperature=0.7
             )
-            db.session.add(bot_message)
-            
-            # Update chat session title if it's the first message
-            chat_session = ChatSession.query.get(session['current_chat_id'])
-            if len(chat_session.messages) <= 2:  # User message + bot response
-                chat_session.title = generate_chat_title(user_input)
-            
-            db.session.commit()
 
-            return jsonify({
-                'status': 'success',
-                'chat_session_id': session['current_chat_id']
-            })
-
+            bot_response = response['choices'][0]['message']['content']
         except Exception as e:
             app.logger.error(f"OpenAI API error: {str(e)}")
-            socketio.emit('bot_stop_typing', {'session_id': session['current_chat_id']}, room=request.sid)
-            error_response = "I'm having trouble connecting to my knowledge base right now. Please try again in a moment or rephrase your question."
-            # Emit the error response as a complete message
-            socketio.emit('bot_response_complete', {'session_id': session['current_chat_id'], 'content': error_response, 'is_user': False, 'error': True}, room=request.sid)
-            
-            # Save the error response to the database
-            bot_message = ChatMessage(
-                session_id=session['current_chat_id'],
-                content=error_response,
-                is_user=False
-            )
-            db.session.add(bot_message)
-            db.session.commit()
+            bot_response = "I'm having trouble connecting to my knowledge base right now. Please try again in a moment or rephrase your question."
 
-            return jsonify({
-                'status': 'error',
-                'message': error_response,
-                'type': 'text'
-            }), 500
+    # Save bot response to database
+    bot_message = ChatMessage(
+        session_id=session['current_chat_id'],
+        content=bot_response,
+        is_user=False
+    )
+    db.session.add(bot_message)
+    
+    # Update chat session title if it's the first message
+    chat_session = ChatSession.query.get(session['current_chat_id'])
+    if len(chat_session.messages) <= 2:  # User message + bot response
+        chat_session.title = generate_chat_title(user_input)
+    
+    db.session.commit()
+
+    return jsonify({
+        'status': 'success',
+        'response': bot_response,
+        'type': 'text',
+        'chat_session_id': session['current_chat_id']
+    })
 
 @app.route('/forgot-password')
 def forgot_password():
@@ -803,5 +734,4 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     port = int(os.environ.get('PORT', 5000))
-    # Run the app using socketio.run instead of app.run
-    socketio.run(app, host='0.0.0.0', port=port, debug=os.getenv('FLASK_ENV') == 'development')
+    app.run(host='0.0.0.0', port=port, debug=os.getenv('FLASK_ENV') == 'development')
