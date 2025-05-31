@@ -149,18 +149,21 @@
         }
 
         /* Sidebar styles */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: var(--bg-darker);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            position: relative;
-            z-index: 1000;
-        }
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--bg-darker);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow-y: auto;       /* ✅ allows scroll inside */
+  overflow-x: hidden;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1000;
+  flex-shrink: 0;          /* ✅ prevent sidebar from shrinking */
+}
+
 
         .sidebar.collapsed {
             width: var(--sidebar-collapsed);
