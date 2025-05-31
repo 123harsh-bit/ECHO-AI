@@ -1,747 +1,3070 @@
-import os
-from datetime import timedelta
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash, check_password_hash
-import openai
-from dotenv import load_dotenv
-from flask_cors import CORS
-from flask_migrate import Migrate
-import json
-from datetime import datetime
-from authlib.integrations.flask_client import OAuth
-from urllib.parse import urlencode
-import secrets
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Echo AI - Heart Health Chatbot</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            /* New Color Palette: Cyan Base - Dark Theme */
+            --primary-color: #00F0FF; /* Bright Cyan - Accent/Highlight */
+            --primary-dark: #00A9BE; /* Main Cyan-Blue - Brand Color, Primary Buttons, Active Sidebar */
+            --secondary-color: #FFD700; /* Gold/Yellow - A warm accent for special elements (e.g. pre-prompts hover) */
+            --error-color: #FF4D4D; /* Red for errors */
+            --warning-color: #FFAA00; /* Orange for warnings */
+            --success-color: #38A3A5; /* Teal for success */
+            --info-color: #64B5F6; /* Soft Blue for info */
 
-# ------------------ INITIAL SETUP ------------------
-load_dotenv()  # Load environment variables from .env
+            --bg-dark: #000000; /* Full Black - Main background */
+            --bg-darker: #0A0A0A; /* Very Dark Grey - Sidebar, Input Container background */
+            --bg-darkest: #1A1A1A; /* Slightly Lighter Dark Grey - Panels, Cards, Bot Messages background */
+            --text-light: #F0F4F8; /* Off-White - Primary text on dark backgrounds */
+            --text-muted: #A0AEC0; /* Light Blue-Grey - Secondary text, timestamps */
+            --text-dark: #D9D9D9; /* Fallback/subtle dark text on very light elements (less common in dark mode) */
+            --border-color: #222222; /* Dark Grey - Subtle borders */
 
-# Initialize Flask app
-app = Flask(__name__, static_folder='static', template_folder='templates')
+            --user-message-bg: var(--primary-dark); /* User messages match brand cyan-blue */
+            --bot-message-bg: var(--bg-darkest); /* Bot messages clearly separated from main bg */
+            --bot-message-border: var(--border-color); /* Bot message border matches general border */
 
-# Configure session
-app.secret_key = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(16))
-app.config['SESSION_COOKIE_SECURE'] = os.getenv('FLASK_ENV') == 'production'
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
+            --table-header-bg: var(--primary-dark);
+            --table-row-even: #111111; /* Slightly lighter than deepest bg */
+            --table-row-odd: #181818; /* Between darker and darkest bg */
+            --table-row-hover: #222222; /* Noticeable hover state for tables */
 
-# Enable CORS
-CORS(app, resources={
-    r"/chat": {"origins": "*"},
-    r"/api/*": {"origins": "*"}
-})
+            --sidebar-width: 280px;
+            --sidebar-collapsed: 60px;
+            --safe-area-inset-top: env(safe-area-inset-top, 0px);
+            --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-area-inset-left: env(safe-area-inset-left, 0px);
+            --safe-area-inset-right: env(safe-area-inset-right, 0px);
 
-# Database configuration
-db_url = os.getenv('DATABASE_URL')
-if db_url and db_url.startswith('postgres://'):
-    db_url = db_url.replace('postgres://', 'postgresql://', 1)
+            --active-chat-bg: rgba(0, 240, 255, 0.1); /* Subtle cyan tint for active chat background */
+            --active-chat-border: var(--primary-color); /* Cyan border for active chat */
+        }
 
-app.config['SQLALCHEMY_DATABASE_URI'] = db_url or 'sqlite:///echoai.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        /* New Color Palette: Cyan Base - Light Theme */
+        [data-theme="light"] {
+            --primary-color: #00A9BE; /* Main Cyan-Blue - Main interactive color */
+            --primary-dark: #007D8C; /* Darker Cyan-Blue - Darker accents */
+            --secondary-color: #FFC107; /* Amber - A warm accent for special elements */
+            --error-color: #DC3545; /* Standard Red */
+            --warning-color: #FFC107; /* Standard Yellow */
+            --success-color: #28A745; /* Standard Green */
+            --info-color: #17A2B8; /* Standard Info Blue */
 
-# Initialize database
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)  # For database migrations
+            --bg-dark: #EBF5F9; /* Very Light Blue-Grey - Main background */
+            --bg-darker: #DAE7EF; /* Light Blue-Grey - Sidebar, Input Container */
+            --bg-darkest: #FFFFFF; /* Pure White - Panels, Cards, Bot Messages */
+            --text-light: #2D3748; /* Dark Blue-Grey - Primary text on light backgrounds */
+            --text-muted: #718096; /* Mid-Blue-Grey - Secondary text, timestamps */
+            --text-dark: #20202F; /* Very Dark Blue-Grey - Highest contrast text */
+            --border-color: #CBD5E0; /* Light Blue-Grey - Subtle borders */
 
-# OpenAI configuration
-openai.api_key = os.getenv('OPENAI_API_KEY')
+            --user-message-bg: var(--primary-color);
+            --bot-message-bg: var(--bg-darkest);
+            --bot-message-border: var(--border-color);
 
-# OAuth configuration
-oauth = OAuth(app)
-google = oauth.register(
-    name='google',
-    client_id=os.getenv('GOOGLE_CLIENT_ID'),
-    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
-    access_token_url='https://oauth2.googleapis.com/token',
-    authorize_url='https://accounts.google.com/o/oauth2/v2/auth',
-    api_base_url='https://www.googleapis.com/oauth2/v3/',
-    client_kwargs={
-        'scope': 'openid email profile',
-        'token_endpoint_auth_method': 'client_secret_post'
-    },
-    jwks_uri='https://www.googleapis.com/oauth2/v3/certs',
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration'
-)
+            --table-header-bg: var(--primary-dark);
+            --table-row-even: #F0F8FC; /* Almost white */
+            --table-row-odd: #FFFFFF; /* Pure white */
+            --table-row-hover: #E0EFF5; /* Light hover state for tables */
 
-# ------------------ DATABASE MODELS ------------------
-class User(db.Model):
-    __tablename__ = "users"
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(150), unique=True, nullable=True)  # Made nullable for Google users
-    email = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=True)  # Made nullable for Google users
-    google_id = db.Column(db.String(150), unique=True, nullable=True)
-    profile_picture = db.Column(db.String(500), nullable=True)
-    chat_sessions = db.relationship('ChatSession', backref='user', lazy=True)
+            --active-chat-bg: rgba(0, 169, 190, 0.1); /* Even more subtle cyan for active chat */
+            --active-chat-border: var(--primary-color); /* Cyan border for active chat */
+        }
 
-class ChatSession(db.Model):
-    __tablename__ = "chat_sessions"
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    title = db.Column(db.String(200), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    messages = db.relationship('ChatMessage', backref='session', lazy=True, cascade="all, delete-orphan")
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+        }
 
-class ChatMessage(db.Model):
-    __tablename__ = "chat_messages"
-    id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.Integer, db.ForeignKey('chat_sessions.id'), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    is_user = db.Column(db.Boolean, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            padding-top: var(--safe-area-inset-top);
+            padding-bottom: var(--safe-area-inset-bottom);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
 
-# ------------------ HEALTH KEYWORDS ------------------
-HEART_KEYWORDS = [
-    # English Terms - General
-    "heart", "cardiac", "cardiovascular", "pulse", "bpm", "heartbeat", 
-    "circulation", "blood flow", "ventricle", "atrium", "aorta", "artery",
-    "vein", "capillary", "myocardium", "pericardium", "valve", "ventricular",
-    
-    # Conditions & Diseases
-    "heart attack", "myocardial infarction", "angina", "arrhythmia", 
-    "tachycardia", "bradycardia", "afib", "atrial fibrillation", 
-    "ventricular fibrillation", "heart failure", "chf", "cardiomyopathy",
-    "endocarditis", "pericarditis", "atherosclerosis", "ischemia", 
-    "heart murmur", "mitral regurgitation", "aortic stenosis", 
-    "congenital heart", "chd", "cardiac arrest", "sudden cardiac death",
-    
-    # Measurements & Tests
-    "blood pressure", "bp", "systolic", "diastolic", "hypertension", 
-    "hypotension", "cholesterol", "ldl", "hdl", "triglycerides", 
-    "lipid profile", "ecg", "ekg", "electrocardiogram", "echo", 
-    "echocardiogram", "stress test", "angiogram", "holter monitor",
-    "cardiac ct", "calcium score", "cabg", "angioplasty", "stent",
-    
-    # Symptoms
-    "chest pain", "palpitations", "dizziness", "shortness of breath",
-    "sob", "fatigue", "edema", "swelling", "syncope", "fainting",
-    "fluttering", "racing heart", "skipped beats", "indigestion",
-    "arm pain", "jaw pain", "cold sweat", "cyanosis", "clubbing",
-    
-    # Lifestyle & Prevention
-    "heart-healthy diet", "mediterranean diet", "dash diet", "exercise", 
-    "cardio", "aerobic", "walking", "swimming", "cycling", "smoking", 
-    "alcohol", "stress", "bmi", "obesity", "salt intake", "sodium",
-    "potassium", "omega-3", "coenzyme q10", "antioxidants", "fiber",
-    
-    # Medications & Treatments
-    "statin", "beta blocker", "ace inhibitor", "arb", "diuretic",
-    "blood thinner", "warfarin", "aspirin", "nitroglycerin", "pacemaker",
-    "icd", "defibrillator", "cabg", "bypass surgery", "valve replacement",
-    "tavr", "cardiac rehab", "cpr", "aed",
-    
-    # Telugu Terms
-    "గుండె", "హృదయం", "హృదయ వైఫల్యం", "రక్తపోటు", "బీపీ", "గుండె ఆరోగ్యం",
-    "గుండె నొప్పి", "హృదయ స్పందన", "పల్స్", "గుండె జబ్బు", "హృదయ వ్యాయామం",
-    "కొలెస్ట్రాల్", "గుండెపోటు", "హృదయ నాళాలు", "రక్తం", "ధమనులు", "సిరలు",
-    "గుండె మందులు", "హృదయ శస్త్రచికిత్స", "గుండె వైద్యుడు", "కార్డియాలజిస్ట్",
-    
-    # Hindi Terms
-    "हृदय", "दिल", "हार्ट", "हृदय रोग", "रक्तचाप", "बीपी", "हृदय स्वास्थ्य", 
-    "सीने में दर्द", "हृदय गति", "नब्ज", "हृदय रोग", "हृदय व्यायाम", 
-    "कोलेस्ट्रॉल", "हार्ट अटैक", "हृदय धमनियाँ", "रक्त", "धमनियाँ", "नसें",
-    "हृदय की दवाएं", "हृदय शल्य चिकित्सा", "हृदय रोग विशेषज्ञ", "कार्डियोलॉजिस्ट",
-    
-    # Kannada Terms
-    "ಹೃದಯ", "ಗುಂಡಿಗೆ", "ಹೃದಯ ಸಮಸ್ಯೆ", "ರಕ್ತದೊತ್ತಡ", "ಬಿಪಿ", "ಹೃದಯ ಆರೋಗ್ಯ",
-    "ಎದೆ ನೋವು", "ಹೃದಯ ಬಡಿತ", "ನಾಡಿ", "ಹೃದಯ ರೋಗ", "ಹೃದಯ ವ್ಯಾಯಾಮ", 
-    "ಕೊಲೆಸ್ಟರಾಲ್", "ಹೃದಯಾಘಾತ", "ಹೃದಯ ಧಮನಿಗಳು", "ರಕ್ತ", "ಧಮನಿಗಳು", "ಸಿರೆಗಳು",
-    "ಹೃದಯ medicine", "ಹೃದಯ ಶಸ್ತ್ರಚಿಕಿತ್ಸೆ", "ಹೃದಯ ವೈದ್ಯ", "ಕಾರ್ಡಿಯೋಲಜಿಸ್ಟ್",
-    
-    # Tamil Terms
-    "இதயம்", "கார்டியாக்", "இதய நோய்", "இரத்த அழுத்தம்", "பிபி", "இதய ஆரோக்கியம்",
-    "மார்பு வலி", "இதய துடிப்பு", "நாடி", "இதய பிரச்சினை", "இதய உடற்பயிற்சி", 
-    "கொலஸ்ட்ரால்", "இதயத்துடிப்பு", "இதய நாளங்கள்", "இரத்தம்", "தமனிகள்", "சிரைகள்",
-    "இதய மருந்துகள்", "இதய அறுவை சிகிச்சை", "இதய மருத்துவர்", "கார்டியாலஜிஸ்ட்",
-    
-    # Common health terms across languages
-    "health", "ఆరోగ్యం", "स्वास्थ्य", "ಆರೋಗ್ಯ", "ஆரோக்யம்",
-    "doctor", "డాక్టర్", "डॉक्टर", "ಡಾಕ್ಟರ್", "மருத்துவர்",
-    "medicine", "మందు", "दवा", "ಮದ್ದು", "மருந்து",
-    "treatment", "చికిత్స", "इलाज", "ಚಿಕಿತ್ಸೆ", "சிகிச்சை",
-    "symptoms", "లక్షణాలు", "लक्षण", "ಲಕ್ಷಣಗಳು", "அறிகுறிகள்"
-]
+        /* Notification styles */
+        .notification {
+            position: fixed;
+            top: calc(20px + var(--safe-area-inset-top));
+            right: calc(20px + var(--safe-area-inset-right));
+            background: var(--error-color);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 2000;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            max-width: calc(100% - 40px - var(--safe-area-inset-left) - var(--safe-area-inset-right));
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-def is_heart_related(user_input):
-    """Improved function to detect heart-related questions in multiple languages"""
-    user_input = user_input.lower()
-    
-    # Direct keyword match in any language
-    for keyword in HEART_KEYWORDS:
-        if keyword.lower() in user_input:
-            return True
-    
-    # Common health phrases that might be heart-related (multilingual)
-    health_phrases = [
-        # English
-        "check my heart", "my heart", "heart health", "chest", "breathing problem",
-        "blood pressure", "exercise advice", "diet for heart", "medical history",
-        "heart rate", "heart monitor", "cardiac", "heart specialist", "cardiologist",
-        "risk factor", "family history", "check up", "monitor", "ecg", "ekg",
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.warning {
+            background: var(--warning-color);
+        }
+
+        .notification.info {
+            background: var(--info-color);
+        }
+
+        .notification.success {
+            background: var(--success-color);
+        }
+
+        .notification .icon {
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .notification .close-btn {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 0 0 0 10px;
+            min-height: 44px;
+            min-width: 44px;
+        }
+
+        /* Sidebar styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-darker); /* Use darker shade for sidebar background */
+            border-right: 1px solid var(--bg-dark); /* Blend border with main background */
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1000;
+        }
+
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed);
+            overflow: hidden;
+            padding-bottom: 0;
+            background: var(--bg-dark); /* Blend collapsed sidebar with main background */
+        }
+
+        .sidebar.collapsed .sidebar-header-text,
+        .sidebar.collapsed .chat-history-search,
+        .sidebar.collapsed .chat-history,
+        .sidebar.collapsed .profile-label {
+            display: none;
+        }
         
-        # Telugu
-        "గుండె తనిఖీ", "నా గుండె", "గుండె ఆరోగ్యం", "ఛాతీ", "శ్వాస సమస్య",
-        "రక్తపోటు", "వ్యాయామ సలహా", "గుండెకు ఆహారం", "వైద్య చరిత్ర",
+        .sidebar.collapsed .new-chat-btn span,
+        .sidebar.collapsed .chat-history-item span,
+        .sidebar.collapsed .chat-history-date,
+        .sidebar.collapsed .profile-menu-btn span {
+            display: none;
+        }
         
-        # Hindi
-        "दिल की जांच", "मेरा दिल", "दिल की सेहत", "छाती", "सांस की समस्या",
-        "ब्लड प्रेशर", "व्यायाम सलाह", "दिल के लिए आहार", "चिकित्सा इतिहास",
-        
-        # Kannada
-        "ಹೃದಯ ಪರಿಶೀಲನೆ", "ನನ್ನ ಹೃದಯ", "ಹೃದಯ ಆರೋಗ್ಯ", "ಎದೆ", "ಉಸಿರಾಟದ ತೊಂದರೆ",
-        "ರಕ್ತದೊತ್ತಡ", "ವ್ಯಾಯಾಮ ಸಲಹೆ", "ಹೃದಯಕ್ಕೆ ಆಹಾರ", "ವೈದ್ಯಕೀಯ ಇತಿಹಾಸ",
-        
-        # Tamil
-        "இதய சோதனை", "என் இதயம்", "இதய ஆரோக்கியம்", "மார்பு", "மூச்சுத் திணறல்",
-        "இரத்த அழுத்தம்", "உடற்பயிற்சி ஆலோசனை", "இதயத்திற்கான உணவு", "மருத்துவ வரலாறு"
-    ]
-    
-    for phrase in health_phrases:
-        if phrase.lower() in user_input:
-            return True
-    
-    # If the question seems to be asking about health in general
-    general_health_terms = [
-        # English
-        "health", "healthy", "doctor", "medical", "condition", "symptoms", "treatment",
-        # Telugu
-        "ఆరోగ్యం", "వైద్యుడు", "వైద్య", "స్థితి", "లక్షణాలు", "చికిత్స",
-        # Hindi
-        "स्वास्थ्य", "स्वस्थ", "डॉक्टर", "चिकित्सा", "स्थिति", "लक्षण", "इलाज",
-        # Kannada
-        "ಆರೋಗ್ಯ", "ಆರೋಗ್ಯಕರ", "ವೈದ್ಯ", "ವೈದ್ಯಕೀಯ", "ಸ್ಥಿತಿ", "ಲಕ್ಷಣಗಳು", "ಚಿಕಿತ್ಸೆ",
-        # Tamil
-        "ஆரோக்கியம்", "ஆரோக்கியமான", "மருத்துவர்", "மருத்துவ", "நிலை", "அறிகுறிகள்", "சிகிச்சை"
-    ]
-    
-    if any(term in user_input for term in general_health_terms):
-        # For general health questions, be more permissive
-        return True
-        
-    return False
+        /* Adjustments to visible elements in collapsed state */
+        .sidebar.collapsed .new-chat-btn {
+            justify-content: center;
+            padding: 0;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            margin: 10px auto;
+            flex-shrink: 0;
+        }
 
-def generate_chat_title(user_input):
-    """Generate a title for the chat session based on the first user message"""
-    try:
-        if not openai.api_key:
-            return user_input[:30] + ("..." if len(user_input) > 30 else "")
+        .sidebar.collapsed .sidebar-header {
+            justify-content: center;
+            padding: 15px 0;
+        }
+
+        .sidebar.collapsed .chat-history-item {
+            padding: 12px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .sidebar.collapsed .user-profile-section {
+            padding: 10px;
+            border-top: 1px solid var(--border-color); /* Keep border for separation from main content */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            background: var(--bg-darkest); /* Keep distinct background for profile section */
+            flex-shrink: 0;
+        }
+
+        .sidebar.collapsed .profile-label-container {
+            width: auto;
+            padding: 0;
+            justify-content: center;
+            border-radius: 50%;
+            height: 40px;
+            margin: 0 auto;
+            flex-direction: column;
+        }
+
+        .sidebar.collapsed .profile-avatar {
+            margin-right: 0;
+        }
+
+        .sidebar.collapsed .profile-menu-dropdown {
+            display: none;
+        }
+
+        .sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 60px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header-text {
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 18px;
+        }
+
+        .collapse-btn {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            font-size: 20px;
+            padding: 5px;
+            min-height: 44px;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .new-chat-btn {
+            background: var(--primary-dark);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            margin: 10px;
+            min-height: 44px;
+            flex-shrink: 0;
+        }
+
+        .new-chat-btn:hover {
+            background: var(--primary-color);
+            transform: translateY(-1px);
+        }
+
+        .new-chat-btn i {
+            font-size: 16px;
+        }
+
+        .chat-history-search {
+            display: flex;
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-darkest);
+            flex-shrink: 0;
+        }
+
+        .chat-history-search input {
+            flex: 1;
+            padding: 8px 12px;
+            background: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            color: var(--text-light);
+            outline: none;
+            font-size: 14px;
+        }
+
+        .chat-history-search button {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            padding: 0 8px;
+            font-size: 16px;
+            min-height: 44px;
+            min-width: 44px;
+        }
+
+        .chat-history {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px;
+            position: relative;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) var(--bg-darker);
+        }
+
+        .chat-history::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-history::-webkit-scrollbar-track {
+            background: var(--bg-darker);
+        }
+
+        .chat-history::-webkit-scrollbar-thumb {
+            background-color: var(--primary-color);
+            border-radius: 3px;
+        }
+
+        .chat-history-item {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-light); /* Default text color */
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .chat-history-item span {
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0; /* Crucial: Allows text to shrink */
+        }
+
+        .chat-history-item:hover {
+            background: var(--bg-darker);
+            transform: translateX(2px);
+        }
+
+        .chat-history-item.active {
+            background: var(--active-chat-bg); /* Use the new active chat background color */
+            color: var(--text-light); /* Keep text light for dark theme, dark for light theme */
+            border-left: 3px solid var(--active-chat-border); /* Use the new active chat border color */
+            padding-left: 12px; /* Adjust padding due to border */
+        }
+
+        .chat-history-item i {
+            font-size: 14px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .chat-history-item.active i {
+            color: var(--primary-color); /* Icon matches primary color when active */
+        }
+
+        .chat-history-item .delete-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            min-height: 44px;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .chat-history-item:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .chat-history-item .delete-btn:hover {
+            color: var(--error-color);
+        }
+
+        .chat-history-date {
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            padding-left: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+
+        .no-results {
+            color: var(--text-muted);
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            font-size: 14px;
+        }
+
+        /* User profile section in sidebar - MOVED TO BOTTOM */
+        .user-profile-section {
+            padding: 15px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-darkest);
+            flex-shrink: 0;
+            margin-top: auto; /* Push to the bottom */
+        }
+
+        .profile-label-container {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .profile-label-container:hover {
+            background-color: var(--bg-darker);
+        }
+
+        .profile-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color); /* Updated to new primary color */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--bg-dark); /* Contrast color for text on avatar */
+            font-weight: bold;
+            text-transform: uppercase;
+            background-size: cover;
+            background-position: center;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .profile-label {
+            color: var(--text-light);
+            font-size: 14px;
+            font-weight: 500;
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .profile-menu-dropdown {
+            display: none;
+            width: 100%;
+            background: var(--bg-darkest);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+            margin-top: 5px;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        .profile-menu-dropdown.show {
+            display: block;
+        }
+
+        .profile-menu-item {
+            width: 100%;
+            background: transparent;
+            color: var(--text-light);
+            border: none;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-align: left;
+            min-height: 44px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .profile-menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .profile-menu-item:hover {
+            background: var(--bg-darker);
+        }
+
+        .profile-menu-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Settings dropdown */
+        .settings-dropdown {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-darkest);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            padding: 20px;
+            width: 90%;
+            max-width: 400px;
+            z-index: 2000;
+            border: 1px solid var(--border-color);
+        }
+
+        .settings-dropdown.show {
+            display: block;
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .settings-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .settings-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .settings-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .settings-option:last-child {
+            border-bottom: none;
+        }
+
+        .settings-option-label {
+            font-size: 15px;
+            color: var(--text-light);
+        }
+
+        .theme-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+        .theme-option {
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .theme-option:hover {
+            background-color: var(--bg-darker);
+        }
+
+        .theme-option.active {
+            background-color: var(--primary-dark);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        /* Main content area */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .header {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            font-size: 20px;
+            font-weight: bold;
+            padding: 10px 15px;
+            color: var(--primary-color);
+            justify-content: space-between;
+            position: relative;
+            border-bottom: 1px solid var(--border-color);
+            min-height: 60px;
+            background: var(--bg-darker);
+            z-index: 100;
+        }
+
+        .heart-rate-button {
+            background: none;
+            border: none;
+            color: var(--error-color);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            min-width: 44px;
+            position: relative;
+        }
+
+        .heart-rate-button:hover {
+            color: var(--primary-color);
+        }
+
+        .heart-rate-button.active::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 8px;
+            height: 8px;
+            background-color: var(--error-color);
+            border-radius: 50%;
+        }
+
+        .main-container {
+            display: flex;
+            width: 100%;
+            height: calc(100vh - 60px - var(--safe-area-inset-top) - var(--safe-area-inset-bottom));
+            gap: 20px;
+            padding: 15px;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 40px 20px;
+            font-size: 18px;
+            color: var(--text-muted);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .welcome-message h1 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .welcome-message p {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .chat-box {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) var(--bg-darker);
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+
+        .chat-box::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-box::-webkit-scrollbar-track {
+            background: var(--bg-darker);
+        }
+
+        .chat-box::-webkit-scrollbar-thumb {
+            background-color: var(--primary-color);
+            border-radius: 3px;
+        }
+
+        .message {
+            padding: 15px; /* Base padding for message content area */
+            border-radius: 18px;
+            max-width: 85%;
+            width: fit-content;
+            word-wrap: break-word;
+            line-height: 1.5;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            display: flex; /* Use flex for internal layout */
+            flex-direction: column; /* Default for messages: content + timestamp */
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: var(--user-message-bg);
+            color: var(--text-light); /* User messages should have light text on primary-dark background */
+            border-radius: 18px 18px 0 18px;
+        }
+
+        .bot-message {
+            align-self: flex-start;
+            background: var(--bot-message-bg);
+            color: var(--text-light);
+            border: 1px solid var(--bot-message-border);
+            border-radius: 18px 18px 18px 0;
+            display: flex;
+            flex-direction: row; /* Avatar and message content side-by-side */
+            align-items: flex-start;
+            gap: 10px;
+            max-width: 85%;
+            width: fit-content;
+            padding: 10px; /* Adjust padding due to avatar */
+        }
+
+        .bot-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--primary-color); /* Bright cyan for avatar background */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--bg-dark); /* Dark text on bright avatar */
+            font-size: 14px;
+            font-weight: bold;
+            flex-shrink: 0;
+            text-transform: uppercase; /* Ensure AI is capitalized */
+        }
+
+        .bot-message-content {
+            flex-grow: 1;
+            /* No padding here, it's applied to the .bot-message container */
+            /* Ensure content inside doesn't overflow the message bubble itself */
+            overflow-wrap: break-word; /* Allows long words to break */
+            min-width: 0;
+            padding-right: 5px; /* Small right padding to ensure content doesn't touch the edge */
+        }
+
+        .error-message {
+            align-self: flex-start;
+            background: var(--error-color);
+            color: white;
+            border-radius: 18px 18px 18px 0;
+            padding: 15px;
+            max-width: 85%;
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            color: var(--text-muted);
+            font-style: italic;
+            padding: 10px 15px;
+            align-self: flex-start;
+        }
+
+        /* Hide the previous 'Echo AI is typing' text from JS */
+        .typing-indicator::before {
+            content: 'Echo AI is typing'; /* Keep content as visual text part */
+            margin-right: 8px;
+        }
+
+        .typing-dots {
+            display: inline-flex;
+            gap: 4px; /* Space between dots */
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--primary-color); /* Dots use primary color */
+            border-radius: 50%;
+            opacity: 0.3; /* Start subtle */
+            animation: typing-animation 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing-animation {
+            0%, 80%, 100% {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+            40% {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+        }
+
+        .message-timestamp {
+            font-size: 10px;
+            color: var(--text-muted); /* Default muted text */
+            align-self: flex-end; /* Align timestamp to the right within the message bubble */
+            margin-top: 5px; /* Space between message content and timestamp */
+            opacity: 0.8;
+            flex-shrink: 0;
+        }
+        /* Specific colors for timestamps within user/bot messages based on background contrast */
+        .user-message .message-timestamp {
+            color: rgba(255, 255, 255, 0.7); /* Lighter white for user messages on primary-dark */
+        }
+        [data-theme="light"] .user-message .message-timestamp {
+            color: rgba(255, 255, 255, 0.7); /* Keep light for user messages in light mode too, as user message bg is still primary-color */
+        }
+
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            background: var(--bg-darker);
+            border-top: 1px solid var(--border-color);
+            position: sticky;
+            bottom: 0;
+            z-index: 50;
+        }
+
+        .pre-prompts {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .pre-prompts button {
+            padding: 12px 15px;
+            border: none;
+            background: var(--bg-darker);
+            color: var(--text-light);
+            cursor: pointer;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .pre-prompts button:hover {
+            background: var(--primary-dark); /* Hover uses primary-dark */
+            color: white; /* Ensure text is white on primary-dark */
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        [data-theme="light"] .pre-prompts button:hover {
+            background: var(--primary-color); /* Light theme uses primary-color for hover */
+            color: white;
+        }
+
+
+        .pre-prompts button i {
+            font-size: 16px;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            border-radius: 30px;
+            background: var(--bg-darkest);
+            transition: all 0.3s ease;
+        }
+
+        .input-row:focus-within {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2); /* Adjust shadow color to primary */
+        }
+
+        textarea { /* Changed from input to textarea */
+            flex: 1;
+            padding: 10px 15px;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-light);
+            font-size: 16px;
+            border-radius: 20px; /* Still apply border-radius for visual consistency */
+            min-height: 44px;
+            resize: vertical; /* Allow vertical resizing */
+            max-height: 120px; /* Max height for textarea */
+            overflow-y: auto; /* Enable scroll if content exceeds max-height */
+            line-height: 1.5; /* Improve readability for multi-line text */
+            -webkit-appearance: none; /* Remove default macOS textarea styling */
+        }
+
+        button.send-btn {
+            padding: 10px 16px;
+            background: #00A9BE; /* Specific blue for send button */
+            border: none;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 20px;
+            margin-left: 8px;
+            transition: all 0.3s ease;
+            min-height: 44px;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button.send-btn:hover {
+            background: #00F0FF; /* Lighter blue on hover */
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        button.send-btn:active {
+            transform: translateY(0);
+        }
+
+        button.send-btn i {
+            font-size: 18px;
+        }
+
+        /* Animation for paper plane icon */
+        @keyframes fly {
+            0% { transform: translateX(0) translateY(0) rotate(0deg); }
+            50% { transform: translateX(10px) translateY(-10px) rotate(20deg); }
+            100% { transform: translateX(0) translateY(0) rotate(0deg); }
+        }
+
+        .send-btn.clicked i {
+            animation: fly 0.5s ease;
+        }
+
+        /* Enhanced Text Formatting */
+        .bot-message h1, 
+        .bot-message h2, 
+        .bot-message h3, 
+        .bot-message h4 {
+            color: var(--primary-color);
+            margin: 15px 0 10px 0;
+        }
+
+        .bot-message h1 {
+            font-size: 22px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .bot-message h2 {
+            font-size: 20px;
+        }
+
+        .bot-message h3 {
+            font-size: 18px;
+        }
+
+        .bot-message h4 {
+            font-size: 16px;
+        }
+
+        .bot-message strong {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .bot-message em {
+            font-style: italic;
+            color: var(--text-muted);
+        }
+
+        .bot-message p {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .bot-message blockquote {
+            border-left: 3px solid var(--primary-dark);
+            padding-left: 15px;
+            margin: 15px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Professional Table Styling */
+        .bot-message table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .bot-message th {
+            background-color: var(--table-header-bg);
+            color: white;
+            font-weight: bold;
+            padding: 12px 15px;
+            text-align: left;
+        }
+        
+        .bot-message td {
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+        }
+        
+        .bot-message tr:nth-child(even) {
+            background-color: var(--table-row-even);
+        }
+        
+        .bot-message tr:nth-child(odd) {
+            background-color: var(--table-row-odd);
+        }
+        
+        .bot-message tr:hover {
+            background-color: var(--table-row-hover);
+        }
+        
+        .bot-message ul, .bot-message ol {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+        
+        .bot-message li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        
+        .bot-message ul li {
+            list-style-type: disc;
+        }
+        
+        .bot-message ol li {
+            list-style-type: decimal;
+        }
+
+        /* Heart Rate Panel Styles - Now in top-right corner */
+        .heart-rate-panel {
+            position: fixed;
+            top: calc(70px + var(--safe-area-inset-top)); /* Adjust for safe area */
+            right: calc(20px + var(--safe-area-inset-right)); /* Adjust for safe area */
+            background: var(--bg-darker);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            width: 280px;
+            z-index: 1000;
+            border: 1px solid var(--border-color);
+            display: none;
+            transform: translateY(-10px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .heart-rate-panel.visible {
+            display: block;
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .heart-rate-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .heart-rate-header h3 {
+            margin: 0;
+            font-size: 16px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .heart-rate-header h3 i {
+            font-size: 18px;
+            color: var(--error-color);
+        }
+
+        .heart-rate-content {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .heart-rate-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            padding: 10px;
+            background: var(--bg-darkest);
+            border-radius: 10px;
+        }
+
+        .current-hr {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--error-color);
+            font-family: 'Courier New', monospace;
+        }
+
+        .hr-status {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .heart-rate-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .heart-rate-btn {
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .heart-rate-btn i {
+            font-size: 14px;
+        }
+
+        .heart-rate-btn.connect {
+            background: var(--primary-dark); /* Connect uses primary-dark */
+        }
+
+        .heart-rate-btn.disconnect {
+            background: var(--text-muted);
+        }
+
+        .heart-rate-btn.analyze {
+            background: var(--success-color);
+        }
+
+        .heart-rate-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .heart-rate-btn:active {
+            transform: translateY(0);
+        }
+
+        .heart-rate-btn:disabled {
+            background: var(--border-color);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .manual-hr-input {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        #manual-hr {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-darkest);
+            color: var(--text-light);
+            font-size: 14px;
+            outline: none;
+            min-height: 44px;
+        }
+
+        #manual-hr:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2);
+        }
+
+        #submit-hr {
+            padding: 10px 15px;
+            background: var(--primary-dark); /* Submit uses primary-dark */
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            min-height: 44px;
+            min-width: 80px;
+            transition: all 0.3s ease;
+        }
+
+        #submit-hr:hover {
+            background: var(--primary-color); /* Hover to primary color */
+            transform: translateY(-1px);
+        }
+
+        .hr-history {
+            margin-top: 10px;
+            max-height: 120px;
+            overflow-y: auto;
+            background: var(--bg-darkest);
+            border-radius: 10px;
+            padding: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) var(--bg-darker);
+        }
+
+        .hr-history::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .hr-history::-webkit-scrollbar-track {
+            background: var(--bg-darker);
+        }
+
+        .hr-history::-webkit-scrollbar-thumb {
+            background-color: var(--primary-color);
+            border-radius: 3px;
+        }
+
+        .hr-history h4 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .hr-history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .hr-history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 10px;
+            background: var(--bg-darker);
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .hr-history-item:hover {
+            background: var(--border-color);
+            transform: translateX(2px);
+        }
+
+        .hr-history-value {
+            font-weight: bold;
+            color: var(--error-color);
+            font-family: 'Courier New', monospace;
+        }
+
+        .bluetooth-note {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 10px;
+            line-height: 1.4;
+        }
+
+        /* Mobile responsiveness */
+        .sidebar-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 20px;
+            cursor: pointer;
+            margin-right: 10px;
+            min-height: 44px;
+            min-width: 44px;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            backdrop-filter: blur(5px);
+        }
+
+        .settings-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1500;
+            backdrop-filter: blur(3px);
+        }
+
+        .settings-overlay.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: -280px;
+                bottom: 0;
+                z-index: 1000;
+                width: 280px;
+                transition: transform 0.3s ease;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+            }
+
+            .sidebar.open {
+                transform: translateX(280px);
+            }
+
+            .sidebar.collapsed {
+                width: 280px;
+                left: -280px;
+            }
+
+            .sidebar.collapsed.open {
+                transform: translateX(280px);
+            }
+
+            .sidebar-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .overlay.active {
+                display: block;
+            }
+
+            .main-container {
+                flex-direction: column;
+                height: auto;
+                width: 100%;
+                padding: 10px;
+                padding-bottom: calc(10px + var(--safe-area-inset-bottom));
+            }
             
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "Generate a very short title (3-5 words max) for this chat about heart health. Just return the title, nothing else."},
-                {"role": "user", "content": user_input}
-            ],
-            temperature=0.3,
-            max_tokens=15
-        )
-        return response['choices'][0]['message']['content'].strip('"\'')
-    except Exception:
-        return user_input[:30] + ("..." if len(user_input) > 30 else "")
-
-def create_or_get_user(email, username=None, google_id=None, profile_picture=None):
-    """Helper function to create or get user"""
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        # Create new user
-        user = User(
-            email=email,
-            username=username or email.split('@')[0],
-            google_id=google_id,
-            profile_picture=profile_picture
-        )
-        db.session.add(user)
-        db.session.commit()
-    else:
-        # Update existing user with Google ID and profile picture
-        if google_id and not user.google_id:
-            user.google_id = google_id
-        if profile_picture and (not user.profile_picture or user.profile_picture != profile_picture):
-            user.profile_picture = profile_picture
-        db.session.commit()
-    return user
-
-# ------------------ MIDDLEWARE ------------------
-@app.before_request
-def before_request():
-    """Force HTTPS in production"""
-    if request.url.startswith('http://') and os.getenv('FLASK_ENV') == 'production':
-        return redirect(request.url.replace('http://', 'https://'), 301)
-
-# ------------------ AUTH ROUTES ------------------
-@app.route('/api/user/profile', methods=['GET'])
-def get_user_profile():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    user = User.query.get(session['user_id'])
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
-    
-    return jsonify({
-        'username': user.username,
-        'email': user.email,
-        'profile_picture': user.profile_picture,
-        'google_id': user.google_id
-    })
-@app.route('/google-login')
-def google_login():
-    """Initialize Google OAuth flow"""
-    if 'user_id' in session:
-        return redirect(url_for('home'))
-    
-    # Generate a secure nonce
-    nonce = secrets.token_urlsafe(16)
-    session['google_nonce'] = nonce
-    
-    # Force HTTPS in production
-    redirect_uri = url_for('google_authorize', _external=True)
-    if os.getenv('FLASK_ENV') == 'production':
-        redirect_uri = redirect_uri.replace('http://', 'https://')
-    
-    return google.authorize_redirect(redirect_uri, nonce=nonce)
-
-@app.route('/google-authorize')
-def google_authorize():
-    try:
-        # Check if nonce exists in session
-        if 'google_nonce' not in session:
-            return redirect(url_for('login', error_message='Google authentication failed: Missing nonce'))
-        
-        # Force HTTPS in production
-        if os.getenv('FLASK_ENV') == 'production':
-            request.url = request.url.replace('http://', 'https://')
-        
-        # Get token with proper nonce verification
-        token = google.authorize_access_token()
-        if not token or 'id_token' not in token:
-            return redirect(url_for('login', error_message='Google authentication failed: No token received'))
-        
-        # Verify token with the stored nonce
-        user_info = google.parse_id_token(token, nonce=session.pop('google_nonce', None))
-        if not user_info.get('email'):
-            return redirect(url_for('login', error_message='Google authentication failed: No email provided'))
-        
-        # Get additional user info including profile picture
-        google_user_info = google.get('userinfo').json()
-        profile_picture = google_user_info.get('picture')
-        
-        # Create or get user with profile picture
-        user = create_or_get_user(
-            email=user_info['email'],
-            username=user_info.get('name', user_info['email'].split('@')[0]),
-            google_id=user_info['sub'],
-            profile_picture=profile_picture  # This is the key addition
-        )
-        
-        # Set session - don't store profile picture in session
-        session.permanent = True
-        session['user_id'] = user.id
-        session['username'] = user.username or user_info.get('name', 'User')
-        session['email'] = user_info['email']
-        
-        return redirect(url_for('home'))
-    
-    except Exception as e:
-        app.logger.error(f"Google OAuth error: {str(e)}")
-        return redirect(url_for('login', error_message=f'Google login failed: {str(e)}'))
-
-# ------------------ ROUTES ------------------
-@app.route('/')
-def home():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    # Get current user's username
-    user = User.query.get(session['user_id'])
-    return render_template('index.html', current_user=user.username)
-
-@app.route('/check-auth')
-def check_auth():
-    if 'user_id' in session:
-        user = User.query.get(session['user_id'])
-        if not user:
-            return jsonify({'authenticated': False}), 401
+            .chat-container {
+                width: 100%;
+                height: calc(100vh - 60px - var(--safe-area-inset-top) - var(--safe-area-inset-bottom));
+            }
             
-        return jsonify({
-            'authenticated': True,
-            'username': user.username,
-            'email': user.email,
-            'profile_picture': user.profile_picture,
-            'google_id': user.google_id
-        })
-    return jsonify({'authenticated': False}), 401
-    
-@app.route('/api/chat-sessions', methods=['GET'])
-def get_chat_sessions():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    sessions = ChatSession.query.filter_by(user_id=session['user_id']).order_by(ChatSession.updated_at.desc()).all()
-    
-    sessions_data = [{
-        'id': session.id,
-        'title': session.title,
-        'created_at': session.created_at.strftime('%Y-%m-%d %H:%M'),
-        'updated_at': session.updated_at.strftime('%Y-%m-%d %H:%M'),
-        'is_current': 'current_chat_id' in session and session.id == session['current_chat_id']
-    } for session in sessions]
-    
-    return jsonify(sessions_data)
+            .pre-prompts {
+                flex-direction: row;
+                align-items: center;
+                justify-content: flex-start;
+                overflow-x: auto;
+                padding-bottom: 10px;
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+                scroll-snap-type: x mandatory;
+            }
 
-@app.route('/api/chat-sessions', methods=['POST'])
-def create_chat_session():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    new_session = ChatSession(
-        user_id=session['user_id'],
-        title="New Chat"
-    )
-    
-    try:
-        db.session.add(new_session)
-        db.session.commit()
-        session['current_chat_id'] = new_session.id
-        return jsonify({
-            'id': new_session.id,
-            'title': new_session.title,
-            'created_at': new_session.created_at.strftime('%Y-%m-%d %H:%M')
-        }), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+            .pre-prompts::-webkit-scrollbar {
+                display: none;
+            }
+            
+            .pre-prompts button {
+                width: auto;
+                white-space: nowrap;
+                flex-shrink: 0;
+                scroll-snap-align: start;
+            }
 
-@app.route('/api/chat-sessions/<int:session_id>', methods=['GET'])
-def get_chat_session(session_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    chat_session = ChatSession.query.filter_by(id=session_id, user_id=session['user_id']).first()
-    if not chat_session:
-        return jsonify({'error': 'Chat session not found'}), 404
-    
-    messages = [{
-        'content': msg.content,
-        'is_user': msg.is_user,
-        'created_at': msg.created_at.strftime('%Y-%m-%d %H:%M')
-    } for msg in chat_session.messages]
-    
-    return jsonify({
-        'id': chat_session.id,
-        'title': chat_session.title,
-        'messages': messages
-    })
+            .bot-message table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
 
-@app.route('/api/chat-sessions/<int:session_id>', methods=['DELETE'])
-def delete_chat_session(session_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    chat_session = ChatSession.query.filter_by(id=session_id, user_id=session['user_id']).first()
-    if not chat_session:
-        return jsonify({'error': 'Chat session not found'}), 404
-    
-    try:
-        db.session.delete(chat_session)
-        db.session.commit()
+            .welcome-message {
+                padding: 30px 15px;
+                font-size: 16px;
+            }
+
+            .welcome-message h1 {
+                font-size: 24px;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+
+            .input-container {
+                padding: 15px;
+                padding-bottom: calc(15px + var(--safe-area-inset-bottom));
+            }
+
+            /* Profile menu mobile styles */
+            .profile-menu-dropdown {
+                position: static;
+                margin-top: 10px;
+                box-shadow: none;
+                border: none;
+                padding: 0;
+                background: transparent;
+            }
+            
+            .profile-menu-item {
+                padding: 12px 15px;
+                border-radius: 0;
+                border-bottom: 1px solid var(--border-color);
+            }
+            
+            .profile-menu-item:last-child {
+                border-bottom: none;
+            }
+
+            /* Heart rate panel mobile styles */
+            .heart-rate-panel {
+                position: fixed;
+                top: auto;
+                bottom: calc(80px + var(--safe-area-inset-bottom));
+                right: 15px;
+                left: 15px;
+                width: auto;
+                max-width: 350px;
+                margin: 0 auto;
+            }
+
+            /* Settings dropdown mobile styles */
+            .settings-dropdown {
+                width: 95%;
+                max-width: none;
+            }
+
+            /* Fix mobile scrolling */
+            body, html {
+                overflow: auto;
+                height: 100%;
+            }
+
+            .main-content {
+                overflow: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .chat-box {
+                overflow-y: scroll;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 20px;
+            }
+
+            /* Adjust for iOS notch */
+            @supports (padding-top: env(safe-area-inset-top)) {
+                .sidebar {
+                    padding-top: env(safe-area-inset-top);
+                    height: calc(100vh - env(safe-area-inset-top));
+                }
+
+                .header {
+                    padding-top: calc(10px + env(safe-area-inset-top));
+                }
+            }
+        }
+
+        /* Animation for heart rate button when active */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .heart-rate-button.pulse {
+            animation: pulse 1s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="notification" id="hr-notification">
+        <span class="icon"><i class="fas fa-exclamation-circle"></i></span>
+        <span class="message" id="notification-message"></span>
+        <button class="close-btn" id="close-notification" aria-label="Close notification"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+
+    <div class="settings-overlay" id="settings-overlay"></div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-header-text">Chat History</div>
+            <button class="collapse-btn" id="collapse-btn" aria-label="Collapse sidebar"><i class="fas fa-bars"></i></button>
+        </div>
+        <button class="new-chat-btn" id="new-chat-btn" aria-label="New chat">
+            <i class="fas fa-plus"></i>
+            <span>New chat</span>
+        </button>
+        <div class="chat-history-search">
+            <input type="text" id="chat-history-search" placeholder="Search chats..." aria-label="Search chats">
+            <button id="search-btn" aria-label="Search"><i class="fas fa-search"></i></button>
+        </div>
+        <div class="chat-history" id="chat-history">
+            <div class="chat-history-date">Today</div>
+            <div class="chat-history-item active">
+                <i class="fas fa-heart"></i>
+                <span>Heart Health Basics</span>
+                <button class="delete-btn" aria-label="Delete chat"><i class="fas fa-trash-alt"></i></button>
+            </div>
+            <div class="chat-history-item">
+                <i class="fas fa-running"></i>
+                <span>Exercise Recommendations</span>
+                <button class="delete-btn" aria-label="Delete chat"><i class="fas fa-trash-alt"></i></button>
+            </div>
+            <div class="chat-history-date">Yesterday</div>
+            <div class="chat-history-item">
+                <i class="fas fa-utensils"></i>
+                <span>Diet Plan Discussion</span>
+                <button class="delete-btn" aria-label="Delete chat"><i class="fas fa-trash-alt"></i></button>
+            </div>
+        </div>
         
-        # If we deleted the current chat, create a new one
-        if 'current_chat_id' in session and session['current_chat_id'] == session_id:
-            new_session = ChatSession(user_id=session['user_id'], title="New Chat")
-            db.session.add(new_session)
-            db.session.commit()
-            session['current_chat_id'] = new_session.id
+        <div class="user-profile-section">
+            <div class="profile-label-container" id="profile-menu-btn">
+                <div class="profile-avatar" id="user-avatar"></div>
+                <div class="profile-label" id="profile-label">Loading...</div>
+            </div>
             
-        return jsonify({'success': True}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+            <div class="user-profile-menu">
+                <div class="profile-menu-dropdown" id="profile-menu-dropdown">
+                    <button class="profile-menu-item" id="settings-btn">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </button>
+                    <button class="profile-menu-item" id="contact-btn">
+                        <i class="fas fa-envelope"></i>
+                        <span>Contact Us</span>
+                    </button>
+                    <button class="profile-menu-item" id="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    if 'user_id' in session:
-        return redirect(url_for('home'))
+    <div class="settings-dropdown" id="settings-dropdown">
+        <div class="settings-header">
+            <div class="settings-title">Settings</div>
+            <button class="settings-close-btn" id="settings-close-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="settings-option">
+            <div class="settings-option-label">Theme</div>
+            <div class="theme-selector">
+                <div class="theme-option" data-theme="dark">Dark</div>
+                <div class="theme-option" data-theme="light">Light</div>
+            </div>
+        </div>
+    </div>
 
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '').strip()
-
-        # Validate all fields
-        if not username or not password or not email:
-            return render_template('signup.html', error_message="All fields are required.")
-
-        # Basic email validation
-        if '@' not in email or '.' not in email.split('@')[-1]:
-            return render_template('signup.html', error_message="Please enter a valid email address.")
-
-        # Check for existing username or email
-        if User.query.filter_by(username=username).first():
-            return render_template('signup.html', error_message="Username already exists.")
+    <div class="heart-rate-panel" id="heart-rate-panel">
+        <div class="heart-rate-header">
+            <h3><i class="fas fa-heartbeat"></i> Heart Rate Monitor</h3>
+            <button class="heart-rate-button" id="close-hr-panel" aria-label="Close panel"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="heart-rate-content" id="heart-rate-content">
+            <div class="heart-rate-display">
+                <div class="current-hr" id="current-hr">--</div>
+                <div class="hr-status" id="hr-status">Not connected</div>
+            </div>
             
-        if User.query.filter_by(email=email).first():
-            return render_template('signup.html', error_message="Email already registered.")
-
-        # Create new user
-        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-        new_user = User(username=username, email=email, password=hashed_password)
-
-        try:
-            db.session.add(new_user)
-            db.session.commit()
-
-            # Set session variables
-            session.permanent = True
-            session['user_id'] = new_user.id
-            session['username'] = new_user.username
-
-            return redirect(url_for('home'))
-        except Exception as e:
-            db.session.rollback()
-            app.logger.error(f"Registration error: {str(e)}")
-            error_msg = "Registration failed. Please try again."
-            if "unique constraint" in str(e).lower():
-                error_msg = "Username or email already exists."
-            return render_template('signup.html', error_message=error_msg)
-
-    return render_template('signup.html')
-
-@app.route('/login', methods=['GET', 'POST'])
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if 'user_id' in session:
-        return redirect(url_for('home'))
-
-    if request.method == 'POST':
-        identifier = request.form.get('username_or_email', '').strip()
-        password = request.form.get('password', '').strip()
-
-        # Find user by username or email
-        user = None
-        if '@' in identifier:
-            user = User.query.filter_by(email=identifier).first()
-        else:
-            user = User.query.filter_by(username=identifier).first()
-
-        # Validate credentials
-        if not user:
-            return render_template('login.html', error_message="Invalid credentials.")
+            <div class="heart-rate-actions">
+                <button id="connect-btn" class="heart-rate-btn connect">
+                    <i class="fas fa-bluetooth-b"></i>
+                    <span>Connect</span>
+                </button>
+                <button id="disconnect-btn" class="heart-rate-btn disconnect" style="display:none;">
+                    <i class="fas fa-plug"></i>
+                    <span>Disconnect</span>
+                </button>
+                <button id="analyze-btn" class="heart-rate-btn analyze" disabled>
+                    <i class="fas fa-chart-line"></i>
+                    <span>Analyze</span>
+                </button>
+            </div>
             
-        # Check if user has a password (not a Google user)
-        if not user.password:
-            return render_template('login.html', 
-                                error_message="This account was created with Google. Please use Google login.")
+            <div class="manual-hr-input">
+                <input type="number" id="manual-hr" placeholder="Enter HR (30-250 BPM)" min="30" max="250" aria-label="Enter heart rate manually">
+                <button id="submit-hr">Submit</button>
+            </div>
             
-        # Now safely check password
-        if not check_password_hash(user.password, password):
-            return render_template('login.html', error_message="Invalid credentials.")
-
-        # Set session variables
-        session.permanent = True
-        session['user_id'] = user.id
-        session['username'] = user.username
-
-        return redirect(url_for('home'), 303) # Added explicit status code
-
-    return render_template('login.html')
-    
-@app.route('/logout', methods=['POST'])
-def logout():
-    session.clear()
-    return jsonify({'success': True}), 200
-
-@app.route('/profile')
-def profile():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    user = User.query.get(session['user_id'])
-    return render_template('profile.html', 
-                         user=user,
-                         profile_picture=user.profile_picture or session.get('profile_picture', None))
-
-@app.route('/api/heart-rate', methods=['POST'])
-def handle_heart_rate():
-    if 'user_id' not in session:
-        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 401
-        
-    data = request.get_json()
-    
-    # Here you can:
-    # 1. Store in database
-    # 2. Perform analysis
-    # 3. Trigger alerts if needed
-    
-    print(f"Heart rate received from user {session['user_id']}: {data['bpm']} bpm at {data['timestamp']}")
-    
-    return jsonify({'status': 'success'})
-
-@app.route('/test-openai', methods=['GET'])
-def test_openai():
-    """Test OpenAI API connection"""
-    try:
-        if not openai.api_key:
-            return jsonify({
-                'status': 'error',
-                'message': 'OpenAI API key is missing.'
-            }), 500
-
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": "Hello, are you working?"}
-            ],
-            temperature=0.7
-        )
-
-        return jsonify({
-            'status': 'success',
-            'message': 'OpenAI API is working.',
-            'response': response['choices'][0]['message']['content']
-        })
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': f'Error: {str(e)}'
-        }), 500
-
-@app.route('/chat', methods=['POST'])
-def chat():
-    if 'user_id' not in session:
-        return jsonify({
-            'status': 'error',
-            'message': 'Please log in first.',
-            'type': 'text'
-        }), 401
-
-    if not request.is_json:
-        return jsonify({
-            'status': 'error',
-            'message': 'Invalid request format. JSON expected.',
-            'type': 'text'
-        }), 400
-
-    data = request.get_json()
-    user_input = data.get('message', '').strip()
-
-    # Debug info
-    print(f"Received message: '{user_input}'")
-    print(f"Is heart related: {is_heart_related(user_input.lower())}")
-
-    if not user_input:
-        return jsonify({
-            'status': 'error',
-            'message': 'Empty message received.',
-            'type': 'text'
-        }), 400
-
-    # Check if we have a current chat session
-    if 'current_chat_id' not in session:
-        # Create a new chat session
-        chat_title = generate_chat_title(user_input)
-        new_session = ChatSession(
-            user_id=session['user_id'],
-            title=chat_title
-        )
-        db.session.add(new_session)
-        db.session.commit()
-        session['current_chat_id'] = new_session.id
-    else:
-        # Get current chat session
-        chat_session = ChatSession.query.get(session['current_chat_id'])
-        if not chat_session:
-            # Session was deleted or doesn't exist
-            chat_title = generate_chat_title(user_input)
-            new_session = ChatSession(
-                user_id=session['user_id'],
-                title=chat_title
-            )
-            db.session.add(new_session)
-            db.session.commit()
-            session['current_chat_id'] = new_session.id
-
-    # Save user message to database
-    user_message = ChatMessage(
-        session_id=session['current_chat_id'],
-        content=user_input,
-        is_user=True
-    )
-    db.session.add(user_message)
-
-    # Handle predefined queries with specific responses
-    lower_input = user_input.lower().strip()
-    
-    # Custom responses
-    if lower_input in ["who are you?", "who are you", "what is your name?", "who is this?", "what is echo ai?"]:
-        bot_response = "I am Echo AI, your heart health assistant. I provide guidance and insights related to heart health to help you stay informed and make better health decisions."
-    elif lower_input in ["what is echo ai", "what is echo ai?"]:
-        bot_response = "Echo AI is a heart health assistant. It provides guidance and insights related to heart health to help you stay informed and make better health decisions."
-    elif lower_input in ["hello", "hi", "hey", "greetings"]:
-        bot_response = "Hello! I am Echo AI, your heart health assistant. How can I help you today?"
-    elif lower_input in ["who created you?", "who invented you?", "who made you?", "who created you", "who invented you", "who made you", "who created you echo ai", "who created you echoai", "who created you echo ai?"]:
-        bot_response = "I was created by a dedicated team of developers. Our team includes Guru Prasad, Harshavardhan Reddy, Ranjith, and Giri. We are working to provide reliable heart health assistance through AI."
-    elif not is_heart_related(user_input):
-        bot_response = "I'm specially designed to answer heart health-related questions. Could you please ask me something related to heart health, cardiac care, or general health concerns?"
-    else:
-        try:
-            if not openai.api_key:
-                return jsonify({
-                    'status': 'error',
-                    'message': 'OpenAI API key is missing.',
-                    'type': 'text'
-                }), 500
-
-            # Detect language and respond appropriately
-            system_prompt = """You are a helpful heart health expert who can communicate in English, Telugu, Hindi, Kannada, and Tamil. 
-            Provide accurate, empathetic, and concise information about heart health topics in the user's preferred language. 
-            Include relevant medical facts when appropriate, but always encourage users to consult healthcare professionals for personalized advice."""
+            <div class="hr-history">
+                <h4>Recent Readings</h4>
+                <div class="hr-history-list" id="hr-history-list">
+                    <div class="hr-history-item">
+                        <span>10:30 AM</span>
+                        <span class="hr-history-value">72 bpm</span>
+                    </div>
+                    <div class="hr-history-item">
+                        <span>10:15 AM</span>
+                        <span class="hr-history-value">68 bpm</span>
+                    </div>
+                </div>
+            </div>
             
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_input}
-                ],
-                temperature=0.7
-            )
+            <div class="bluetooth-note">(Chrome on Windows/Mac/Android only)</div>
+        </div>
+    </div>
 
-            bot_response = response['choices'][0]['message']['content']
-        except Exception as e:
-            app.logger.error(f"OpenAI API error: {str(e)}")
-            bot_response = "I'm having trouble connecting to my knowledge base right now. Please try again in a moment or rephrase your question."
+    <div class="main-content">
+        <div class="header">
+            <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+            <div>Echo AI</div>
+            <button class="heart-rate-button" id="heart-rate-button" aria-label="Heart rate monitor"><i class="fas fa-heartbeat"></i></button>
+        </div>
 
-    # Save bot response to database
-    bot_message = ChatMessage(
-        session_id=session['current_chat_id'],
-        content=bot_response,
-        is_user=False
-    )
-    db.session.add(bot_message)
-    
-    # Update chat session title if it's the first message
-    chat_session = ChatSession.query.get(session['current_chat_id'])
-    if len(chat_session.messages) <= 2:  # User message + bot response
-        chat_session.title = generate_chat_title(user_input)
-    
-    db.session.commit()
+        <div class="main-container">
+            <div class="chat-container">
+                <div class="welcome-message" id="welcome-message">
+                    <h1>AI Heart Health Chatbot</h1>
+                    <p>"Your AI-powered heart health assistant - monitor, analyze, and stay informed."</p>
+                </div>
 
-    return jsonify({
-        'status': 'success',
-        'response': bot_response,
-        'type': 'text',
-        'chat_session_id': session['current_chat_id']
-    })
+                <div class="chat-box" id="chat-box"></div>
 
-@app.route('/forgot-password')
-def forgot_password():
-    return render_template('forgot_password.html')
+                <div class="pre-prompts">
+                    <button class="pre-prompt-btn" data-prompt="Best exercises for heart health">
+                        <i class="fas fa-running"></i> Best Exercises
+                    </button>
+                    <button class="pre-prompt-btn" data-prompt="How to maintain healthy blood pressure?">
+                        <i class="fas fa-heartbeat"></i> Blood Pressure
+                    </button>
+                    <button class="pre-prompt-btn" data-prompt="Indian based Heart-friendly diet plan in tabular format">
+                        <i class="fas fa-utensils"></i> Diet Plan
+                    </button>
+                    <button class="pre-prompt-btn" data-prompt="Symptoms of heart disease">
+                        <i class="fas fa-heart"></i> Warning Signs
+                    </button>
+                </div>
 
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=os.getenv('FLASK_ENV') == 'development')
+                <div class="input-container">
+                    <div class="input-row">
+                        <textarea id="user-input" placeholder="Ask me about heart health..." autofocus aria-label="Type your message"></textarea>
+                        <button class="send-btn" id="send-btn" aria-label="Send message"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let isLoggedIn = false;
+        let hrHistory = [];
+        let currentChatId = null;
+        let chatSessions = [];
+        let lastNotificationTime = 0;
+        const NOTIFICATION_COOLDOWN = 30000; // 30 seconds
+        let isWaitingForResponse = false; // Flag to prevent multiple messages while waiting
+
+        // Initialize all event listeners
+        function initEventListeners() {
+            // Bluetooth buttons
+            document.getElementById('connect-btn').addEventListener('click', () => bluetoothManager.connect());
+            document.getElementById('disconnect-btn').addEventListener('click', () => bluetoothManager.handleDisconnect());
+            
+            // Manual HR input
+            document.getElementById('submit-hr').addEventListener('click', updateHRManually);
+            document.getElementById('manual-hr').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') updateHRManually();
+            });
+            
+            // Analyze button
+            document.getElementById('analyze-btn').addEventListener('click', analyzeHeartRate);
+            
+            // Pre-prompt buttons
+            document.querySelectorAll('.pre-prompt-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    if (isWaitingForResponse) return;
+                    // Ensure we target the button itself, not its children (like the icon)
+                    const targetButton = e.currentTarget; 
+                    const message = targetButton.dataset.prompt;
+                    document.getElementById('user-input').value = message;
+                    sendMessage();
+                });
+            });
+            
+            // Chat input (now textarea)
+            document.getElementById('user-input').addEventListener('keypress', (e) => {
+                // Allow Shift+Enter for new line, Enter to send
+                if (e.key === 'Enter' && !e.shiftKey && !isWaitingForResponse) {
+                    e.preventDefault(); // Prevent default new line
+                    sendMessage();
+                }
+            });
+            document.getElementById('send-btn').addEventListener('click', () => {
+                if (!isWaitingForResponse) sendMessage();
+            });
+            
+            // Heart rate button
+            document.getElementById('heart-rate-button').addEventListener('click', toggleHeartRatePanel);
+            document.getElementById('close-hr-panel').addEventListener('click', toggleHeartRatePanel);
+            
+            // Profile menu button
+            document.getElementById('profile-menu-btn').addEventListener('click', toggleProfileMenu);
+            
+            // Profile menu items
+            document.getElementById('settings-btn').addEventListener('click', showSettings);
+            document.getElementById('contact-btn').addEventListener('click', () => {
+                alert('Contact us at support@echoai.com');
+                document.getElementById('profile-menu-dropdown').classList.remove('show');
+            });
+            document.getElementById('logout-btn').addEventListener('click', logout);
+            
+            // Settings close button
+            document.getElementById('settings-close-btn').addEventListener('click', hideSettings);
+            document.getElementById('settings-overlay').addEventListener('click', hideSettings);
+            
+            // Theme selector
+            document.querySelectorAll('.theme-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    setTheme(option.dataset.theme);
+                });
+            });
+            
+            // New chat button
+            document.getElementById('new-chat-btn').addEventListener('click', createNewChat);
+            
+            // Sidebar toggle for mobile
+            document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
+            
+            // Sidebar collapse button
+            document.getElementById('collapse-btn').addEventListener('click', toggleCollapseSidebar);
+            
+            // Overlay click to close sidebar on mobile
+            document.getElementById('overlay').addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    toggleSidebar();
+                }
+            });
+
+            // Close notification button
+            document.getElementById('close-notification').addEventListener('click', hideNotification);
+            
+            // Close profile menu when clicking outside
+            document.addEventListener('click', (e) => {
+                const profileMenu = document.getElementById('profile-menu-dropdown');
+                const profileBtn = document.getElementById('profile-menu-btn');
+                
+                if (!profileMenu.contains(e.target) && !profileBtn.contains(e.target)) {
+                    profileMenu.classList.remove('show');
+                }
+            });
+            
+            // Handle window resize
+            window.addEventListener('resize', handleResize);
+        }
+
+        // Set theme (dark/light)
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            // Also update the body class for theme-specific styles
+            document.body.classList.remove('light-theme'); // Remove previous theme class
+            if (theme === 'light') {
+                document.body.classList.add('light-theme');
+            }
+            localStorage.setItem('theme', theme);
+            
+            // Update active state in theme selector
+            document.querySelectorAll('.theme-option').forEach(option => {
+                if (option.dataset.theme === theme) {
+                    option.classList.add('active');
+                } else {
+                    option.classList.remove('active');
+                }
+            });
+        }
+
+        // Initialize theme from localStorage
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            setTheme(savedTheme);
+        }
+
+        // Toggle profile menu
+        function toggleProfileMenu(e) {
+            e.stopPropagation();
+            document.getElementById('profile-menu-dropdown').classList.toggle('show');
+        }
+
+        // Show settings dialog
+        function showSettings() {
+            document.getElementById('settings-dropdown').classList.add('show');
+            document.getElementById('settings-overlay').classList.add('active');
+            document.getElementById('profile-menu-dropdown').classList.remove('show');
+        }
+
+        // Hide settings dialog
+        function hideSettings() {
+            document.getElementById('settings-dropdown').classList.remove('show');
+            document.getElementById('settings-overlay').classList.remove('active');
+        }
+
+        // Handle window resize
+        function handleResize() {
+            if (window.innerWidth > 768) {
+                // Close mobile sidebar if open
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('overlay');
+                if (sidebar.classList.contains('open')) {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            }
+        }
+
+        // Initialize search functionality
+        function initSearch() {
+            const searchInput = document.getElementById('chat-history-search');
+            const searchBtn = document.getElementById('search-btn');
+            
+            searchInput.addEventListener('input', () => filterChatHistory(searchInput.value));
+            searchBtn.addEventListener('click', () => filterChatHistory(searchInput.value));
+        }
+
+        // Filter chat history based on search query
+        function filterChatHistory(query) {
+            const historyContainer = document.getElementById('chat-history');
+            const historyItems = historyContainer.querySelectorAll('.chat-history-item');
+            const dateHeaders = historyContainer.querySelectorAll('.chat-history-date');
+            
+            // Remove existing no-results message before filtering
+            const existingNoResults = historyContainer.querySelector('.no-results');
+            if (existingNoResults) {
+                existingNoResults.remove();
+            }
+
+            if (!query.trim()) {
+                // Show all if query is empty
+                historyItems.forEach(item => item.style.display = 'flex');
+                dateHeaders.forEach(header => header.style.display = '');
+                return;
+            }
+            
+            const lowerQuery = query.toLowerCase();
+            let hasMatches = false;
+            
+            // First hide all
+            historyItems.forEach(item => item.style.display = 'none');
+            dateHeaders.forEach(header => header.style.display = 'none');
+            
+            // Show matching items and their corresponding date headers
+            historyItems.forEach(item => {
+                const textContent = item.querySelector('span')?.textContent || '';
+                if (textContent.toLowerCase().includes(lowerQuery)) {
+                    item.style.display = 'flex';
+                    hasMatches = true;
+                    
+                    let prevElement = item.previousElementSibling;
+                    while (prevElement) {
+                        if (prevElement.classList.contains('chat-history-date')) {
+                            prevElement.style.display = ''; // Show the date header
+                            break;
+                        }
+                        prevElement = prevElement.previousElementSibling;
+                    }
+                }
+            });
+            
+            if (!hasMatches) {
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results';
+                noResults.textContent = 'No matching chats found';
+                historyContainer.appendChild(noResults);
+            }
+        }
+
+        // Enhanced date grouping for chat history
+        function groupChatSessionsByDate(sessions) {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const sevenDaysAgo = new Date(today);
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            const thirtyDaysAgo = new Date(today);
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            
+            // Sort sessions by creation date, newest first
+            sessions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            return sessions.reduce((groups, session) => {
+                const sessionDate = new Date(session.created_at);
+                
+                if (sessionDate >= today) {
+                    groups.today.push(session);
+                } else if (sessionDate >= yesterday) {
+                    groups.yesterday.push(session);
+                } else if (sessionDate >= sevenDaysAgo) {
+                    groups.last7Days.push(session);
+                } else if (sessionDate >= thirtyDaysAgo) {
+                    groups.last30Days.push(session);
+                } else {
+                    groups.older.push(session);
+                }
+                
+                return groups;
+            }, {
+                today: [],
+                yesterday: [],
+                last7Days: [],
+                last30Days: [],
+                older: []
+            });
+        }
+
+        // Check if should start new chat (based on last activity)
+        function shouldStartNewChat() {
+            const lastActive = localStorage.getItem('lastActiveTime');
+            if (!lastActive) return true;
+            
+            const lastActiveTime = new Date(parseInt(lastActive));
+            const now = new Date();
+            const hoursSinceLastActive = (now - lastActiveTime) / (1000 * 60 * 60);
+            
+            // Start new chat if last activity was more than 1 hour ago
+            return hoursSinceLastActive > 1;
+        }
+
+        // Toggle heart rate panel visibility
+        function toggleHeartRatePanel() {
+            const panel = document.getElementById('heart-rate-panel');
+            const button = document.getElementById('heart-rate-button');
+            
+            panel.classList.toggle('visible');
+            button.classList.toggle('active');
+            
+            // Close profile menu if open
+            document.getElementById('profile-menu-dropdown').classList.remove('show');
+        }
+
+        // Show notification
+        function showNotification(message, type = 'warning') {
+            const now = Date.now();
+            if (now - lastNotificationTime < NOTIFICATION_COOLDOWN) return;
+            
+            const notification = document.getElementById('hr-notification');
+            const messageElement = document.getElementById('notification-message');
+            
+            notification.className = `notification ${type}`;
+            messageElement.textContent = message;
+            notification.classList.add('show');
+            
+            lastNotificationTime = now;
+            
+            // Auto-hide after 10 seconds
+            setTimeout(hideNotification, 10000);
+        }
+
+        // Hide notification
+        function hideNotification() {
+            document.getElementById('hr-notification').classList.remove('show');
+        }
+
+        // Toggle sidebar collapse state
+        function toggleCollapseSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+            
+            // Save state to localStorage
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        }
+
+        // Toggle sidebar visibility on mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+            
+            // Prevent scrolling when sidebar is open
+            if (sidebar.classList.contains('open')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+        }
+
+        // Create a new chat session
+        async function createNewChat() {
+            try {
+                // Create a new chat session in memory
+                const newSession = {
+                    id: Date.now().toString(),
+                    title: "New Chat",
+                    created_at: new Date().toISOString(),
+                    messages: []
+                };
+                
+                // Add to our sessions array at the beginning
+                chatSessions.unshift(newSession);
+                currentChatId = newSession.id;
+                
+                // Clear the chat box
+                document.getElementById('chat-box').innerHTML = '';
+                
+                // Show welcome message
+                document.getElementById('welcome-message').style.display = 'block';
+                
+                // Update chat history UI
+                updateChatHistoryUI();
+                
+                // Close sidebar on mobile
+                if (window.innerWidth <= 768) {
+                    toggleSidebar();
+                }
+                
+                // Save to localStorage
+                saveChatSessions();
+                
+            } catch (error) {
+                console.error('Error creating new chat:', error);
+                appendMessage('Failed to create new chat. Please try again.', 'error-message');
+            }
+        }
+
+        // Update the chat history sidebar UI
+        function updateChatHistoryUI() {
+            const historyContainer = document.getElementById('chat-history');
+            historyContainer.innerHTML = ''; // Clear existing content
+            
+            // Sort chatSessions by created_at in descending order
+            chatSessions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            // Group sessions by date
+            const groupedSessions = groupChatSessionsByDate(chatSessions);
+            
+            const groupOrder = ['today', 'yesterday', 'last7Days', 'last30Days', 'older'];
+            const groupTitles = {
+                today: 'Today',
+                yesterday: 'Yesterday',
+                last7Days: 'Previous 7 Days',
+                last30Days: 'Previous 30 Days',
+                older: 'Older'
+            };
+
+            groupOrder.forEach(groupKey => {
+                if (groupedSessions[groupKey].length > 0) {
+                    const dateHeader = document.createElement('div');
+                    dateHeader.className = 'chat-history-date';
+                    dateHeader.textContent = groupTitles[groupKey];
+                    historyContainer.appendChild(dateHeader);
+                    
+                    groupedSessions[groupKey].forEach(session => {
+                        addChatSessionToHistory(session, historyContainer);
+                    });
+                }
+            });
+        }
+
+        // Add a chat session to the history sidebar
+        function addChatSessionToHistory(session, container) {
+            const sessionElement = document.createElement('div');
+            sessionElement.className = `chat-history-item ${session.id === currentChatId ? 'active' : ''}`;
+            
+            // Determine icon based on session content
+            let iconClass = 'fa-comment-alt';
+            const firstMessage = session.messages[0]?.content.toLowerCase() || '';
+            
+            if (firstMessage.includes('exercise') || firstMessage.includes('workout')) {
+                iconClass = 'fa-running';
+            } else if (firstMessage.includes('diet') || firstMessage.includes('food') || firstMessage.includes('nutrition')) {
+                iconClass = 'fa-utensils';
+            } else if (firstMessage.includes('heart rate') || firstMessage.includes('bpm')) {
+                iconClass = 'fa-heartbeat';
+            } else if (firstMessage.includes('blood pressure')) {
+                iconClass = 'fa-tint';
+            } else if (firstMessage.includes('symptom') || firstMessage.includes('pain')) {
+                iconClass = 'fa-heartbeat';
+            }
+            
+            sessionElement.innerHTML = `
+                <i class="fas ${iconClass}"></i>
+                <span>${session.title || "New Chat"}</span>
+            `;
+            
+            sessionElement.dataset.id = session.id;
+            
+            // Add delete button
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+            deleteBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                await deleteChatSession(session.id);
+            });
+            sessionElement.appendChild(deleteBtn);
+            
+            // Add click handler to load chat
+            sessionElement.addEventListener('click', async () => {
+                await loadChatSession(session.id);
+            });
+            
+            container.appendChild(sessionElement);
+        }
+
+        // Load a specific chat session
+        async function loadChatSession(sessionId) {
+            try {
+                const session = chatSessions.find(s => s.id === sessionId);
+                if (!session) {
+                    throw new Error('Chat session not found');
+                }
+                
+                currentChatId = session.id;
+                
+                // Clear the chat box
+                const chatBox = document.getElementById('chat-box');
+                chatBox.innerHTML = '';
+                
+                // Hide welcome message
+                document.getElementById('welcome-message').style.display = 'none';
+                
+                // Add messages to chat box
+                session.messages.forEach(msg => {
+                    appendMessage(msg.content, msg.is_user ? 'user-message' : 'bot-message');
+                });
+                
+                // Update active state in sidebar
+                document.querySelectorAll('.chat-history-item').forEach(item => {
+                    item.classList.remove('active');
+                    if (item.dataset.id === sessionId) {
+                        item.classList.add('active');
+                    }
+                });
+                
+                // Close sidebar on mobile
+                if (window.innerWidth <= 768) {
+                    toggleSidebar();
+                }
+                
+                // Scroll to bottom of chat
+                chatBox.scrollTop = chatBox.scrollHeight;
+                
+            } catch (error) {
+                console.error('Error loading chat session:', error);
+                appendMessage('Failed to load chat. Please try again.', 'error-message');
+            }
+        }
+
+        // Delete a chat session
+        async function deleteChatSession(sessionId) {
+            try {
+                // Remove from our sessions array
+                chatSessions = chatSessions.filter(session => session.id !== sessionId);
+                
+                // If the deleted session was the current one, create a new one
+                if (currentChatId === sessionId) {
+                    currentChatId = null; // Clear current chat ID
+                    await createNewChat(); // This will create a new chat and set currentChatId
+                }
+                
+                // Update UI
+                updateChatHistoryUI();
+                
+                // Save to localStorage
+                saveChatSessions();
+                
+            } catch (error) {
+                console.error('Error deleting chat session:', error);
+                showNotification('Failed to delete chat. Please try again.', 'error');
+            }
+        }
+
+        // Save chat sessions to localStorage
+        function saveChatSessions() {
+            localStorage.setItem('chatSessions', JSON.stringify(chatSessions));
+        }
+
+        // Load chat sessions from localStorage
+        function loadChatSessions() {
+            const savedSessions = localStorage.getItem('chatSessions');
+            if (savedSessions) {
+                chatSessions = JSON.parse(savedSessions);
+            }
+        }
+
+        // Check login status and load user data when page loads
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkLoginStatus();
+            await loadUserData();
+            initTheme(); // Initialize theme
+            initEventListeners();
+            initSearch(); // Initialize search functionality
+            bluetoothManager.updateUI(false);
+            
+            // Load chat sessions from localStorage
+            loadChatSessions();
+            
+            // If no sessions or if it's been over an hour since last activity, create a new chat
+            if (chatSessions.length === 0 || shouldStartNewChat()) {
+                await createNewChat();
+            } else {
+                // Otherwise load the most recent session
+                currentChatId = chatSessions[0].id;
+                await loadChatSession(currentChatId);
+            }
+            
+            // Update chat history UI (this will also ensure the correct active state is set)
+            updateChatHistoryUI();
+            
+            // Load any existing HR history from local storage
+            const savedHistory = localStorage.getItem('hrHistory');
+            if (savedHistory) {
+                hrHistory = JSON.parse(savedHistory);
+                bluetoothManager.updateHistoryUI();
+            }
+            
+            // Load sidebar collapsed state
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed && window.innerWidth > 768) {
+                document.getElementById('sidebar').classList.add('collapsed');
+            }
+            
+            // Store current time as last active time
+            localStorage.setItem('lastActiveTime', Date.now());
+        });
+
+        // Check if user is logged in
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch('/check-auth', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    isLoggedIn = data.authenticated;
+                    
+                    if (!isLoggedIn) {
+                        window.location.href = '/login';
+                    }
+                } else {
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('Error checking auth status:', error);
+                // In case of network error or server down, redirect to login as a fallback
+                window.location.href = '/login';
+            }
+        }
+
+        // Load user data from server
+        async function loadUserData() {
+            try {
+                const response = await fetch('/api/user/profile', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user data');
+                }
+
+                const data = await response.json();
+                
+                if (data && data.username) {
+                    // Update profile label
+                    const profileLabel = document.getElementById('profile-label');
+                    profileLabel.textContent = data.username;
+                    
+                    // Update avatar
+                    const avatar = document.getElementById('user-avatar');
+                    
+                    if (data.profile_picture) {
+                        // If we have a profile picture URL
+                        avatar.style.backgroundImage = `url(${data.profile_picture})`;
+                        avatar.textContent = '';
+                    } else {
+                        // Fallback to initials
+                        const initials = data.username.split(' ')
+                            .map(n => n[0])
+                            .join('')
+                            .toUpperCase();
+                        avatar.textContent = initials.substring(0, 2);
+                        avatar.style.backgroundImage = 'none';
+                    }
+
+                    // Prepend email to the profile menu dropdown only if it doesn't exist
+                    if (!document.getElementById('profile-email-item')) {
+                        const emailItem = document.createElement('button');
+                        emailItem.className = 'profile-menu-item';
+                        emailItem.id = 'profile-email-item'; // Add ID to easily check existence
+                        emailItem.disabled = true; // Make it non-clickable
+                        emailItem.innerHTML = `
+                            <i class="fas fa-envelope"></i>
+                            <span>${data.email || 'user@example.com'}</span>
+                        `;
+                        document.getElementById('profile-menu-dropdown').prepend(emailItem);
+                    } else {
+                        // Update existing email item
+                        document.getElementById('profile-email-item').querySelector('span').textContent = data.email || 'user@example.com';
+                    }
+
+                } else {
+                    // Fallback if data or username is missing
+                    document.getElementById('profile-label').textContent = 'Guest User';
+                    document.getElementById('user-avatar').textContent = 'GU';
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                // Set default values if there's an error
+                document.getElementById('profile-label').textContent = 'User';
+                const avatar = document.getElementById('user-avatar');
+                avatar.textContent = 'U';
+                avatar.style.backgroundImage = 'none';
+            }
+        }
+
+
+        // Send Message Function
+        async function sendMessage() {
+            const userInputElement = document.getElementById("user-input");
+            const userInput = userInputElement.value.trim();
+            if (userInput === "" || isWaitingForResponse) return;
+
+            const chatBox = document.getElementById("chat-box");
+            const welcomeMessage = document.getElementById("welcome-message");
+
+            if (welcomeMessage && welcomeMessage.style.display !== "none") {
+                welcomeMessage.style.display = "none";
+            }
+
+            // Append user message with current timestamp
+            appendMessage(userInput, 'user-message');
+            userInputElement.value = ""; // Clear textarea
+            userInputElement.style.height = 'auto'; // Reset textarea height
+            userInputElement.focus(); // Keep focus on textarea
+
+            const typingIndicator = showTypingIndicator();
+            isWaitingForResponse = true;
+            document.getElementById("send-btn").disabled = true;
+
+            try {
+                // Find current session
+                let currentSession = chatSessions.find(s => s.id === currentChatId);
+                if (!currentSession) {
+                    console.error('Current chat session not found. Creating a new one.');
+                    await createNewChat(); // Try creating a new session if not found
+                    // Re-find the new session
+                    const newCurrentSession = chatSessions.find(s => s.id === currentChatId);
+                    if (!newCurrentSession) {
+                        throw new Error('Failed to create or find a current chat session.');
+                    }
+                    currentSession = newCurrentSession;
+                }
+                
+                // Add user message to session
+                currentSession.messages.push({
+                    content: userInput,
+                    is_user: true,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Update session title if it's the first message or if it's "New Chat"
+                if (currentSession.messages.length === 1 || currentSession.title === "New Chat") {
+                    currentSession.title = userInput.length > 30 ? userInput.substring(0, 30) + '...' : userInput;
+                    updateChatHistoryUI(); // Refresh history to update title
+                }
+                
+                // Save sessions
+                saveChatSessions();
+                
+                // Call the actual API endpoint
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ message: userInput })
+                });
+
+                const data = await response.json();
+                chatBox.removeChild(typingIndicator);
+                isWaitingForResponse = false;
+                document.getElementById("send-btn").disabled = false;
+
+                if (!response.ok) {
+                    // Handle HTTP errors
+                    if (response.status === 400 && data.response === 'I can only answer heart health-related questions.') {
+                        appendMessage("I only support heart-related questions.", 'bot-message');
+                    } else {
+                        throw new Error(data.message || 'Server error');
+                    }
+                } else if (data.status === "error") {
+                    // Handle application errors
+                    appendMessage(data.message, 'error-message');
+                } else {
+                    // Handle successful responses
+                    appendMessage(data.response, 'bot-message'); // Append directly, formatBotResponse is called inside appendMessage
+                    
+                    // Add bot response to session
+                    currentSession.messages.push({
+                        content: data.response,
+                        is_user: false,
+                        timestamp: new Date().toISOString()
+                    });
+                    
+                    // Save sessions again
+                    saveChatSessions();
+                    
+                    // Add flying animation to paper plane icon
+                    const sendBtn = document.getElementById('send-btn');
+                    sendBtn.classList.add('clicked');
+                    setTimeout(() => {
+                        sendBtn.classList.remove('clicked');
+                    }, 500);
+                }
+                
+            } catch (error) {
+                chatBox.removeChild(typingIndicator);
+                isWaitingForResponse = false;
+                document.getElementById("send-btn").disabled = false;
+                appendMessage(`Error: ${error.message}`, 'error-message');
+                console.error('Chat error:', error);
+                
+                if (error.message.includes('Please log in')) {
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                }
+            }
+        }
+
+        // Append message to chat box
+        function appendMessage(text, className) {
+            const chatBox = document.getElementById("chat-box");
+            const message = document.createElement("div");
+            // Common message classes
+            message.classList.add("message", className);
+            
+            // Create a wrapper for the message's main content (text + timestamp)
+            const messageBody = document.createElement('div');
+            messageBody.classList.add('message-body');
+            
+            // Create a div specifically for the formatted text content
+            const messageTextContent = document.createElement('div');
+            messageTextContent.classList.add('message-text-content');
+
+            // Add bot avatar if it's a bot message
+            if (className === 'bot-message') {
+                const botAvatar = document.createElement('div');
+                botAvatar.classList.add('bot-avatar');
+                botAvatar.textContent = 'AI'; 
+                message.appendChild(botAvatar);
+                
+                // For bot messages, messageBody should contain the actual content and timestamp
+                // and it needs flex-grow to take up remaining space
+                messageBody.style.flexGrow = '1'; 
+            } else {
+                // For user messages, messageBody directly is the main content area
+                messageBody.style.alignSelf = 'flex-end'; // Users messages align to end
+            }
+
+            // Apply markdown formatting to messageTextContent
+            if (text.includes('|') && text.includes('\n')) {
+                // Assuming only bot messages can have tables or complex markdown that needs specific handling
+                // if (!className.includes('bot-message')) { // If not a bot message, format as plain text or simpler markdown
+                //     messageTextContent.innerHTML = formatTextResponse(text);
+                // } else {
+                    formatBotResponse(text, messageTextContent);
+                // }
+            } else {
+                messageTextContent.innerHTML = formatTextResponse(text);
+            }
+            
+            messageBody.appendChild(messageTextContent);
+
+            // Add timestamp
+            const timestamp = document.createElement('div');
+            timestamp.classList.add('message-timestamp');
+            const now = new Date();
+            timestamp.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            messageBody.appendChild(timestamp);
+
+            // Append messageBody to the main message div
+            message.appendChild(messageBody);
+
+            chatBox.appendChild(message);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Format text with headings, bold, lists, etc.
+        function formatTextResponse(text) {
+            // Convert markdown-style headings to HTML
+            text = text.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+            text = text.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+            text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+            text = text.replace(/^#### (.*$)/gm, '<h4>$1</h4>'); // Added H4
+
+            // Convert markdown bold to HTML
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            // Convert markdown blockquotes to HTML
+            text = text.replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>');
+
+            // Handle lists (unordered and ordered)
+            const lines = text.split('\n');
+            let inUnorderedList = false;
+            let inOrderedList = false;
+            let formattedLines = [];
+
+            lines.forEach(line => {
+                const trimmedLine = line.trim();
+                // Check for unordered list items
+                if (trimmedLine.match(/^[\*\-]\s/)) {
+                    if (!inUnorderedList) {
+                        formattedLines.push('<ul>');
+                        inUnorderedList = true;
+                        inOrderedList = false; // Close ordered if open
+                    }
+                    formattedLines.push(`<li>${trimmedLine.substring(1).trim()}</li>`);
+                }
+                // Check for ordered list items
+                else if (trimmedLine.match(/^\d+\.\s/)) {
+                    if (!inOrderedList) {
+                        formattedLines.push('<ol>');
+                        inOrderedList = true;
+                        inUnorderedList = false; // Close unordered if open
+                    }
+                    formattedLines.push(`<li>${trimmedLine.substring(trimmedLine.indexOf('.') + 1).trim()}</li>`);
+                }
+                // If not a list item, close current list if any
+                else {
+                    if (inUnorderedList) {
+                        formattedLines.push('</ul>');
+                        inUnorderedList = false;
+                    }
+                    if (inOrderedList) {
+                        formattedLines.push('</ol>');
+                        inOrderedList = false;
+                    }
+                    formattedLines.push(line); // Add the line as is
+                }
+            });
+
+            // Close any open lists at the end
+            if (inUnorderedList) formattedLines.push('</ul>');
+            if (inOrderedList) formattedLines.push('</ol>');
+
+            text = formattedLines.join('\n');
+
+            // Convert newlines to paragraphs where appropriate, but preserve pre-existing block elements
+            text = text.split('\n\n').map(paragraph => {
+                // If the paragraph already starts with a block-level HTML tag (h, ul, ol, table, blockquote), return as is
+                if (paragraph.match(/^(<h[1-4]>|<ul|<ol|<table|<blockquote)/i)) {
+                    return paragraph.trim();
+                }
+                // Otherwise, wrap in a paragraph tag
+                return `<p>${paragraph.trim()}</p>`;
+            }).join('');
+
+            // Clean up empty paragraph tags that might occur after splitting
+            text = text.replace(/<p>\s*<\/p>/g, '');
+            
+            return text;
+        }
+
+        // Show typing indicator
+        function showTypingIndicator() {
+            const chatBox = document.getElementById("chat-box");
+            const typingIndicator = document.createElement("div");
+            typingIndicator.classList.add("message", "typing-indicator");
+            // Remove innerText from JS, let CSS handle the "Echo AI is typing" text with ::before
+            
+            // Add dots for animation
+            const typingDots = document.createElement('div');
+            typingDots.classList.add('typing-dots');
+            typingDots.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+            typingIndicator.appendChild(typingDots);
+
+            chatBox.appendChild(typingIndicator);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            return typingIndicator;
+        }
+
+        // Format and display bot response with professional tables
+        function formatBotResponse(response, targetElement) {
+            // Regex to find Markdown tables (lines starting and ending with '|', with a separator line)
+            const tableRegex = /^\|.*\|(?:\r?\n\|[-: ]+\|)+\r?\n(?:\|.*\|(?:\r?\n|$))*|^\|.*\|(?:\r?\n(?:\|.*\|\r?\n?)*)/gm;
+            let htmlContent = response;
+
+            // Process tables first
+            let tableMatch;
+            while ((tableMatch = tableRegex.exec(htmlContent)) !== null) {
+                const markdownTable = tableMatch[0];
+                const lines = markdownTable.split('\n').filter(line => line.trim() !== '');
+
+                if (lines.length < 2) continue; // Needs at least header and separator
+
+                let tableHtml = '<table>';
+                let headerProcessed = false;
+
+                lines.forEach((line, index) => {
+                    const trimmedLine = line.trim();
+                    if (trimmedLine.startsWith('|') && trimmedLine.endsWith('|')) {
+                        const cells = trimmedLine.split('|').slice(1, -1).map(cell => cell.trim());
+
+                        // This is the separator line, skip it but mark header as processed
+                        if (trimmedLine.match(/^\|[-=\s:]+\|$/)) {
+                            headerProcessed = true;
+                            return;
+                        }
+
+                        if (!headerProcessed) {
+                            // This is the header row
+                            tableHtml += '<thead><tr>';
+                            cells.forEach(cell => {
+                                tableHtml += `<th>${formatTextResponse(cell)}</th>`;
+                            });
+                            tableHtml += '</tr></thead><tbody>';
+                        } else {
+                            // Data rows
+                            tableHtml += '<tr>';
+                            cells.forEach(cell => {
+                                tableHtml += `<td>${formatTextResponse(cell)}</td>`;
+                            });
+                            tableHtml += '</tr>';
+                        }
+                    }
+                });
+                if (headerProcessed) { // Only close tbody if it was opened
+                    tableHtml += '</tbody>';
+                }
+                tableHtml += '</table>';
+
+                // Replace the markdown table with the generated HTML table
+                htmlContent = htmlContent.replace(markdownTable, tableHtml);
+                // Reset regex lastIndex to ensure it continues from the correct position after replacement
+                tableRegex.lastIndex = 0; 
+            }
+            
+            // Now apply general formatting to the rest of the text content
+            targetElement.innerHTML = formatTextResponse(htmlContent);
+        }
+
+
+        // Manual HR input fallback
+        function updateHRManually() {
+            const hrInput = document.getElementById('manual-hr');
+            const hr = parseInt(hrInput.value);
+            
+            if (isNaN(hr)) {
+                showNotification("Please enter a valid number", 'error');
+                return;
+            }
+            
+            if (hr < 30 || hr > 250) {
+                showNotification("Please enter a value between 30-250", 'error');
+                return;
+            }
+            
+            bluetoothManager.displayHeartRate(hr);
+            bluetoothManager.addToHistory(hr);
+            bluetoothManager.sendToBackend(hr);
+            hrInput.value = '';
+            appendMessage(`Manual HR submitted: ${hr} BPM`, 'bot-message');
+            
+            // Enable analyze button after manual input
+            document.getElementById('analyze-btn').disabled = false;
+            
+            // Check for alerts
+            checkHRAlerts(hr);
+        }
+
+        // Check for heart rate alerts
+        function checkHRAlerts(hr) {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            if (hr > 100) {
+                showNotification(`⚠️ High Heart Rate Alert: ${hr} BPM at ${timeString}. Consider resting and monitoring.`, 'warning');
+                appendMessage(`<strong>Warning:</strong> Your heart rate is high (${hr} BPM). Consider resting.`, 'bot-message');
+            } else if (hr < 60) {
+                showNotification(`⚠️ Low Heart Rate Alert: ${hr} BPM at ${timeString}. If you feel dizzy, consult a doctor.`, 'warning');
+                appendMessage(`<strong>Notice:</strong> Your heart rate is low (${hr} BPM). This may be normal for some people.`, 'bot-message');
+            }
+        }
+
+        // Heart rate analysis function using GPT-3.5
+        async function analyzeHeartRate() {
+            if (hrHistory.length === 0) {
+                appendMessage("No heart rate data available for analysis", 'error-message');
+                return;
+            }
+            
+            const currentHR = hrHistory[0].rate;
+            const typingIndicator = showTypingIndicator();
+            isWaitingForResponse = true;
+            document.getElementById("send-btn").disabled = true;
+            
+            try {
+                // Find current session
+                let currentSession = chatSessions.find(s => s.id === currentChatId);
+                if (!currentSession) {
+                    console.error('Current chat session not found during analysis. Creating a new one.');
+                    await createNewChat(); // Try creating a new session if not found
+                    // Re-find the new session
+                    const newCurrentSession = chatSessions.find(s => s.id === currentChatId);
+                    if (!newCurrentSession) {
+                        throw new Error('Failed to create or find a current chat session for analysis.');
+                    }
+                    currentSession = newCurrentSession;
+                }
+                
+                // Prepare the prompt for GPT-3.5
+                const prompt = `My current heart rate is ${currentHR} BPM. Can you analyze this for me and provide: 
+                1. What this heart rate means for my health
+                2. Potential causes for this reading
+                3. When I should be concerned
+                4. Recommended actions
+                Please provide this in a clear, structured format with bullet points.`;
+                
+                // Add the analysis request to chat history
+                currentSession.messages.push({
+                    content: prompt,
+                    is_user: true,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Save sessions
+                saveChatSessions();
+                
+                // Call the API endpoint with the analysis request
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ message: prompt })
+                });
+
+                const data = await response.json();
+                const chatBox = document.getElementById('chat-box');
+                chatBox.removeChild(typingIndicator);
+                isWaitingForResponse = false;
+                document.getElementById("send-btn").disabled = false;
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Server error');
+                } else if (data.status === "error") {
+                    appendMessage(data.message, 'error-message');
+                } else {
+                    // Handle successful responses
+                    appendMessage(data.response, 'bot-message'); // Append directly, formatBotResponse is called inside appendMessage
+                    
+                    // Add bot response to session
+                    currentSession.messages.push({
+                        content: data.response,
+                        is_user: false,
+                        timestamp: new Date().toISOString()
+                    });
+                    
+                    // Save sessions again
+                    saveChatSessions();
+                    
+                    // Add flying animation to paper plane icon
+                    const sendBtn = document.getElementById('send-btn');
+                    sendBtn.classList.add('clicked');
+                    setTimeout(() => {
+                        sendBtn.classList.remove('clicked');
+                    }, 500);
+                }
+                
+            } catch (error) {
+                const chatBox = document.getElementById('chat-box');
+                chatBox.removeChild(typingIndicator);
+                isWaitingForResponse = false;
+                document.getElementById("send-btn").disabled = false;
+                appendMessage(`Analysis error: ${error.message}`, 'error-message');
+                console.error('Analysis error:', error);
+            }
+        }
+
+        // Logout Function
+        async function logout() {
+            try {
+                if (bluetoothManager.device && bluetoothManager.device.gatt.connected) {
+                    bluetoothManager.handleDisconnect();
+                }
+
+                // Save HR history to local storage
+                localStorage.setItem('hrHistory', JSON.stringify(hrHistory));
+                // Save chat sessions
+                saveChatSessions();
+
+                const response = await fetch('/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    window.location.href = '/login';
+                } else {
+                    showNotification('Logout failed. Please try again.', 'error');
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                showNotification('Logout failed. Please try again.', 'error');
+            }
+        }
+
+        // Bluetooth connection manager
+        const bluetoothManager = {
+            device: null,
+            characteristic: null,
+            isConnected: false,
+
+            async connect() {
+                try {
+                    // Check if Bluetooth is supported
+                    if (!navigator.bluetooth) {
+                        throw new Error('Bluetooth not supported in this browser');
+                    }
+
+                    appendMessage("Searching for devices...", 'bot-message');
+                    
+                    // Request Bluetooth device
+                    this.device = await navigator.bluetooth.requestDevice({
+                        acceptAllDevices: true,
+                        optionalServices: ['heart_rate']
+                    });
+                    
+                    // Add disconnect listener
+                    this.device.addEventListener('gattserverdisconnected', () => {
+                        this.handleDisconnect();
+                    });
+                    
+                    appendMessage(`Found device: ${this.device.name || 'Unknown'}`, 'bot-message');
+                    appendMessage("Connecting...", 'bot-message');
+                    
+                    const server = await this.device.gatt.connect();
+                    const service = await server.getPrimaryService('heart_rate');
+                    this.characteristic = await service.getCharacteristic('heart_rate_measurement');
+                    
+                    await this.characteristic.startNotifications();
+                    this.characteristic.addEventListener(
+                        'characteristicvaluechanged',
+                        this.handleHeartRateMeasurement.bind(this)
+                    );
+                    
+                    appendMessage("Connected successfully!", 'bot-message');
+                    this.isConnected = true;
+                    this.updateUI(true);
+                    document.getElementById('analyze-btn').disabled = false;
+                    document.getElementById('hr-status').textContent = "Connected";
+                    document.getElementById('hr-status').style.color = "#00ff00";
+                    
+                    // Add pulse animation to heart rate button
+                    document.getElementById('heart-rate-button').classList.add('pulse');
+                    
+                } catch (error) {
+                    console.error('Connection error:', error);
+                    appendMessage(`Error: ${error.message}`, 'error-message');
+                    appendMessage("Please enter heart rate manually", 'bot-message');
+                    this.handleDisconnect();
+                }
+            },
+
+            handleHeartRateMeasurement(event) {
+                try {
+                    const value = event.target.value;
+                    const flags = value.getUint8(0);
+                    let rate = value.getUint8(1);
+                    
+                    if (flags & 0x1) { // 16-bit format
+                        rate = value.getUint16(1, true);
+                    }
+                    
+                    this.displayHeartRate(rate);
+                    this.addToHistory(rate);
+                    this.sendToBackend(rate);
+                    
+                    // Check for alerts
+                    checkHRAlerts(rate);
+                } catch (error) {
+                    console.error('Failed to parse HR:', error);
+                }
+            },
+
+            displayHeartRate(rate) {
+                const hrElement = document.getElementById('current-hr');
+                hrElement.textContent = rate;
+                
+                let color;
+                if (rate > 100) {
+                    color = 'var(--error-color)'; // Red for high
+                } else if (rate < 60) {
+                    color = '#FFAA00'; // Orange for low (changed from yellow for better contrast)
+                } else {
+                    color = '#00ff00'; // Green for normal
+                }
+                
+                hrElement.style.color = color;
+            },
+
+            addToHistory(rate) {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                // Add to beginning of array
+                hrHistory.unshift({
+                    rate: rate,
+                    time: timeString,
+                    timestamp: now.getTime()
+                });
+                
+                // Keep only last 10 readings
+                if (hrHistory.length > 10) {
+                    hrHistory.pop();
+                }
+                
+                this.updateHistoryUI();
+                
+                // Save to localStorage
+                localStorage.setItem('hrHistory', JSON.stringify(hrHistory));
+            },
+
+            updateHistoryUI() {
+                const historyList = document.getElementById('hr-history-list');
+                historyList.innerHTML = '';
+                
+                hrHistory.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'hr-history-item';
+                    
+                    const timeElement = document.createElement('span');
+                    timeElement.textContent = item.time;
+                    
+                    const rateElement = document.createElement('span');
+                    rateElement.className = 'hr-history-value';
+                    rateElement.textContent = `${item.rate} bpm`;
+                    rateElement.style.color = item.rate > 100 ? 'var(--error-color)' : 
+                                                 item.rate < 60 ? '#FFAA00' : '#00ff00'; /* Use orange for low HR */
+                    
+                    itemElement.appendChild(timeElement);
+                    itemElement.appendChild(rateElement);
+                    historyList.appendChild(itemElement);
+                });
+            },
+
+            async sendToBackend(rate) {
+                try {
+                    await fetch('/api/heart-rate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            bpm: rate, 
+                            timestamp: new Date().toISOString()
+                        })
+                    });
+                } catch (error) {
+                    console.error('Failed to send to backend:', error);
+                }
+            },
+
+            handleDisconnect() {
+                if (this.device && this.device.gatt.connected) {
+                    this.device.gatt.disconnect();
+                }
+                this.device = null;
+                this.characteristic = null;
+                this.isConnected = false;
+                this.updateUI(false);
+                
+                document.getElementById('current-hr').textContent = '--';
+                document.getElementById('current-hr').style.color = 'var(--error-color)';
+                document.getElementById('hr-status').textContent = "Not connected";
+                document.getElementById('hr-status').style.color = "var(--error-color)";
+                document.getElementById('analyze-btn').disabled = true;
+                
+                // Remove pulse animation from heart rate button
+                document.getElementById('heart-rate-button').classList.remove('pulse');
+            }
+            ,
+            updateUI(connected) {
+                document.getElementById('connect-btn').style.display = connected ? 'none' : 'flex';
+                document.getElementById('disconnect-btn').style.display = connected ? 'flex' : 'none';
+            }
+        };
+    </script>
+</body>
+</html>
