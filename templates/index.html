@@ -10,28 +10,28 @@
             /* New Color Palette: Cyan Base - Dark Theme */
             --primary-color: #00F0FF; /* Bright Cyan - Accent/Highlight */
             --primary-dark: #00A9BE; /* Main Cyan-Blue - Brand Color, Primary Buttons, Active Sidebar */
-            --secondary-color: #FFD700; /* Gold/Yellow - A warm accent for special elements (e.g. send button) */
+            --secondary-color: #FFD700; /* Gold/Yellow - A warm accent for special elements (e.g. pre-prompts hover) */
             --error-color: #FF4D4D; /* Red for errors */
             --warning-color: #FFAA00; /* Orange for warnings */
             --success-color: #38A3A5; /* Teal for success */
             --info-color: #64B5F6; /* Soft Blue for info */
 
-            --bg-dark: #1A202C; /* Dark Blue-Grey - Main background */
-            --bg-darker: #2C3E50; /* Mid-Dark Blue-Grey - Sidebar, Input Container */
-            --bg-darkest: #34495E; /* Slightly Lighter Blue-Grey - Panels, Cards, Bot Messages */
+            --bg-dark: #000000; /* Full Black - Main background */
+            --bg-darker: #0A0A0A; /* Very Dark Grey - Sidebar, Input Container background */
+            --bg-darkest: #1A1A1A; /* Slightly Lighter Dark Grey - Panels, Cards, Bot Messages background */
             --text-light: #F0F4F8; /* Off-White - Primary text on dark backgrounds */
             --text-muted: #A0AEC0; /* Light Blue-Grey - Secondary text, timestamps */
             --text-dark: #D9D9D9; /* Fallback/subtle dark text on very light elements (less common in dark mode) */
-            --border-color: #4A5568; /* Muted Blue-Grey - Subtle borders */
+            --border-color: #222222; /* Dark Grey - Subtle borders */
 
             --user-message-bg: var(--primary-dark); /* User messages match brand cyan-blue */
             --bot-message-bg: var(--bg-darkest); /* Bot messages clearly separated from main bg */
             --bot-message-border: var(--border-color); /* Bot message border matches general border */
 
             --table-header-bg: var(--primary-dark);
-            --table-row-even: #212B3B; /* Slightly lighter than deepest bg */
-            --table-row-odd: #2A384A; /* Between darker and darkest bg */
-            --table-row-hover: #3A4D62; /* Noticeable hover state for tables */
+            --table-row-even: #111111; /* Slightly lighter than deepest bg */
+            --table-row-odd: #181818; /* Between darker and darkest bg */
+            --table-row-hover: #222222; /* Noticeable hover state for tables */
 
             --sidebar-width: 280px;
             --sidebar-collapsed: 60px;
@@ -149,26 +149,24 @@
         }
 
         /* Sidebar styles */
-.sidebar {
-  width: var(--sidebar-width);
-  background: var(--bg-darker);
-  border-right: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow-y: auto;       /* ✅ allows scroll inside */
-  overflow-x: hidden;
-  transition: all 0.3s ease;
-  position: relative;
-  z-index: 1000;
-  flex-shrink: 0;          /* ✅ prevent sidebar from shrinking */
-}
-
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-darker); /* Use darker shade for sidebar background */
+            border-right: 1px solid var(--bg-dark); /* Blend border with main background */
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1000;
+        }
 
         .sidebar.collapsed {
             width: var(--sidebar-collapsed);
             overflow: hidden;
             padding-bottom: 0;
+            background: var(--bg-dark); /* Blend collapsed sidebar with main background */
         }
 
         .sidebar.collapsed .sidebar-header-text,
@@ -209,13 +207,13 @@
 
         .sidebar.collapsed .user-profile-section {
             padding: 10px;
-            border-top: 1px solid var(--border-color);
+            border-top: 1px solid var(--border-color); /* Keep border for separation from main content */
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 0;
-            background: var(--bg-darkest);
+            background: var(--bg-darkest); /* Keep distinct background for profile section */
             flex-shrink: 0;
         }
 
@@ -787,8 +785,9 @@
 
         .bot-message-content {
             flex-grow: 1;
-            /* Actual message content is inside this div, padding handled by .bot-message */
-            overflow-wrap: break-word;
+            /* No padding here, it's applied to the .bot-message container */
+            /* Ensure content inside doesn't overflow the message bubble itself */
+            overflow-wrap: break-word; /* Allows long words to break */
             min-width: 0;
             padding-right: 5px; /* Small right padding to ensure content doesn't touch the edge */
         }
@@ -856,7 +855,7 @@
         }
         /* Specific colors for timestamps within user/bot messages based on background contrast */
         .user-message .message-timestamp {
-            color: rgba(255, 255, 255, 0.7); /* Lighter white for user messages on dark blue */
+            color: rgba(255, 255, 255, 0.7); /* Lighter white for user messages on primary-dark */
         }
         [data-theme="light"] .user-message .message-timestamp {
             color: rgba(255, 255, 255, 0.7); /* Keep light for user messages in light mode too, as user message bg is still primary-color */
@@ -947,9 +946,9 @@
 
         button.send-btn {
             padding: 10px 16px;
-            background: var(--secondary-color); /* Send button uses secondary color */
+            background: #00A9BE; /* Specific blue for send button */
             border: none;
-            color: var(--bg-dark); /* Dark text on secondary color */
+            color: white;
             font-size: 16px;
             cursor: pointer;
             border-radius: 20px;
@@ -963,8 +962,8 @@
         }
 
         button.send-btn:hover {
-            background: var(--primary-color); /* Hover to primary color */
-            color: var(--bg-dark); /* Keep dark text on hover */
+            background: #00F0FF; /* Lighter blue on hover */
+            color: white;
             transform: translateY(-1px);
         }
 
