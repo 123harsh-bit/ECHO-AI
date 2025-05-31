@@ -734,6 +734,8 @@
             line-height: 1.5;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             transition: all 0.2s ease;
+            display: flex; /* Use flex to align content and timestamp */
+            flex-direction: column; /* Stack content and timestamp */
         }
 
         .user-message {
@@ -749,7 +751,34 @@
             color: var(--text-light);
             border: 1px solid var(--bot-message-border);
             border-radius: 18px 18px 18px 0;
+            display: flex; /* Adjust to accommodate bot avatar */
+            flex-direction: row; /* Align avatar and message content horizontally */
+            align-items: flex-start; /* Align items to the top */
+            gap: 10px; /* Space between avatar and message */
+            max-width: 85%; /* Keep max-width */
+            width: fit-content; /* Keep fit-content */
         }
+
+        .bot-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            flex-shrink: 0; /* Prevent avatar from shrinking */
+            margin-top: 5px; /* Align with text baseline */
+        }
+
+        .bot-message-content {
+            flex-grow: 1;
+            /* Remove padding from here as it's on the .message container */
+        }
+
 
         .error-message {
             align-self: flex-start;
@@ -785,6 +814,22 @@
             33% { box-shadow: 8px 0 0 0 transparent, 16px 0 0 0 var(--text-muted); }
             66% { box-shadow: 8px 0 0 0 var(--text-muted), 16px 0 0 0 transparent; }
         }
+
+        .message-timestamp {
+            font-size: 10px;
+            color: var(--text-muted);
+            align-self: flex-end; /* Align timestamp to the right within the message bubble */
+            margin-top: 5px; /* Space between message content and timestamp */
+            opacity: 0.8;
+        }
+        .user-message .message-timestamp {
+            color: rgba(255, 255, 255, 0.7); /* Lighter for user messages */
+        }
+        .bot-message .message-timestamp {
+            color: var(--text-muted); /* Consistent for bot messages */
+            align-self: flex-end; /* Align timestamp to the right within the message bubble */
+        }
+
 
         .input-container {
             display: flex;
@@ -846,7 +891,7 @@
             box-shadow: 0 0 0 2px rgba(0, 245, 249, 0.2);
         }
 
-        input {
+        textarea { /* Changed from input to textarea */
             flex: 1;
             padding: 10px 15px;
             background: transparent;
@@ -856,6 +901,10 @@
             font-size: 16px;
             border-radius: 20px;
             min-height: 44px;
+            resize: vertical; /* Allow vertical resizing */
+            max-height: 120px; /* Max height for textarea */
+            overflow-y: auto; /* Enable scroll if content exceeds max-height */
+            line-height: 1.5; /* Improve readability for multi-line text */
         }
 
         button.send-btn {
@@ -1620,7 +1669,7 @@
 
                 <div class="input-container">
                     <div class="input-row">
-                        <input type="text" id="user-input" placeholder="Ask me about heart health..." autofocus aria-label="Type your message">
+                        <textarea id="user-input" placeholder="Ask me about heart health..." autofocus aria-label="Type your message"></textarea>
                         <button class="send-btn" id="send-btn" aria-label="Send message"><i class="fas fa-paper-plane"></i></button>
                     </div>
                 </div>
@@ -1665,9 +1714,13 @@
                 });
             });
             
-            // Chat input
+            // Chat input (now textarea)
             document.getElementById('user-input').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !isWaitingForResponse) sendMessage();
+                // Allow Shift+Enter for new line, Enter to send
+                if (e.key === 'Enter' && !e.shiftKey && !isWaitingForResponse) {
+                    e.preventDefault(); // Prevent default new line
+                    sendMessage();
+                }
             });
             document.getElementById('send-btn').addEventListener('click', () => {
                 if (!isWaitingForResponse) sendMessage();
@@ -2264,15 +2317,21 @@
                         avatar.style.backgroundImage = 'none';
                     }
 
-                    // Prepend email to the profile menu dropdown
-                    const emailItem = document.createElement('button'); // Changed to button for consistency
-                    emailItem.className = 'profile-menu-item';
-                    emailItem.disabled = true; // Make it non-clickable
-                    emailItem.innerHTML = `
-                        <i class="fas fa-envelope"></i>
-                        <span>${data.email || 'user@example.com'}</span>
-                    `;
-                    document.getElementById('profile-menu-dropdown').prepend(emailItem);
+                    // Prepend email to the profile menu dropdown only if it doesn't exist
+                    if (!document.getElementById('profile-email-item')) {
+                        const emailItem = document.createElement('button');
+                        emailItem.className = 'profile-menu-item';
+                        emailItem.id = 'profile-email-item'; // Add ID to easily check existence
+                        emailItem.disabled = true; // Make it non-clickable
+                        emailItem.innerHTML = `
+                            <i class="fas fa-envelope"></i>
+                            <span>${data.email || 'user@example.com'}</span>
+                        `;
+                        document.getElementById('profile-menu-dropdown').prepend(emailItem);
+                    } else {
+                        // Update existing email item
+                        document.getElementById('profile-email-item').querySelector('span').textContent = data.email || 'user@example.com';
+                    }
 
                 } else {
                     // Fallback if data or username is missing
@@ -2292,7 +2351,8 @@
 
         // Send Message Function
         async function sendMessage() {
-            const userInput = document.getElementById("user-input").value.trim();
+            const userInputElement = document.getElementById("user-input");
+            const userInput = userInputElement.value.trim();
             if (userInput === "" || isWaitingForResponse) return;
 
             const chatBox = document.getElementById("chat-box");
@@ -2303,7 +2363,9 @@
             }
 
             appendMessage(userInput, 'user-message');
-            document.getElementById("user-input").value = "";
+            userInputElement.value = ""; // Clear textarea
+            userInputElement.style.height = 'auto'; // Reset textarea height
+            userInputElement.focus(); // Keep focus on textarea
 
             const typingIndicator = showTypingIndicator();
             isWaitingForResponse = true;
@@ -2407,13 +2469,33 @@
             const message = document.createElement("div");
             message.classList.add("message", className);
             
+            const messageContentDiv = document.createElement("div");
+            messageContentDiv.classList.add("message-content-wrapper"); // Wrapper for content and timestamp
+
+            if (className === 'bot-message') {
+                const botAvatar = document.createElement('div');
+                botAvatar.classList.add('bot-avatar');
+                botAvatar.textContent = 'AI'; // Or an icon like <i class="fas fa-robot"></i>
+                message.appendChild(botAvatar);
+                messageContentDiv.classList.add('bot-message-content'); // Apply bot-specific content styling
+            }
+
             // Only try to format as table if it's a bot message and contains table-like syntax
             if (className === 'bot-message' && text.includes('|') && text.includes('\n')) {
-                formatBotResponse(text, message);
+                formatBotResponse(text, messageContentDiv); // Pass the content div
             } else {
-                message.innerHTML = formatTextResponse(text);
+                messageContentDiv.innerHTML = formatTextResponse(text);
             }
             
+            message.appendChild(messageContentDiv); // Add content wrapper to message
+
+            // Add timestamp
+            const timestamp = document.createElement('div');
+            timestamp.classList.add('message-timestamp');
+            const now = new Date();
+            timestamp.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            message.appendChild(timestamp);
+
             chatBox.appendChild(message);
             chatBox.scrollTop = chatBox.scrollHeight;
         }
@@ -2507,7 +2589,7 @@
         }
 
         // Format and display bot response with professional tables
-        function formatBotResponse(response, messageElement) {
+        function formatBotResponse(response, targetElement) {
             // Regex to find Markdown tables (lines starting and ending with '|', with a separator line)
             const tableRegex = /^\|.*\|(?:\r?\n\|[-: ]+\|)+\r?\n(?:\|.*\|(?:\r?\n|$))*|^\|.*\|(?:\r?\n(?:\|.*\|\r?\n?)*)/gm;
             let htmlContent = response;
@@ -2563,7 +2645,7 @@
             }
             
             // Now apply general formatting to the rest of the text content
-            messageElement.innerHTML = formatTextResponse(htmlContent);
+            targetElement.innerHTML = formatTextResponse(htmlContent);
         }
 
 
@@ -2674,7 +2756,7 @@
                 } else if (data.status === "error") {
                     appendMessage(data.message, 'error-message');
                 } else {
-                    // Format and display the GPT-3.5 response
+                    // Handle successful responses
                     appendMessage(data.response, 'bot-message'); // Append directly, formatBotResponse is called inside appendMessage
                     
                     // Add bot response to session
