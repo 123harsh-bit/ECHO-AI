@@ -341,16 +341,12 @@
             border-radius: 8px;
             margin-bottom: 5px;
             cursor: pointer;
-            /* Changed for truncation fix */
             display: flex; /* Ensure flex for icon + text */
             align-items: center;
             gap: 8px;
             color: var(--text-light);
             position: relative;
-            /* Ensure it respects parent width */
-            overflow: hidden; /* Crucial for text-overflow to work on inner span */
-            text-overflow: ellipsis; /* Fallback, applied to container for edge cases */
-            white-space: nowrap; /* Fallback, applied to container for edge cases */
+            /* No direct overflow/text-overflow here, it's on the span */
         }
 
         .chat-history-item span {
@@ -358,7 +354,7 @@
             overflow: hidden; /* Hide overflowing text */
             text-overflow: ellipsis; /* Add ellipsis for overflowed text */
             white-space: nowrap; /* Prevent text from wrapping */
-            min-width: 0; /* Allow the flex item to shrink below its content size */
+            min-width: 0; /* Crucial: Allow the flex item to shrink below its content size */
         }
 
 
