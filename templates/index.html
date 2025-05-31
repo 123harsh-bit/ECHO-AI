@@ -42,6 +42,10 @@
 
             --active-chat-bg: rgba(0, 240, 255, 0.1); /* Subtle cyan tint for active chat background */
             --active-chat-border: var(--primary-color); /* Cyan border for active chat */
+
+            /* Scrollbar colors for dark theme */
+            --scrollbar-thumb-color: rgba(255, 255, 255, 0.15);
+            --scrollbar-track-color: var(--bg-dark);
         }
 
         /* New Color Palette: Cyan Base - Light Theme */
@@ -73,6 +77,10 @@
 
             --active-chat-bg: rgba(0, 169, 190, 0.1); /* Even more subtle cyan for active chat */
             --active-chat-border: var(--primary-color); /* Cyan border for active chat */
+
+            /* Scrollbar colors for light theme */
+            --scrollbar-thumb-color: rgba(0, 0, 0, 0.15);
+            --scrollbar-track-color: var(--bg-dark);
         }
 
         * {
@@ -149,25 +157,46 @@
         }
 
         /* Sidebar styles */
-       .sidebar {
-  width: var(--sidebar-width);
-  background: var(--bg-darker);
-  border-right: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow-y: auto;       /* ✅ allows scroll inside */
-  overflow-x: hidden;
-  transition: all 0.3s ease;
-  position: relative;
-  z-index: 1000;
-  flex-shrink: 0;          /* ✅ prevent sidebar from shrinking */
-}
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-dark); /* Blend with main background */
+            border-right: 1px solid var(--bg-dark); /* Blend the border too */
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow-y: auto; /* Allows vertical scroll */
+            overflow-x: hidden; /* Prevents horizontal scroll */
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1000;
+            flex-shrink: 0; /* Prevent sidebar from shrinking */
+
+            /* Scrollbar for Firefox */
+            scrollbar-width: thin;
+            scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color);
+        }
+
+        /* Scrollbar for Webkit browsers (Chrome, Edge, Safari) */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: var(--scrollbar-track-color);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: var(--scrollbar-thumb-color);
+            border-radius: 3px;
+        }
+
+
         .sidebar.collapsed {
             width: var(--sidebar-collapsed);
             overflow: hidden;
             padding-bottom: 0;
             background: var(--bg-dark); /* Blend collapsed sidebar with main background */
+            border-right: 1px solid var(--bg-dark); /* Blend the border too */
         }
 
         .sidebar.collapsed .sidebar-header-text,
@@ -328,7 +357,7 @@
             padding: 10px;
             position: relative;
             scrollbar-width: thin;
-            scrollbar-color: var(--primary-color) var(--bg-darker);
+            scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color); /* Updated for consistency */
         }
 
         .chat-history::-webkit-scrollbar {
@@ -336,11 +365,11 @@
         }
 
         .chat-history::-webkit-scrollbar-track {
-            background: var(--bg-darker);
+            background: var(--scrollbar-track-color);
         }
 
         .chat-history::-webkit-scrollbar-thumb {
-            background-color: var(--primary-color);
+            background-color: var(--scrollbar-thumb-color);
             border-radius: 3px;
         }
 
@@ -716,7 +745,7 @@
             flex-direction: column;
             gap: 15px;
             scrollbar-width: thin;
-            scrollbar-color: var(--primary-color) var(--bg-darker);
+            scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color);
             -webkit-overflow-scrolling: touch;
             overscroll-behavior: contain;
         }
@@ -726,11 +755,11 @@
         }
 
         .chat-box::-webkit-scrollbar-track {
-            background: var(--bg-darker);
+            background: var(--scrollbar-track-color);
         }
 
         .chat-box::-webkit-scrollbar-thumb {
-            background-color: var(--primary-color);
+            background-color: var(--scrollbar-thumb-color);
             border-radius: 3px;
         }
 
@@ -949,7 +978,7 @@
             padding: 10px 16px;
             background: #00A9BE; /* Specific blue for send button */
             border: none;
-            color: white;
+            color: white; /* Ensure white text on blue button */
             font-size: 16px;
             cursor: pointer;
             border-radius: 20px;
@@ -1268,7 +1297,7 @@
             border-radius: 10px;
             padding: 10px;
             scrollbar-width: thin;
-            scrollbar-color: var(--primary-color) var(--bg-darker);
+            scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color); /* Updated for consistency */
         }
 
         .hr-history::-webkit-scrollbar {
@@ -1276,11 +1305,11 @@
         }
 
         .hr-history::-webkit-scrollbar-track {
-            background: var(--bg-darker);
+            background: var(--scrollbar-track-color);
         }
 
         .hr-history::-webkit-scrollbar-thumb {
-            background-color: var(--primary-color);
+            background-color: var(--scrollbar-thumb-color);
             border-radius: 3px;
         }
 
@@ -2307,7 +2336,7 @@
                 
                 if (response.ok) {
                     const data = await response.json();
-                    isLoggedIn = data.authenticated;
+                    isLoggedIn = data.a`authenticated`;
                     
                     if (!isLoggedIn) {
                         window.location.href = '/login';
@@ -2785,7 +2814,7 @@
                     // Re-find the new session
                     const newCurrentSession = chatSessions.find(s => s.id === currentChatId);
                     if (!newCurrentSession) {
-                        throw new Error('Failed to create or find a current chat session for analysis.');
+                        throw new Error('Failed to create or find a current chat session.');
                     }
                     currentSession = newCurrentSession;
                 }
@@ -2819,14 +2848,19 @@
                 });
 
                 const data = await response.json();
-                const chatBox = document.getElementById('chat-box');
                 chatBox.removeChild(typingIndicator);
                 isWaitingForResponse = false;
                 document.getElementById("send-btn").disabled = false;
 
                 if (!response.ok) {
-                    throw new Error(data.message || 'Server error');
+                    // Handle HTTP errors
+                    if (response.status === 400 && data.response === 'I can only answer heart health-related questions.') {
+                        appendMessage("I only support heart-related questions.", 'bot-message');
+                    } else {
+                        throw new Error(data.message || 'Server error');
+                    }
                 } else if (data.status === "error") {
+                    // Handle application errors
                     appendMessage(data.message, 'error-message');
                 } else {
                     // Handle successful responses
