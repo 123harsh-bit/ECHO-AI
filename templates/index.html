@@ -7,54 +7,72 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #00f5f9;
-            --primary-dark: #019396;
-            --secondary-color: #007bff;
-            --error-color: #ff4444;
-            --warning-color: #ff9800;
-            --success-color: #00a854;
-            --info-color: #2196F3;
-            --bg-dark: #000;
-            --bg-darker: #111;
-            --bg-darkest: #0a0a0a;
-            --text-light: #fff;
-            --text-muted: #aaa;
-            --text-dark: #333;
-            --border-color: #333;
-            --user-message-bg: #007bff;
-            --bot-message-bg: #000;
-            --bot-message-border: #333;
-            --table-header-bg: #019396;
-            --table-row-even: #1a1a1a;
-            --table-row-odd: #222;
-            --table-row-hover: #2a2a2a;
+            /* New Color Palette: Cyan Base - Dark Theme */
+            --primary-color: #00F0FF; /* Bright Cyan - Accent/Highlight */
+            --primary-dark: #00A9BE; /* Main Cyan-Blue - Brand Color, Primary Buttons, Active Sidebar */
+            --secondary-color: #FFD700; /* Gold/Yellow - A warm accent for special elements (e.g. pre-prompts hover) */
+            --error-color: #FF4D4D; /* Red for errors */
+            --warning-color: #FFAA00; /* Orange for warnings */
+            --success-color: #38A3A5; /* Teal for success */
+            --info-color: #64B5F6; /* Soft Blue for info */
+
+            --bg-dark: #000000; /* Full Black - Main background */
+            --bg-darker: #0A0A0A; /* Very Dark Grey - Sidebar, Input Container background */
+            --bg-darkest: #1A1A1A; /* Slightly Lighter Dark Grey - Panels, Cards, Bot Messages background */
+            --text-light: #F0F4F8; /* Off-White - Primary text on dark backgrounds */
+            --text-muted: #A0AEC0; /* Light Blue-Grey - Secondary text, timestamps */
+            --text-dark: #D9D9D9; /* Fallback/subtle dark text on very light elements (less common in dark mode) */
+            --border-color: #222222; /* Dark Grey - Subtle borders */
+
+            --user-message-bg: var(--primary-dark); /* User messages match brand cyan-blue */
+            --bot-message-bg: var(--bg-darkest); /* Bot messages clearly separated from main bg */
+            --bot-message-border: var(--border-color); /* Bot message border matches general border */
+
+            --table-header-bg: var(--primary-dark);
+            --table-row-even: #111111; /* Slightly lighter than deepest bg */
+            --table-row-odd: #181818; /* Between darker and darkest bg */
+            --table-row-hover: #222222; /* Noticeable hover state for tables */
+
             --sidebar-width: 280px;
             --sidebar-collapsed: 60px;
             --safe-area-inset-top: env(safe-area-inset-top, 0px);
             --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
             --safe-area-inset-left: env(safe-area-inset-left, 0px);
             --safe-area-inset-right: env(safe-area-inset-right, 0px);
+
+            --active-chat-bg: rgba(0, 240, 255, 0.1); /* Subtle cyan tint for active chat background */
+            --active-chat-border: var(--primary-color); /* Cyan border for active chat */
         }
 
-        /* Light theme variables */
+        /* New Color Palette: Cyan Base - Light Theme */
         [data-theme="light"] {
-            --primary-color: #007bff;
-            --primary-dark: #0056b3;
-            --secondary-color: #00f5f9;
-            --bg-dark: #f5f5f5;
-            --bg-darker: #e0e0e0;
-            --bg-darkest: #ffffff;
-            --text-light: #333;
-            --text-muted: #666;
-            --text-dark: #111;
-            --border-color: #ddd;
-            --user-message-bg: #007bff;
-            --bot-message-bg: #ffffff;
-            --bot-message-border: #ddd;
-            --table-header-bg: #0056b3;
-            --table-row-even: #f9f9f9;
-            --table-row-odd: #ffffff;
-            --table-row-hover: #f0f0f0;
+            --primary-color: #00A9BE; /* Main Cyan-Blue - Main interactive color */
+            --primary-dark: #007D8C; /* Darker Cyan-Blue - Darker accents */
+            --secondary-color: #FFC107; /* Amber - A warm accent for special elements */
+            --error-color: #DC3545; /* Standard Red */
+            --warning-color: #FFC107; /* Standard Yellow */
+            --success-color: #28A745; /* Standard Green */
+            --info-color: #17A2B8; /* Standard Info Blue */
+
+            --bg-dark: #EBF5F9; /* Very Light Blue-Grey - Main background */
+            --bg-darker: #DAE7EF; /* Light Blue-Grey - Sidebar, Input Container */
+            --bg-darkest: #FFFFFF; /* Pure White - Panels, Cards, Bot Messages */
+            --text-light: #2D3748; /* Dark Blue-Grey - Primary text on light backgrounds */
+            --text-muted: #718096; /* Mid-Blue-Grey - Secondary text, timestamps */
+            --text-dark: #20202F; /* Very Dark Blue-Grey - Highest contrast text */
+            --border-color: #CBD5E0; /* Light Blue-Grey - Subtle borders */
+
+            --user-message-bg: var(--primary-color);
+            --bot-message-bg: var(--bg-darkest);
+            --bot-message-border: var(--border-color);
+
+            --table-header-bg: var(--primary-dark);
+            --table-row-even: #F0F8FC; /* Almost white */
+            --table-row-odd: #FFFFFF; /* Pure white */
+            --table-row-hover: #E0EFF5; /* Light hover state for tables */
+
+            --active-chat-bg: rgba(0, 169, 190, 0.1); /* Even more subtle cyan for active chat */
+            --active-chat-border: var(--primary-color); /* Cyan border for active chat */
         }
 
         * {
@@ -159,35 +177,40 @@
 
         /* Sidebar styles */
         .sidebar {
-  width: var(--sidebar-width);
-  background: var(--bg-darker);
-  border-right: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow-y: auto;       /* ✅ allows scroll inside */
-  overflow-x: hidden;
-  transition: all 0.3s ease;
-  position: relative;
-  z-index: 1000;
-  flex-shrink: 0;          /* ✅ prevent sidebar from shrinking */
-}
+            width: var(--sidebar-width);
+            background: var(--bg-darker); /* Use darker shade for sidebar background */
+            border-right: 1px solid var(--bg-dark); /* Blend border with main background */
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1000;
+        }
 
         .sidebar.collapsed {
             width: var(--sidebar-collapsed);
             overflow: hidden;
+            padding-bottom: 0;
+            background: var(--bg-dark); /* Blend collapsed sidebar with main background */
         }
 
         .sidebar.collapsed .sidebar-header-text,
+        .sidebar.collapsed .chat-history-search,
+        .sidebar.collapsed .chat-history,
+        .sidebar.collapsed .profile-label {
+            display: none;
+        }
+        
         .sidebar.collapsed .new-chat-btn span,
         .sidebar.collapsed .chat-history-item span,
         .sidebar.collapsed .chat-history-date,
-        .sidebar.collapsed .user-profile-section,
-        .sidebar.collapsed .chat-history-search,
         .sidebar.collapsed .profile-menu-btn span {
             display: none;
         }
-
+        
+        /* Adjustments to visible elements in collapsed state */
         .sidebar.collapsed .new-chat-btn {
             justify-content: center;
             padding: 0;
@@ -195,6 +218,7 @@
             width: 40px;
             height: 40px;
             margin: 10px auto;
+            flex-shrink: 0;
         }
 
         .sidebar.collapsed .sidebar-header {
@@ -208,13 +232,35 @@
             justify-content: center;
         }
 
-        .sidebar.collapsed .profile-menu-btn {
+        .sidebar.collapsed .user-profile-section {
+            padding: 10px;
+            border-top: 1px solid var(--border-color); /* Keep border for separation from main content */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             justify-content: center;
+            gap: 0;
+            background: var(--bg-darkest); /* Keep distinct background for profile section */
+            flex-shrink: 0;
+            margin-top: auto; /* Push to the bottom */
+        }
+
+        .sidebar.collapsed .profile-label-container {
+            width: auto;
             padding: 0;
+            justify-content: center;
             border-radius: 50%;
-            width: 40px;
             height: 40px;
-            margin: 10px auto;
+            margin: 0 auto;
+            flex-direction: column;
+        }
+
+        .sidebar.collapsed .profile-avatar {
+            margin-right: 0;
+        }
+
+        .sidebar.collapsed .profile-menu-dropdown {
+            display: none;
         }
 
         .sidebar-header {
@@ -224,6 +270,7 @@
             justify-content: space-between;
             align-items: center;
             min-height: 60px;
+            flex-shrink: 0;
         }
 
         .sidebar-header-text {
@@ -260,6 +307,7 @@
             font-size: 14px;
             margin: 10px;
             min-height: 44px;
+            flex-shrink: 0;
         }
 
         .new-chat-btn:hover {
@@ -276,6 +324,7 @@
             padding: 10px;
             border-bottom: 1px solid var(--border-color);
             background: var(--bg-darkest);
+            flex-shrink: 0;
         }
 
         .chat-history-search input {
@@ -327,15 +376,20 @@
             border-radius: 8px;
             margin-bottom: 5px;
             cursor: pointer;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-size: 14px;
-            transition: all 0.2s ease;
-            position: relative;
             display: flex;
             align-items: center;
             gap: 8px;
+            color: var(--text-light); /* Default text color */
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .chat-history-item span {
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0; /* Crucial: Allows text to shrink */
         }
 
         .chat-history-item:hover {
@@ -344,16 +398,20 @@
         }
 
         .chat-history-item.active {
-            background: var(--primary-dark);
+            background: var(--active-chat-bg); /* Use the new active chat background color */
+            color: var(--text-light); /* Keep text light for dark theme, dark for light theme */
+            border-left: 3px solid var(--active-chat-border); /* Use the new active chat border color */
+            padding-left: 12px; /* Adjust padding due to border */
         }
 
         .chat-history-item i {
             font-size: 14px;
             color: var(--text-muted);
+            flex-shrink: 0;
         }
 
         .chat-history-item.active i {
-            color: white;
+            color: var(--primary-color); /* Icon matches primary color when active */
         }
 
         .chat-history-item .delete-btn {
@@ -372,6 +430,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
         }
 
         .chat-history-item:hover .delete-btn {
@@ -390,6 +449,7 @@
             padding-left: 10px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            flex-shrink: 0;
         }
 
         .no-results {
@@ -400,7 +460,7 @@
             font-size: 14px;
         }
 
-        /* User profile section in sidebar */
+        /* User profile section in sidebar - MOVED TO BOTTOM */
         .user-profile-section {
             padding: 15px;
             border-top: 1px solid var(--border-color);
@@ -409,6 +469,8 @@
             align-items: center;
             gap: 10px;
             background: var(--bg-darkest);
+            flex-shrink: 0;
+            margin-top: auto; /* Push to the bottom */
         }
 
         .profile-label-container {
@@ -429,11 +491,11 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            background: var(--primary-color); /* Updated to new primary color */
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            color: var(--bg-dark); /* Contrast color for text on avatar */
             font-weight: bold;
             text-transform: uppercase;
             background-size: cover;
@@ -712,7 +774,7 @@
         }
 
         .message {
-            padding: 15px;
+            padding: 15px; /* Base padding for message content area */
             border-radius: 18px;
             max-width: 85%;
             width: fit-content;
@@ -720,12 +782,14 @@
             line-height: 1.5;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             transition: all 0.2s ease;
+            display: flex; /* Use flex for internal layout */
+            flex-direction: column; /* Default for messages: content + timestamp */
         }
 
         .user-message {
             align-self: flex-end;
             background: var(--user-message-bg);
-            color: white;
+            color: var(--text-light); /* User messages should have light text on primary-dark background */
             border-radius: 18px 18px 0 18px;
         }
 
@@ -735,6 +799,37 @@
             color: var(--text-light);
             border: 1px solid var(--bot-message-border);
             border-radius: 18px 18px 18px 0;
+            display: flex;
+            flex-direction: row; /* Avatar and message content side-by-side */
+            align-items: flex-start;
+            gap: 10px;
+            max-width: 85%;
+            width: fit-content;
+            padding: 10px; /* Adjust padding due to avatar */
+        }
+
+        .bot-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--primary-color); /* Bright cyan for avatar background */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--bg-dark); /* Dark text on bright avatar */
+            font-size: 14px;
+            font-weight: bold;
+            flex-shrink: 0;
+            text-transform: uppercase; /* Ensure AI is capitalized */
+        }
+
+        .bot-message-content {
+            flex-grow: 1;
+            /* No padding here, it's applied to the .bot-message container */
+            /* Ensure content inside doesn't overflow the message bubble itself */
+            overflow-wrap: break-word; /* Allows long words to break */
+            min-width: 0;
+            padding-right: 5px; /* Small right padding to ensure content doesn't touch the edge */
         }
 
         .error-message {
@@ -751,25 +846,59 @@
             align-items: center;
             color: var(--text-muted);
             font-style: italic;
-            padding: 15px;
+            padding: 10px 15px;
             align-self: flex-start;
         }
 
-        .typing-indicator::after {
-            content: '';
-            display: inline-block;
-            width: 4px;
-            height: 4px;
-            margin-left: 5px;
-            border-radius: 50%;
-            background-color: var(--text-muted);
-            animation: blink 1.5s infinite ease-in-out;
+        /* Hide the previous 'Echo AI is typing' text from JS */
+        .typing-indicator::before {
+            content: 'Echo AI is typing'; /* Keep content as visual text part */
+            margin-right: 8px;
         }
 
-        @keyframes blink {
-            0%, 100% { box-shadow: 8px 0 0 0 var(--text-muted), 16px 0 0 0 var(--text-muted); }
-            33% { box-shadow: 8px 0 0 0 transparent, 16px 0 0 0 var(--text-muted); }
-            66% { box-shadow: 8px 0 0 0 var(--text-muted), 16px 0 0 0 transparent; }
+        .typing-dots {
+            display: inline-flex;
+            gap: 4px; /* Space between dots */
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--primary-color); /* Dots use primary color */
+            border-radius: 50%;
+            opacity: 0.3; /* Start subtle */
+            animation: typing-animation 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing-animation {
+            0%, 80%, 100% {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+            40% {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+        }
+
+        .message-timestamp {
+            font-size: 10px;
+            color: var(--text-muted); /* Default muted text */
+            align-self: flex-end; /* Align timestamp to the right within the message bubble */
+            margin-top: 5px; /* Space between message content and timestamp */
+            opacity: 0.8;
+            flex-shrink: 0;
+        }
+        /* Specific colors for timestamps within user/bot messages based on background contrast */
+        .user-message .message-timestamp {
+            color: rgba(255, 255, 255, 0.7); /* Lighter white for user messages on primary-dark */
+        }
+        [data-theme="light"] .user-message .message-timestamp {
+            color: rgba(255, 255, 255, 0.7); /* Keep light for user messages in light mode too, as user message bg is still primary-color */
         }
 
         .input-container {
@@ -808,10 +937,16 @@
         }
 
         .pre-prompts button:hover {
-            background: var(--secondary-color);
+            background: var(--primary-dark); /* Hover uses primary-dark */
+            color: white; /* Ensure text is white on primary-dark */
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
+        [data-theme="light"] .pre-prompts button:hover {
+            background: var(--primary-color); /* Light theme uses primary-color for hover */
+            color: white;
+        }
+
 
         .pre-prompts button i {
             font-size: 16px;
@@ -829,10 +964,10 @@
 
         .input-row:focus-within {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(0, 245, 249, 0.2);
+            box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2); /* Adjust shadow color to primary */
         }
 
-        input {
+        textarea { /* Changed from input to textarea */
             flex: 1;
             padding: 10px 15px;
             background: transparent;
@@ -840,13 +975,18 @@
             outline: none;
             color: var(--text-light);
             font-size: 16px;
-            border-radius: 20px;
+            border-radius: 20px; /* Still apply border-radius for visual consistency */
             min-height: 44px;
+            resize: vertical; /* Allow vertical resizing */
+            max-height: 120px; /* Max height for textarea */
+            overflow-y: auto; /* Enable scroll if content exceeds max-height */
+            line-height: 1.5; /* Improve readability for multi-line text */
+            -webkit-appearance: none; /* Remove default macOS textarea styling */
         }
 
         button.send-btn {
             padding: 10px 16px;
-            background: var(--secondary-color);
+            background: #00A9BE; /* Specific blue for send button */
             border: none;
             color: white;
             font-size: 16px;
@@ -862,7 +1002,8 @@
         }
 
         button.send-btn:hover {
-            background: #0056b3;
+            background: #00F0FF; /* Lighter blue on hover */
+            color: white;
             transform: translateY(-1px);
         }
 
@@ -992,8 +1133,8 @@
         /* Heart Rate Panel Styles - Now in top-right corner */
         .heart-rate-panel {
             position: fixed;
-            top: 70px;
-            right: 20px;
+            top: calc(70px + var(--safe-area-inset-top)); /* Adjust for safe area */
+            right: calc(20px + var(--safe-area-inset-right)); /* Adjust for safe area */
             background: var(--bg-darker);
             padding: 15px;
             border-radius: 12px;
@@ -1091,7 +1232,7 @@
         }
 
         .heart-rate-btn.connect {
-            background: var(--secondary-color);
+            background: var(--primary-dark); /* Connect uses primary-dark */
         }
 
         .heart-rate-btn.disconnect {
@@ -1137,12 +1278,12 @@
 
         #manual-hr:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(0, 245, 249, 0.2);
+            box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2);
         }
 
         #submit-hr {
             padding: 10px 15px;
-            background: var(--secondary-color);
+            background: var(--primary-dark); /* Submit uses primary-dark */
             color: white;
             border: none;
             border-radius: 20px;
@@ -1154,7 +1295,7 @@
         }
 
         #submit-hr:hover {
-            background: #0056b3;
+            background: var(--primary-color); /* Hover to primary color */
             transform: translateY(-1px);
         }
 
@@ -1446,7 +1587,7 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="flash-message {{ category }}">{{ message }}</div>
+                    <div class="flash-message {{ category }}">{{ message | tojson | safe }}</div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
@@ -1551,7 +1692,15 @@
             <div class="hr-history">
                 <h4>Recent Readings</h4>
                 <div class="hr-history-list" id="hr-history-list">
+                    <div class="hr-history-item">
+                        <span>10:30 AM</span>
+                        <span class="hr-history-value">72 bpm</span>
                     </div>
+                    <div class="hr-history-item">
+                        <span>10:15 AM</span>
+                        <span class="hr-history-value">68 bpm</span>
+                    </div>
+                </div>
             </div>
             
             <div class="bluetooth-note">(Chrome on Windows/Mac/Android only for Bluetooth)</div>
@@ -1595,7 +1744,7 @@
 
                 <div class="input-container">
                     <div class="input-row">
-                        <input type="text" id="user-input" placeholder="Ask me about heart health..." autofocus aria-label="Type your message">
+                        <textarea id="user-input" placeholder="Ask me about heart health..." autofocus aria-label="Type your message"></textarea>
                         <button class="send-btn" id="send-btn" aria-label="Send message"><i class="fas fa-paper-plane"></i></button>
                     </div>
                 </div>
@@ -1606,8 +1755,8 @@
     <script>
         // Global variables
         let isLoggedIn = false;
-        let hrHistory = []; // Stored in localStorage
-        let currentChatId = null; // Managed by backend session now
+        let hrHistory = [];
+        let currentChatId = null;
         let chatSessions = []; // Fetched from backend
         let lastNotificationTime = 0;
         const NOTIFICATION_COOLDOWN = 30000; // 30 seconds
@@ -1626,11 +1775,16 @@
         }
 
         // Parse flashed messages from Jinja2
-        {% for category, message in get_flashed_messages(with_categories=true) %}
-            document.addEventListener('DOMContentLoaded', () => {
-                showFlashMessage("{{ message | tojson }}", "{{ category }}");
-            });
-        {% endfor %}
+        // This block is for initial page load; subsequent flashes will use the JS function
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                document.addEventListener('DOMContentLoaded', () => {
+                    {% for category, message in messages %}
+                        showFlashMessage({{ message | tojson | safe }}, "{{ category }}");
+                    {% endfor %}
+                });
+            {% endif %}
+        {% endwith %}
 
 
         // Initialize all event listeners
@@ -1652,17 +1806,29 @@
             document.querySelectorAll('.pre-prompt-btn').forEach(button => {
                 button.addEventListener('click', (e) => {
                     if (isWaitingForResponse) return;
-                    // Use textContent instead of dataset.prompt for safety and robustness
-                    const message = e.currentTarget.dataset.prompt || e.currentTarget.textContent.trim();
+                    // Ensure we target the button itself, not its children (like the icon)
+                    const targetButton = e.currentTarget;  
+                    const message = targetButton.dataset.prompt;
                     document.getElementById('user-input').value = message;
                     sendMessage();
                 });
             });
             
-            // Chat input
-            document.getElementById('user-input').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !isWaitingForResponse) sendMessage();
+            // Chat input (now textarea)
+            const userInputElement = document.getElementById('user-input');
+            userInputElement.addEventListener('keypress', (e) => {
+                // Allow Shift+Enter for new line, Enter to send
+                if (e.key === 'Enter' && !e.shiftKey && !isWaitingForResponse) {
+                    e.preventDefault(); // Prevent default new line
+                    sendMessage();
+                }
             });
+            userInputElement.addEventListener('input', () => {
+                // Auto-resize textarea based on content
+                userInputElement.style.height = 'auto';
+                userInputElement.style.height = userInputElement.scrollHeight + 'px';
+            });
+
             document.getElementById('send-btn').addEventListener('click', () => {
                 if (!isWaitingForResponse) sendMessage();
             });
@@ -1729,6 +1895,11 @@
         // Set theme (dark/light)
         function setTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
+            // Also update the body class for theme-specific styles
+            document.body.classList.remove('light-theme'); // Remove previous theme class
+            if (theme === 'light') {
+                document.body.classList.add('light-theme');
+            }
             localStorage.setItem('theme', theme);
             
             // Update active state in theme selector
@@ -1792,53 +1963,54 @@
         // Filter chat history based on search query
         function filterChatHistory(query) {
             const historyContainer = document.getElementById('chat-history');
-            const allItems = Array.from(historyContainer.children); // Get all direct children (date headers & items)
+            const historyItems = historyContainer.querySelectorAll('.chat-history-item');
+            const dateHeaders = historyContainer.querySelectorAll('.chat-history-date');
             
-            const lowerQuery = query.toLowerCase();
-            let hasMatches = false;
-            let lastHeader = null; // To keep track of the most recent date header
-
-            // First, hide all elements and then selectively show them
-            allItems.forEach(item => item.style.display = 'none');
-            
-            chatSessions.forEach(session => {
-                const sessionTitle = session.title.toLowerCase();
-                const firstMessageContent = (session.first_message_content || '').toLowerCase();
-
-                if (sessionTitle.includes(lowerQuery) || firstMessageContent.includes(lowerQuery)) {
-                    // Find the corresponding DOM element
-                    const sessionElement = historyContainer.querySelector(`[data-id="${session.id}"]`);
-                    if (sessionElement) {
-                        sessionElement.style.display = 'flex'; // Show item
-                        hasMatches = true;
-
-                        // Find and show its date header
-                        let prevElement = sessionElement.previousElementSibling;
-                        while (prevElement) {
-                            if (prevElement.classList.contains('chat-history-date')) {
-                                prevElement.style.display = ''; // Show header
-                                break;
-                            }
-                            prevElement = prevElement.previousElementSibling;
-                        }
-                    }
-                }
-            });
-            
-            // Handle no results message
+            // Remove existing no-results message before filtering
             const existingNoResults = historyContainer.querySelector('.no-results');
             if (existingNoResults) {
                 existingNoResults.remove();
             }
 
-            if (!hasMatches && query.trim() !== '') {
+            if (!query.trim()) {
+                // Show all if query is empty
+                historyItems.forEach(item => item.style.display = 'flex');
+                dateHeaders.forEach(header => header.style.display = '');
+                return;
+            }
+            
+            const lowerQuery = query.toLowerCase();
+            let hasMatches = false;
+            
+            // First hide all
+            historyItems.forEach(item => item.style.display = 'none');
+            dateHeaders.forEach(header => header.style.display = 'none');
+            
+            // Show matching items and their corresponding date headers
+            historyItems.forEach(item => {
+                const textContent = item.querySelector('span')?.textContent || '';
+                if (textContent.toLowerCase().includes(lowerQuery)) {
+                    item.style.display = 'flex';
+                    hasMatches = true;
+                    
+                    let prevElement = item.previousElementSibling;
+                    while (prevElement) {
+                        if (prevElement.classList.contains('chat-history-date')) {
+                            prevElement.style.display = ''; // Show the date header
+                            break;
+                        }
+                        prevElement = prevElement.previousElementSibling;
+                    }
+                }
+            });
+            
+            if (!hasMatches) {
                 const noResults = document.createElement('div');
                 noResults.className = 'no-results';
                 noResults.textContent = 'No matching chats found';
                 historyContainer.appendChild(noResults);
             }
         }
-
 
         // Enhanced date grouping for chat history
         function groupChatSessionsByDate(sessions) {
@@ -1851,6 +2023,9 @@
             const thirtyDaysAgo = new Date(today);
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
             
+            // Sort sessions by updated_at, newest first for display order within groups
+            sessions.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+
             return sessions.reduce((groups, session) => {
                 const sessionDate = new Date(session.created_at);
                 
@@ -1876,10 +2051,17 @@
             });
         }
 
-        // Check if should start new chat (based on last activity - now handled by backend creating empty session)
-        // This function is less relevant now as backend API handles session creation/activation
+        // Check if should start new chat (based on last activity)
         function shouldStartNewChat() {
-             return currentChatId === null; // If no chat is active, create one
+            const lastActive = localStorage.getItem('lastActiveTime');
+            if (!lastActive) return true;
+            
+            const lastActiveTime = new Date(parseInt(lastActive));
+            const now = new Date();
+            const hoursSinceLastActive = (now - lastActiveTime) / (1000 * 60 * 60);
+            
+            // Start new chat if last activity was more than 1 hour ago
+            return hoursSinceLastActive > 1;
         }
 
         // Toggle heart rate panel visibility
@@ -1951,9 +2133,16 @@
                     credentials: 'include'
                 });
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    if (response.status === 401) {
+                         window.location.href = '/login'; // Redirect to login if unauthorized
+                         return;
+                    }
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
+                
+                // Update currentChatId from the backend response
                 currentChatId = data.id;
                 
                 // Clear the chat box
@@ -1972,8 +2161,8 @@
                 showFlashMessage("New chat started!", 'info');
             } catch (error) {
                 console.error('Error creating new chat:', error);
-                appendMessage('Failed to create new chat. Please try again.', 'error-message');
-                showFlashMessage('Failed to create new chat.', 'error');
+                // appendMessage('Failed to create new chat. Please try again.', 'error-message'); // This message is already handled by flash
+                showFlashMessage('Failed to create new chat. Please try again.', 'error');
             }
         }
 
@@ -1996,7 +2185,6 @@
                 updateChatHistoryUI(); // Update UI after fetching
             } catch (error) {
                 console.error('Error fetching chat sessions:', error);
-                // Optionally show a message to the user
                 document.getElementById('chat-history').innerHTML = '<div class="no-results">Failed to load chat history.</div>';
                 showFlashMessage('Failed to load chat history. Please try refreshing.', 'error');
             }
@@ -2012,7 +2200,7 @@
                 return;
             }
 
-            // Sort sessions by updated_at for display
+            // Sort sessions by updated_at for display order
             const sortedSessions = [...chatSessions].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
             
             const groupedSessions = groupChatSessionsByDate(sortedSessions);
@@ -2046,20 +2234,20 @@
             sessionElement.className = `chat-history-item ${session.id === currentChatId ? 'active' : ''}`;
             
             // Determine icon based on session content heuristic
-            let iconClass = 'fa-comment-alt';
+            let iconClass = 'fa-comment-alt'; // Default icon
             const firstMessageContent = session.first_message_content ? session.first_message_content.toLowerCase() : '';
             
-            if (firstMessageContent.includes('exercise') || firstMessageContent.includes('workout')) {
+            if (firstMessageContent.includes('exercise') || firstMessageContent.includes('workout') || session.title.toLowerCase().includes('exercise')) {
                 iconClass = 'fa-running';
-            } else if (firstMessageContent.includes('diet') || firstMessageContent.includes('food') || firstMessageContent.includes('nutrition')) {
+            } else if (firstMessageContent.includes('diet') || firstMessageContent.includes('food') || firstMessageContent.includes('nutrition') || session.title.toLowerCase().includes('diet')) {
                 iconClass = 'fa-utensils';
-            } else if (firstMessageContent.includes('heart rate') || firstMessageContent.includes('bpm')) {
+            } else if (firstMessageContent.includes('heart rate') || firstMessageContent.includes('bpm') || session.title.toLowerCase().includes('heart rate')) {
                 iconClass = 'fa-heartbeat';
-            } else if (firstMessageContent.includes('blood pressure')) {
+            } else if (firstMessageContent.includes('blood pressure') || session.title.toLowerCase().includes('blood pressure')) {
                 iconClass = 'fa-tint';
-            } else if (firstMessageContent.includes('symptom') || firstMessageContent.includes('pain') || firstMessageContent.includes('disease')) {
+            } else if (firstMessageContent.includes('symptom') || firstMessageContent.includes('pain') || firstMessageContent.includes('disease') || session.title.toLowerCase().includes('symptoms') || session.title.toLowerCase().includes('disease')) {
                 iconClass = 'fa-heart-broken';
-            } else if (firstMessageContent.includes('health') || firstMessageContent.includes('medical')) {
+            } else if (firstMessageContent.includes('health') || firstMessageContent.includes('medical') || session.title.toLowerCase().includes('health')) {
                 iconClass = 'fa-notes-medical';
             }
             
@@ -2139,8 +2327,8 @@
 
             } catch (error) {
                 console.error('Error loading chat session:', error);
-                appendMessage('Failed to load chat. Please try again.', 'error-message');
-                showFlashMessage('Failed to load chat.', 'error');
+                // appendMessage('Failed to load chat. Please try again.', 'error-message'); // Flash message will replace this
+                showFlashMessage('Failed to load chat. Please try again.', 'error');
             }
         }
 
@@ -2156,18 +2344,19 @@
                          window.location.href = '/login';
                          return;
                     }
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
                 
                 if (data.success) {
                     showFlashMessage('Chat deleted successfully!', 'success');
-                    // If the deleted chat was the current one, create a new one
+                    // If the deleted chat was the current one, force a new chat
                     if (data.message.includes('session reset')) {
                         currentChatId = null; // Clear current chat ID on client
-                        await createNewChat(); // Force creation of a new chat
+                        await createNewChat(); // This will create a new chat and set currentChatId
                     }
-                    await fetchChatSessions(); // Refresh chat history
+                    await fetchChatSessions(); // Refresh chat history sidebar to reflect deletion
                 } else {
                     showFlashMessage(`Failed to delete chat: ${data.error}`, 'error');
                 }
@@ -2202,27 +2391,28 @@
             // Always fetch and display chat sessions from backend on load
             await fetchChatSessions();
 
-            // If no sessions or currentChatId is null after fetching (e.g., deleted last chat, or new user)
-            // The backend's /chat endpoint will handle creating a new one if currentChatId is null
-            // or if a new chat is explicitly requested.
-            // On initial load, if there are no existing sessions, we still need a default "new chat" state.
-            if (chatSessions.length === 0) {
-                await createNewChat(); // This also sets currentChatId
+            // After fetching sessions, decide which one to load or create a new one
+            if (chatSessions.length === 0 || shouldStartNewChat()) {
+                await createNewChat(); // This will create a new chat on backend and set currentChatId
             } else {
-                // Load the most recent session if no explicit current one
-                // The backend /api/chat-sessions/<id> sets session['current_chat_id']
-                // So here, we just need to load the *first* one from the fetched list
-                // if currentChatId is not yet set (first load of the page).
-                if (currentChatId === null && chatSessions.length > 0) {
-                    await loadChatSession(chatSessions[0].id);
-                } else if (currentChatId !== null) {
-                    // Ensure the currentChatId from the backend session matches what's displayed
-                    // And re-load it to ensure UI is consistent after refresh
+                // If there are sessions and not a "new chat" scenario, load the most recent one
+                // The backend automatically sets Flask session current_chat_id on login to the most recent one.
+                // So, we just need to ensure the frontend loads the *correct* current session.
+                // Re-find the most recent one from the fetched list based on updated_at
+                const mostRecentSession = chatSessions.reduce((latest, session) => {
+                    return (new Date(session.updated_at) > new Date(latest.updated_at)) ? session : latest;
+                }, chatSessions[0]); // Start comparison with the first element
+                
+                if (mostRecentSession) {
+                    currentChatId = mostRecentSession.id; // Set global currentChatId
                     await loadChatSession(currentChatId);
+                } else {
+                    // Fallback in case reduce fails or empty array
+                    await createNewChat();
                 }
             }
             
-            // Store current time as last active time
+            // Store current time as last active time (for shouldStartNewChat logic)
             localStorage.setItem('lastActiveTime', Date.now());
         });
 
@@ -2237,14 +2427,17 @@
                 if (response.ok) {
                     const data = await response.json();
                     isLoggedIn = data.authenticated;
+                    
                     if (!isLoggedIn) {
-                        window.location.href = '/login';
+                        window.location.href = '/login'; // Redirect to login if not authenticated
                     }
                 } else {
+                    // If response is not OK (e.g., 401, 500), assume not authenticated
                     window.location.href = '/login';
                 }
             } catch (error) {
                 console.error('Error checking auth status:', error);
+                // In case of network error or server unreachable, redirect to login as a fallback
                 window.location.href = '/login';
             }
         }
@@ -2288,18 +2481,27 @@
                         avatar.style.backgroundImage = 'none';
                     }
 
-                    // Prepend email to profile menu dropdown
-                    const emailItem = document.createElement('div');
-                    emailItem.className = 'profile-menu-item';
-                    emailItem.innerHTML = `
-                        <i class="fas fa-envelope"></i>
-                        <span>${data.email || 'user@example.com'}</span>
-                    `;
-                    // Check if the email item already exists to prevent duplicates on re-load
-                    if (!document.querySelector('#profile-menu-dropdown .profile-menu-item span[content="'+data.email+'"]')) {
-                         document.getElementById('profile-menu-dropdown').prepend(emailItem);
+                    // Prepend email to the profile menu dropdown only if it doesn't exist
+                    if (!document.getElementById('profile-email-item')) {
+                        const emailItem = document.createElement('button');
+                        emailItem.className = 'profile-menu-item';
+                        emailItem.id = 'profile-email-item'; // Add ID to easily check existence
+                        emailItem.disabled = true; // Make it non-clickable
+                        emailItem.innerHTML = `
+                            <i class="fas fa-envelope"></i>
+                            <span>${data.email || 'user@example.com'}</span>
+                        `;
+                        document.getElementById('profile-menu-dropdown').prepend(emailItem);
+                    } else {
+                        // Update existing email item
+                        document.getElementById('profile-email-item').querySelector('span').textContent = data.email || 'user@example.com';
                     }
-                   
+
+                } else {
+                    // Fallback if data or username is missing
+                    document.getElementById('profile-label').textContent = 'Guest User';
+                    document.getElementById('user-avatar').textContent = 'GU';
+                    document.getElementById('user-avatar').style.backgroundImage = 'none';
                 }
             } catch (error) {
                 console.error('Error loading user data:', error);
@@ -2314,7 +2516,8 @@
 
         // Send Message Function
         async function sendMessage() {
-            const userInput = document.getElementById("user-input").value.trim();
+            const userInputElement = document.getElementById("user-input");
+            const userInput = userInputElement.value.trim();
             if (userInput === "" || isWaitingForResponse) return;
 
             const chatBox = document.getElementById("chat-box");
@@ -2324,22 +2527,29 @@
                 welcomeMessage.style.display = "none";
             }
 
+            // Append user message with current timestamp
             appendMessage(userInput, 'user-message');
-            document.getElementById("user-input").value = "";
+            userInputElement.value = ""; // Clear textarea
+            userInputElement.style.height = 'auto'; // Reset textarea height
+            userInputElement.focus(); // Keep focus on textarea
 
             const typingIndicator = showTypingIndicator();
             isWaitingForResponse = true;
             document.getElementById("send-btn").disabled = true;
 
             try {
-                // Send currentChatId to the backend
+                // Determine the session_id to send. If currentChatId is null,
+                // the backend will create a new session and return its ID.
+                const sessionIdToSend = currentChatId;
+
+                // Call the actual API endpoint
                 const response = await fetch("/chat", {
                     method: "POST",
                     headers: {  
                         "Content-Type": "application/json",
                     },
                     credentials: 'include',
-                    body: JSON.stringify({ message: userInput, session_id: currentChatId })
+                    body: JSON.stringify({ message: userInput, session_id: sessionIdToSend })
                 });
 
                 const data = await response.json();
@@ -2358,8 +2568,9 @@
                     appendMessage(data.message, 'error-message');
                     showFlashMessage(`Chat error: ${data.message}`, 'error');
                 } else {
-                    formatBotResponse(data.response);
-                    // Update currentChatId and title from backend response
+                    appendMessage(data.response, 'bot-message'); // Append directly, formatBotResponse is called inside appendMessage
+                    
+                    // Update currentChatId from backend response (important if a new session was created)
                     currentChatId = data.chat_session_id;
                     await fetchChatSessions(); // Refresh sidebar to show new chat or updated title
                     
@@ -2385,77 +2596,126 @@
         function appendMessage(text, className) {
             const chatBox = document.getElementById("chat-box");
             const message = document.createElement("div");
+            // Common message classes
             message.classList.add("message", className);
             
-            // Check if the message contains markdown tables
-            if (text.includes('|') && text.includes('\n')) {
-                // Call formatBotResponse directly with the message element
-                formatBotResponse(text, message); 
-            } else {
-                // Format headings, bold text, etc.
-                message.innerHTML = formatTextResponse(text);
-            }
+            // Create a wrapper for the message's main content (text + timestamp)
+            const messageBody = document.createElement('div');
+            messageBody.classList.add('message-body');
             
+            // Create a div specifically for the formatted text content
+            const messageTextContent = document.createElement('div');
+            messageTextContent.classList.add('message-text-content');
+
+            // Add bot avatar if it's a bot message
+            if (className === 'bot-message') {
+                const botAvatar = document.createElement('div');
+                botAvatar.classList.add('bot-avatar');
+                botAvatar.textContent = 'AI';  
+                message.appendChild(botAvatar);
+                
+                // For bot messages, messageBody should contain the actual content and timestamp
+                // and it needs flex-grow to take up remaining space
+                messageBody.style.flexGrow = '1';  
+            } else {
+                // For user messages, messageBody directly is the main content area
+                messageBody.style.alignSelf = 'flex-end'; // Users messages align to end
+            }
+
+            // Apply markdown formatting to messageTextContent
+            formatBotResponse(text, messageTextContent);
+            
+            messageBody.appendChild(messageTextContent);
+
+            // Add timestamp
+            const timestamp = document.createElement('div');
+            timestamp.classList.add('message-timestamp');
+            const now = new Date();
+            timestamp.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            messageBody.appendChild(timestamp);
+
+            // Append messageBody to the main message div
+            message.appendChild(messageBody);
+
             chatBox.appendChild(message);
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // Format text with headings, bold, etc.
+        // Format text with headings, bold, lists, etc.
         function formatTextResponse(text) {
             // Convert markdown-style headings to HTML
             text = text.replace(/^# (.*$)/gm, '<h1>$1</h1>');
             text = text.replace(/^## (.*$)/gm, '<h2>$1</h2>');
             text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
-            
+            text = text.replace(/^#### (.*$)/gm, '<h4>$1</h4>'); // Added H4
+
             // Convert markdown bold to HTML
             text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
             
-            // Convert markdown lists to HTML
-            text = text.replace(/^\s*\*\s(.*$)/gm, '<li>$1</li>');
-            text = text.replace(/^\s*-\s(.*$)/gm, '<li>$1</li>');
-            text = text.replace(/^\s*\+\s(.*$)/gm, '<li>$1</li>');
-            
-            // Wrap list items in <ul> or <ol> tags
-            text = text.replace(/(<li>.*<\/li>(\n|$))+/gs, (match) => {
-                const lines = match.trim().split('\n');
-                if (lines[0].match(/^\d+\./)) { // Check for ordered list
-                    return '<ol>' + lines.join('') + '</ol>';
-                } else { // Unordered list
-                    return '<ul>' + lines.join('') + '</ul>';
-                }
-            });
+            // Convert markdown blockquotes to HTML
+            text = text.replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>');
 
-            // Convert newlines to paragraphs where appropriate, handling lists properly
+            // Handle lists (unordered and ordered)
             const lines = text.split('\n');
-            let formattedHtml = '';
-            let inParagraph = false;
+            let inUnorderedList = false;
+            let inOrderedList = false;
+            let formattedLines = [];
+
             lines.forEach(line => {
-                line = line.trim();
-                if (line.startsWith('<h') || line.startsWith('<ul') || line.startsWith('<ol') || line.startsWith('<blockquote') || line.startsWith('<table')) {
-                    if (inParagraph) {
-                        formattedHtml += '</p>';
-                        inParagraph = false;
+                const trimmedLine = line.trim();
+                // Check for unordered list items
+                if (trimmedLine.match(/^[\*\-]\s/)) {
+                    if (!inUnorderedList) {
+                        formattedLines.push('<ul>');
+                        inUnorderedList = true;
+                        inOrderedList = false; // Close ordered if open
                     }
-                    formattedHtml += line;
-                } else if (line === '') {
-                    if (inParagraph) {
-                        formattedHtml += '</p>';
-                        inParagraph = false;
+                    formattedLines.push(`<li>${trimmedLine.substring(1).trim()}</li>`);
+                }
+                // Check for ordered list items
+                else if (trimmedLine.match(/^\d+\.\s/)) {
+                    if (!inOrderedList) {
+                        formattedLines.push('<ol>');
+                        inOrderedList = true;
+                        inUnorderedList = false; // Close unordered if open
                     }
-                } else {
-                    if (!inParagraph) {
-                        formattedHtml += '<p>';
-                        inParagraph = true;
+                    formattedLines.push(`<li>${trimmedLine.substring(trimmedLine.indexOf('.') + 1).trim()}</li>`);
+                }
+                // If not a list item, close current list if any
+                else {
+                    if (inUnorderedList) {
+                        formattedLines.push('</ul>');
+                        inUnorderedList = false;
                     }
-                    formattedHtml += line + ' ';
+                    if (inOrderedList) {
+                        formattedLines.push('</ol>');
+                        inOrderedList = false;
+                    }
+                    formattedLines.push(line); // Add the line as is
                 }
             });
-            if (inParagraph) {
-                formattedHtml += '</p>';
-            }
 
-            return formattedHtml;
+            // Close any open lists at the end
+            if (inUnorderedList) formattedLines.push('</ul>');
+            if (inOrderedList) formattedLines.push('</ol>');
+
+            text = formattedLines.join('\n');
+
+            // Convert newlines to paragraphs where appropriate, but preserve pre-existing block elements
+            text = text.split('\n\n').map(paragraph => {
+                // If the paragraph already starts with a block-level HTML tag (h, ul, ol, table, blockquote), return as is
+                if (paragraph.match(/^(<h[1-4]>|<ul|<ol|<table|<blockquote)/i)) {
+                    return paragraph.trim();
+                }
+                // Otherwise, wrap in a paragraph tag
+                return `<p>${paragraph.trim()}</p>`;
+            }).join('');
+
+            // Clean up empty paragraph tags that might occur after splitting
+            text = text.replace(/<p>\s*<\/p>/g, '');
+            
+            return text;
         }
 
         // Show typing indicator
@@ -2463,98 +2723,81 @@
             const chatBox = document.getElementById("chat-box");
             const typingIndicator = document.createElement("div");
             typingIndicator.classList.add("message", "typing-indicator");
-            typingIndicator.innerText = "Echo AI is typing";
+            // Remove innerText from JS, let CSS handle the "Echo AI is typing" text with ::before
+            
+            // Add dots for animation
+            const typingDots = document.createElement('div');
+            typingDots.classList.add('typing-dots');
+            typingDots.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+            typingIndicator.appendChild(typingDots);
+
             chatBox.appendChild(typingIndicator);
             chatBox.scrollTop = chatBox.scrollHeight;
             return typingIndicator;
         }
 
         // Format and display bot response with professional tables
-        function formatBotResponse(response, messageElement) {
-            // This function now just applies the formatting to the passed messageElement
-            // It assumes messageElement is already created and appended if needed.
-            
-            // Check if the response contains markdown tables
-            if (response.includes('|') && response.includes('\n')) {
-                const lines = response.trim().split('\n');
-                let htmlContent = '';
-                let inTable = false;
-                let tableRows = [];
+        function formatBotResponse(response, targetElement) {
+            // Regex to find Markdown tables (lines starting and ending with '|', with a separator line)
+            // This regex attempts to capture the entire table block.
+            const tableRegex = /^\|.*\|(?:\r?\n\|[-: ]+\|)+\r?\n(?:\|.*\|(?:\r?\n|$))*|^\|.*\|(?:\r?\n(?:\|.*\|\r?\n?)*)/gm;
+            let htmlContent = response;
 
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if (line.startsWith('|') && line.endsWith('|')) {
-                        if (!inTable) {
-                            inTable = true;
-                            tableRows = [];
+            // Process tables first
+            let tableMatch;
+            // Use a loop with exec to find all matches and replace them
+            while ((tableMatch = tableRegex.exec(htmlContent)) !== null) {
+                const markdownTable = tableMatch[0];
+                const lines = markdownTable.split('\n').filter(line => line.trim() !== '');
+
+                if (lines.length < 2) continue; // Need at least header and separator
+
+                let tableHtml = '<table>';
+                let headerProcessed = false;
+
+                lines.forEach((line, index) => {
+                    const trimmedLine = line.trim();
+                    if (trimmedLine.startsWith('|') && trimmedLine.endsWith('|')) {
+                        const cells = trimmedLine.split('|').slice(1, -1).map(cell => cell.trim());
+
+                        // This is the separator line (e.g., |---|:--:|---)
+                        if (trimmedLine.match(/^\|[-=\s:]+\|$/)) {
+                            headerProcessed = true;
+                            return; // Skip this line
                         }
-                        tableRows.push(line);
-                    } else {
-                        if (inTable) {
-                            // End of table, process it
-                            htmlContent += generateHtmlTable(tableRows);
-                            inTable = false;
-                            tableRows = [];
+
+                        if (!headerProcessed) {
+                            // This is the header row
+                            tableHtml += '<thead><tr>';
+                            cells.forEach(cell => {
+                                tableHtml += `<th>${formatTextResponse(cell)}</th>`;
+                            });
+                            tableHtml += '</tr></thead><tbody>';
+                        } else {
+                            // Data rows
+                            tableHtml += '<tr>';
+                            cells.forEach(cell => {
+                                // Apply general formatting to cell content
+                                tableHtml += `<td>${formatTextResponse(cell)}</td>`;
+                            });
+                            tableHtml += '</tr>';
                         }
-                        // Process non-table content with general formatting
-                        htmlContent += formatTextResponse(line);
                     }
-                }
-                // Handle case where table is at the very end
-                if (inTable) {
-                    htmlContent += generateHtmlTable(tableRows);
-                }
-                messageElement.innerHTML = htmlContent;
-            } else {
-                messageElement.innerHTML = formatTextResponse(response);
-            }
-        }
-
-        function generateHtmlTable(rows) {
-            if (rows.length < 2) return ''; // Need at least header and separator
-            const table = document.createElement("table");
-            
-            // Header row
-            const headerCells = rows[0].split('|').filter(cell => cell.trim());
-            const thead = document.createElement("thead");
-            const headerTr = document.createElement("tr");
-            headerCells.forEach(cellText => {
-                const th = document.createElement("th");
-                th.innerHTML = formatTextResponse(cellText.trim());
-                headerTr.appendChild(th);
-            });
-            thead.appendChild(headerTr);
-            table.appendChild(thead);
-
-            // Body rows
-            const tbody = document.createElement("tbody");
-            for (let i = 2; i < rows.length; i++) { // Skip header and separator rows
-                const bodyCells = rows[i].split('|').filter(cell => cell.trim());
-                const tr = document.createElement("tr");
-                bodyCells.forEach(cellText => {
-                    const td = document.createElement("td");
-                    // Handle bullet points within table cells
-                    if (cellText.includes('-') && cellText.trim().startsWith('-')) {
-                        const listItems = cellText.split('-').filter(item => item.trim());
-                        const ul = document.createElement("ul");
-                        listItems.forEach(item => {
-                            const li = document.createElement("li");
-                            li.textContent = item.trim();
-                            ul.appendChild(li);
-                        });
-                        td.appendChild(ul);
-                    } else {
-                        td.innerHTML = formatTextResponse(cellText.trim());
-                    }
-                    tr.appendChild(td);
                 });
-                tbody.appendChild(tr);
+                if (headerProcessed) { // Only close tbody if it was opened
+                    tableHtml += '</tbody>';
+                }
+                tableHtml += '</table>';
+
+                // Replace the markdown table with the generated HTML table in the original string
+                htmlContent = htmlContent.replace(markdownTable, tableHtml);
+                // Reset regex lastIndex to ensure it continues from the correct position after replacement
+                // This is crucial when using `exec` in a loop with a global regex.
+                tableRegex.lastIndex = 0; 
             }
-            table.appendChild(tbody);
             
-            const tempDiv = document.createElement('div');
-            tempDiv.appendChild(table);
-            return tempDiv.innerHTML; // Return the HTML string of the table
+            // Now apply general formatting to the rest of the text content (which might include converted tables)
+            targetElement.innerHTML = formatTextResponse(htmlContent);
         }
 
 
@@ -2564,12 +2807,12 @@
             const hr = parseInt(hrInput.value);
             
             if (isNaN(hr)) {
-                showFlashMessage("Please enter a valid number for heart rate.", 'error');
+                showNotification("Please enter a valid number for heart rate.", 'error');
                 return;
             }
             
             if (hr < 30 || hr > 250) {
-                showFlashMessage("Heart rate should be between 30-250 BPM.", 'error');
+                showNotification("Heart rate should be between 30-250 BPM.", 'error');
                 return;
             }
             
@@ -2649,8 +2892,8 @@
                     appendMessage(data.message, 'error-message');
                     showFlashMessage(`Analysis error: ${data.message}`, 'error');
                 } else {
-                    // Format and display the GPT-3.5 response
-                    formatBotResponse(data.response);
+                    // Handle successful responses
+                    appendMessage(data.response, 'bot-message'); // Append directly, formatBotResponse is called inside appendMessage
                     currentChatId = data.chat_session_id; // Update currentChatId if new session created
                     await fetchChatSessions(); // Refresh sidebar to show new chat or updated title
                 }
@@ -2673,9 +2916,9 @@
                     bluetoothManager.handleDisconnect();
                 }
 
-                // Save HR history to local storage before logout
-                localStorage.setItem('hrHistory', JSON.stringify(hrHistory));
-                // Chat sessions are handled by the backend, no need to save local copy.
+                // Clear HR history from local storage
+                localStorage.removeItem('hrHistory');
+                // Chat sessions are handled by the backend, no need to clear local copy or localStorage for sessions.
 
                 const response = await fetch('/logout', {
                     method: 'POST',
@@ -2713,8 +2956,10 @@
                     if (!navigator.bluetooth) {
                         throw new Error('Web Bluetooth is not supported in this browser. Try Chrome on Windows, Mac, or Android.');
                     }
-                    if (!navigator.bluetooth.getAvailability()) {
-                        throw new Error('Bluetooth is turned off or unavailable.');
+                    // Check for Bluetooth availability (permission might be needed first time)
+                    const isAvailable = await navigator.bluetooth.getAvailability();
+                    if (!isAvailable) {
+                        throw new Error('Bluetooth is turned off or unavailable on your device.');
                     }
 
                     showFlashMessage("Searching for devices...", 'info');
@@ -2758,8 +3003,19 @@
                     
                 } catch (error) {
                     console.error('Bluetooth connection error:', error);
-                    appendMessage(`Bluetooth Error: ${error.message}. Please try entering heart rate manually.`, 'error-message');
-                    showFlashMessage(`Bluetooth connection failed: ${error.message}`, 'error');
+                    let errorMessage = error.message;
+                    if (error.name === 'NotFoundError') {
+                        errorMessage = 'No Bluetooth device found or selected.';
+                    } else if (error.name === 'NotAllowedError') {
+                        errorMessage = 'Bluetooth permission denied by user.';
+                    } else if (error.message.includes('Bluetooth is turned off')) {
+                        // Custom error from getAvailability check
+                    } else if (error.message.includes('User cancelled the request')) {
+                        errorMessage = 'Bluetooth device selection cancelled.';
+                    }
+                    
+                    appendMessage(`Bluetooth Error: ${errorMessage}. Please try entering heart rate manually.`, 'error-message');
+                    showFlashMessage(`Bluetooth connection failed: ${errorMessage}`, 'error');
                     this.handleDisconnect(); // Ensure UI is reset on failure
                 } finally {
                     this.isConnecting = false;
@@ -2772,7 +3028,7 @@
                     const flags = value.getUint8(0);
                     let rate = value.getUint8(1);
                     
-                    if (flags & 0x1) { // 16-bit format if the first bit of flags is 1
+                    if (flags & 0x1) { // If the first bit of the flags is set, it's a 16-bit heart rate value
                         rate = value.getUint16(1, true); // true for little-endian
                     }
                     
@@ -2796,7 +3052,7 @@
                 if (rate > 100) {
                     color = 'var(--error-color)'; // Red for high
                 } else if (rate < 60) {
-                    color = 'var(--warning-color)'; // Yellow for low
+                    color = 'var(--warning-color)'; // Orange for low
                 } else {
                     color = 'var(--success-color)'; // Green for normal
                 }
@@ -2878,7 +3134,12 @@
 
             handleDisconnect() {
                 if (this.device && this.device.gatt.connected) {
-                    this.device.gatt.disconnect();
+                    this.characteristic.stopNotifications()
+                        .then(() => {
+                            console.log('Notifications stopped.');
+                            this.device.gatt.disconnect();
+                        })
+                        .catch(error => console.error('Error stopping notifications or disconnecting:', error));
                 }
                 this.device = null;
                 this.characteristic = null;
