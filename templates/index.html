@@ -54,14 +54,14 @@
             --bg-dark: #F0F2F5; /* Very light grey for background */
             --bg-darker: #E9ECEF; /* Slightly darker grey for elements */
             --bg-darkest: #FFFFFF; /* Pure white for cards/panels */
-            --text-light: #212529; /* Dark charcoal for primary text */
-            --text-muted: #6C757D; /* Medium grey for muted text */
-            --text-dark: #343A40; /* Darker charcoal */
-            --border-color: #DEE2E6; /* Light grey for borders */
+            --text-light: #343A40; /* Dark charcoal for primary text - improved contrast */
+            --text-muted: #6C757D; /* Medium grey for muted text - improved contrast */
+            --text-dark: #212529; /* Darker charcoal */
+            --border-color: #DDE2E6; /* Slightly darker light grey for borders - improved contrast */
 
             --user-message-bg: #007bff; /* Consistent blue */
             --bot-message-bg: #FFFFFF; /* Pure white */
-            --bot-message-border: #DEE2E6; /* Light grey */
+            --bot-message-border: #DDE2E6; /* Light grey - improved contrast */
 
             --table-header-bg: var(--primary-dark);
             --table-row-even: #F8F9FA; /* Off-white */
@@ -73,7 +73,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            font-family: -apple-system, BlinkMacMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             -webkit-tap-highlight-color: transparent;
             -webkit-font-smoothing: antialiased;
         }
@@ -159,18 +159,26 @@
         .sidebar.collapsed {
             width: var(--sidebar-collapsed);
             overflow: hidden;
+            /* New: Adjust overflow for collapsed state to hide content */
+            padding-bottom: 0; /* Ensure no extra padding pushes content out */
         }
 
         .sidebar.collapsed .sidebar-header-text,
+        .sidebar.collapsed .chat-history-search,
+        .sidebar.collapsed .chat-history,
+        .sidebar.collapsed .profile-label { /* Hide profile label */
+            display: none;
+        }
+        
+        /* Ensure these remain flexible to center content */
         .sidebar.collapsed .new-chat-btn span,
         .sidebar.collapsed .chat-history-item span,
         .sidebar.collapsed .chat-history-date,
-        .sidebar.collapsed .user-profile-section,
-        .sidebar.collapsed .chat-history-search,
         .sidebar.collapsed .profile-menu-btn span {
             display: none;
         }
-
+        
+        /* Adjustments to visible elements in collapsed state */
         .sidebar.collapsed .new-chat-btn {
             justify-content: center;
             padding: 0;
@@ -178,6 +186,7 @@
             width: 40px;
             height: 40px;
             margin: 10px auto;
+            flex-shrink: 0; /* Prevent shrinking */
         }
 
         .sidebar.collapsed .sidebar-header {
@@ -191,13 +200,35 @@
             justify-content: center;
         }
 
-        .sidebar.collapsed .profile-menu-btn {
-            justify-content: center;
-            padding: 0;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            margin: 10px auto;
+        /* Make sure profile section is visible but condensed */
+        .sidebar.collapsed .user-profile-section {
+            padding: 10px; /* Adjust padding for compact look */
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column; /* Still column, but main content centered */
+            align-items: center; /* Center items horizontally */
+            justify-content: center; /* Center items vertically */
+            gap: 0; /* Remove gap */
+            background: var(--bg-darkest);
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+
+        .sidebar.collapsed .profile-label-container {
+            width: auto; /* Allow it to shrink */
+            padding: 0; /* Remove padding */
+            justify-content: center; /* Center the avatar */
+            border-radius: 50%; /* Make it round */
+            height: 40px; /* Match avatar height */
+            margin: 0 auto; /* Center it */
+            flex-direction: column; /* Stack avatar and (hidden) label */
+        }
+
+        .sidebar.collapsed .profile-avatar {
+            margin-right: 0; /* Remove margin */
+        }
+
+        .sidebar.collapsed .profile-menu-dropdown {
+            display: none; /* Keep dropdown hidden until clicked */
         }
 
         .sidebar-header {
@@ -207,6 +238,7 @@
             justify-content: space-between;
             align-items: center;
             min-height: 60px;
+            flex-shrink: 0; /* Prevent shrinking */
         }
 
         .sidebar-header-text {
@@ -243,6 +275,7 @@
             font-size: 14px;
             margin: 10px;
             min-height: 44px;
+            flex-shrink: 0; /* Prevent shrinking */
         }
 
         .new-chat-btn:hover {
@@ -259,6 +292,7 @@
             padding: 10px;
             border-bottom: 1px solid var(--border-color);
             background: var(--bg-darkest);
+            flex-shrink: 0; /* Prevent shrinking */
         }
 
         .chat-history-search input {
@@ -392,6 +426,7 @@
             align-items: center;
             gap: 10px;
             background: var(--bg-darkest);
+            flex-shrink: 0; /* Prevent shrinking */
         }
 
         .profile-label-container {
@@ -1457,28 +1492,28 @@
         </div>
         
         <div class="user-profile-section">
-        <div class="profile-label-container" id="profile-menu-btn">
-            <div class="profile-avatar" id="user-avatar"></div>
-            <div class="profile-label" id="profile-label">Loading...</div>
-        </div>
-        
-        <div class="user-profile-menu">
-            <div class="profile-menu-dropdown" id="profile-menu-dropdown">
-                <button class="profile-menu-item" id="settings-btn">
-                    <i class="fas fa-cog"></i>
-                    <span>Settings</span>
-                </button>
-                <button class="profile-menu-item" id="contact-btn">
-                    <i class="fas fa-envelope"></i>
-                    <span>Contact Us</span>
-                </button>
-                <button class="profile-menu-item" id="logout-btn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </button>
+            <div class="profile-label-container" id="profile-menu-btn">
+                <div class="profile-avatar" id="user-avatar"></div>
+                <div class="profile-label" id="profile-label">Loading...</div>
+            </div>
+            
+            <div class="user-profile-menu">
+                <div class="profile-menu-dropdown" id="profile-menu-dropdown">
+                    <button class="profile-menu-item" id="settings-btn">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </button>
+                    <button class="profile-menu-item" id="contact-btn">
+                        <i class="fas fa-envelope"></i>
+                        <span>Contact Us</span>
+                    </button>
+                    <button class="profile-menu-item" id="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
     </div>
 
     <div class="settings-dropdown" id="settings-dropdown">
@@ -1614,7 +1649,9 @@
             document.querySelectorAll('.pre-prompt-btn').forEach(button => {
                 button.addEventListener('click', (e) => {
                     if (isWaitingForResponse) return;
-                    const message = e.target.dataset.prompt;
+                    // Ensure we target the button itself, not its children (like the icon)
+                    const targetButton = e.currentTarget; 
+                    const message = targetButton.dataset.prompt;
                     document.getElementById('user-input').value = message;
                     sendMessage();
                 });
@@ -1752,9 +1789,16 @@
 
         // Filter chat history based on search query
         function filterChatHistory(query) {
-            const historyItems = document.querySelectorAll('.chat-history-item');
-            const dateHeaders = document.querySelectorAll('.chat-history-date');
+            const historyContainer = document.getElementById('chat-history');
+            const historyItems = historyContainer.querySelectorAll('.chat-history-item');
+            const dateHeaders = historyContainer.querySelectorAll('.chat-history-date');
             
+            // Remove existing no-results message before filtering
+            const existingNoResults = historyContainer.querySelector('.no-results');
+            if (existingNoResults) {
+                existingNoResults.remove();
+            }
+
             if (!query.trim()) {
                 // Show all if query is empty
                 historyItems.forEach(item => item.style.display = 'flex');
@@ -1769,18 +1813,17 @@
             historyItems.forEach(item => item.style.display = 'none');
             dateHeaders.forEach(header => header.style.display = 'none');
             
-            // Show matching items
+            // Show matching items and their corresponding date headers
             historyItems.forEach(item => {
                 const textContent = item.querySelector('span')?.textContent || '';
                 if (textContent.toLowerCase().includes(lowerQuery)) {
                     item.style.display = 'flex';
                     hasMatches = true;
                     
-                    // Show the date header for this item if it exists
                     let prevElement = item.previousElementSibling;
                     while (prevElement) {
                         if (prevElement.classList.contains('chat-history-date')) {
-                            prevElement.style.display = '';
+                            prevElement.style.display = ''; // Show the date header
                             break;
                         }
                         prevElement = prevElement.previousElementSibling;
@@ -1792,21 +1835,7 @@
                 const noResults = document.createElement('div');
                 noResults.className = 'no-results';
                 noResults.textContent = 'No matching chats found';
-                
-                const historyContainer = document.getElementById('chat-history');
-                
-                // Remove previous no-results if exists
-                const existingNoResults = historyContainer.querySelector('.no-results');
-                if (existingNoResults) {
-                    historyContainer.removeChild(existingNoResults);
-                }
-                
                 historyContainer.appendChild(noResults);
-            } else {
-                const noResults = document.getElementById('chat-history').querySelector('.no-results');
-                if (noResults) {
-                    noResults.remove();
-                }
             }
         }
 
@@ -1821,6 +1850,9 @@
             const thirtyDaysAgo = new Date(today);
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
             
+            // Sort sessions by creation date, newest first
+            sessions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
             return sessions.reduce((groups, session) => {
                 const sessionDate = new Date(session.created_at);
                 
@@ -1931,7 +1963,7 @@
                     messages: []
                 };
                 
-                // Add to our sessions array
+                // Add to our sessions array at the beginning
                 chatSessions.unshift(newSession);
                 currentChatId = newSession.id;
                 
@@ -1961,70 +1993,35 @@
         // Update the chat history sidebar UI
         function updateChatHistoryUI() {
             const historyContainer = document.getElementById('chat-history');
-            historyContainer.innerHTML = '';
+            historyContainer.innerHTML = ''; // Clear existing content
             
+            // Sort chatSessions by created_at in descending order
+            chatSessions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
             // Group sessions by date
             const groupedSessions = groupChatSessionsByDate(chatSessions);
             
-            // Render today's sessions
-            if (groupedSessions.today.length > 0) {
-                const dateHeader = document.createElement('div');
-                dateHeader.className = 'chat-history-date';
-                dateHeader.textContent = 'Today';
-                historyContainer.appendChild(dateHeader);
-                
-                groupedSessions.today.forEach(session => {
-                    addChatSessionToHistory(session, historyContainer);
-                });
-            }
-            
-            // Render yesterday's sessions
-            if (groupedSessions.yesterday.length > 0) {
-                const dateHeader = document.createElement('div');
-                dateHeader.className = 'chat-history-date';
-                dateHeader.textContent = 'Yesterday';
-                historyContainer.appendChild(dateHeader);
-                
-                groupedSessions.yesterday.forEach(session => {
-                    addChatSessionToHistory(session, historyContainer);
-                });
-            }
-            
-            // Render last 7 days sessions
-            if (groupedSessions.last7Days.length > 0) {
-                const dateHeader = document.createElement('div');
-                dateHeader.className = 'chat-history-date';
-                dateHeader.textContent = 'Previous 7 Days';
-                historyContainer.appendChild(dateHeader);
-                
-                groupedSessions.last7Days.forEach(session => {
-                    addChatSessionToHistory(session, historyContainer);
-                });
-            }
-            
-            // Render last 30 days sessions
-            if (groupedSessions.last30Days.length > 0) {
-                const dateHeader = document.createElement('div');
-                dateHeader.className = 'chat-history-date';
-                dateHeader.textContent = 'Previous 30 Days';
-                historyContainer.appendChild(dateHeader);
-                
-                groupedSessions.last30Days.forEach(session => {
-                    addChatSessionToHistory(session, historyContainer);
-                });
-            }
-            
-            // Render older sessions
-            if (groupedSessions.older.length > 0) {
-                const dateHeader = document.createElement('div');
-                dateHeader.className = 'chat-history-date';
-                dateHeader.textContent = 'Older';
-                historyContainer.appendChild(dateHeader);
-                
-                groupedSessions.older.forEach(session => {
-                    addChatSessionToHistory(session, historyContainer);
-                });
-            }
+            const groupOrder = ['today', 'yesterday', 'last7Days', 'last30Days', 'older'];
+            const groupTitles = {
+                today: 'Today',
+                yesterday: 'Yesterday',
+                last7Days: 'Previous 7 Days',
+                last30Days: 'Previous 30 Days',
+                older: 'Older'
+            };
+
+            groupOrder.forEach(groupKey => {
+                if (groupedSessions[groupKey].length > 0) {
+                    const dateHeader = document.createElement('div');
+                    dateHeader.className = 'chat-history-date';
+                    dateHeader.textContent = groupTitles[groupKey];
+                    historyContainer.appendChild(dateHeader);
+                    
+                    groupedSessions[groupKey].forEach(session => {
+                        addChatSessionToHistory(session, historyContainer);
+                    });
+                }
+            });
         }
 
         // Add a chat session to the history sidebar
@@ -2123,20 +2120,21 @@
                 // Remove from our sessions array
                 chatSessions = chatSessions.filter(session => session.id !== sessionId);
                 
+                // If the deleted session was the current one, create a new one
+                if (currentChatId === sessionId) {
+                    currentChatId = null; // Clear current chat ID
+                    await createNewChat(); // This will create a new chat and set currentChatId
+                }
+                
                 // Update UI
                 updateChatHistoryUI();
-                
-                // If we deleted the current chat, create a new one
-                if (currentChatId === sessionId) {
-                    await createNewChat();
-                }
                 
                 // Save to localStorage
                 saveChatSessions();
                 
             } catch (error) {
                 console.error('Error deleting chat session:', error);
-                appendMessage('Failed to delete chat. Please try again.', 'error-message');
+                showNotification('Failed to delete chat. Please try again.', 'error');
             }
         }
 
@@ -2165,21 +2163,16 @@
             // Load chat sessions from localStorage
             loadChatSessions();
             
-            // If we have no sessions, create a new one
-            if (chatSessions.length === 0) {
+            // If no sessions or if it's been over an hour since last activity, create a new chat
+            if (chatSessions.length === 0 || shouldStartNewChat()) {
                 await createNewChat();
             } else {
-                // Check if we should start a new chat
-                if (shouldStartNewChat()) {
-                    await createNewChat();
-                } else {
-                    // Otherwise load the most recent session
-                    currentChatId = chatSessions[0].id;
-                    await loadChatSession(currentChatId);
-                }
+                // Otherwise load the most recent session
+                currentChatId = chatSessions[0].id;
+                await loadChatSession(currentChatId);
             }
             
-            // Update chat history UI
+            // Update chat history UI (this will also ensure the correct active state is set)
             updateChatHistoryUI();
             
             // Load any existing HR history from local storage
@@ -2219,6 +2212,7 @@
                 }
             } catch (error) {
                 console.error('Error checking auth status:', error);
+                // In case of network error or server down, redirect to login as a fallback
                 window.location.href = '/login';
             }
         }
@@ -2262,14 +2256,20 @@
                         avatar.style.backgroundImage = 'none';
                     }
 
-                    // Update profile menu items if needed
-                    const emailItem = document.createElement('div');
+                    // Prepend email to the profile menu dropdown
+                    const emailItem = document.createElement('button'); // Changed to button for consistency
                     emailItem.className = 'profile-menu-item';
+                    emailItem.disabled = true; // Make it non-clickable
                     emailItem.innerHTML = `
                         <i class="fas fa-envelope"></i>
                         <span>${data.email || 'user@example.com'}</span>
                     `;
                     document.getElementById('profile-menu-dropdown').prepend(emailItem);
+
+                } else {
+                    // Fallback if data or username is missing
+                    document.getElementById('profile-label').textContent = 'Guest User';
+                    document.getElementById('user-avatar').textContent = 'GU';
                 }
             } catch (error) {
                 console.error('Error loading user data:', error);
@@ -2305,7 +2305,14 @@
                 // Find current session
                 const currentSession = chatSessions.find(s => s.id === currentChatId);
                 if (!currentSession) {
-                    throw new Error('Current chat session not found');
+                    console.error('Current chat session not found. Creating a new one.');
+                    await createNewChat(); // Try creating a new session if not found
+                    // Re-find the new session
+                    const newCurrentSession = chatSessions.find(s => s.id === currentChatId);
+                    if (!newCurrentSession) {
+                        throw new Error('Failed to create or find a current chat session.');
+                    }
+                    currentSession = newCurrentSession;
                 }
                 
                 // Add user message to session
@@ -2315,10 +2322,10 @@
                     timestamp: new Date().toISOString()
                 });
                 
-                // Update session title if it's the first message
-                if (currentSession.messages.length === 1) {
+                // Update session title if it's the first message or if it's "New Chat"
+                if (currentSession.messages.length === 1 || currentSession.title === "New Chat") {
                     currentSession.title = userInput.length > 30 ? userInput.substring(0, 30) + '...' : userInput;
-                    updateChatHistoryUI();
+                    updateChatHistoryUI(); // Refresh history to update title
                 }
                 
                 // Save sessions
@@ -2351,7 +2358,7 @@
                     appendMessage(data.message, 'error-message');
                 } else {
                     // Handle successful responses
-                    formatBotResponse(data.response);
+                    appendMessage(data.response, 'bot-message'); // Append directly, formatBotResponse is called inside appendMessage
                     
                     // Add bot response to session
                     currentSession.messages.push({
@@ -2392,11 +2399,10 @@
             const message = document.createElement("div");
             message.classList.add("message", className);
             
-            // Check if the message contains markdown tables
-            if (text.includes('|') && text.includes('\n') && className === 'bot-message') {
+            // Only try to format as table if it's a bot message and contains table-like syntax
+            if (className === 'bot-message' && text.includes('|') && text.includes('\n')) {
                 formatBotResponse(text, message);
             } else {
-                // Format headings, bold text, etc.
                 message.innerHTML = formatTextResponse(text);
             }
             
@@ -2404,43 +2410,78 @@
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // Format text with headings, bold, etc.
+        // Format text with headings, bold, lists, etc.
         function formatTextResponse(text) {
             // Convert markdown-style headings to HTML
             text = text.replace(/^# (.*$)/gm, '<h1>$1</h1>');
             text = text.replace(/^## (.*$)/gm, '<h2>$1</h2>');
             text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
-            
+            text = text.replace(/^#### (.*$)/gm, '<h4>$1</h4>'); // Added H4
+
             // Convert markdown bold to HTML
             text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
             
-            // Convert markdown lists to HTML
-            // Note: This simple regex for lists might not handle nested lists or complex cases perfectly,
-            // but it works for basic lists generated by the AI model.
-            text = text.replace(/^\s*[\*\-]\s(.*$)/gm, '<li>$1</li>'); // For unordered lists
-            text = text.replace(/(<li>.*<\/li>(\n<li>.*<\/li>)*)/g, '<ul>$1</ul>'); // Wrap in ul if detected list items
-            text = text.replace(/<\/ul>\n<ul>/g, ''); // Fix for multiple <ul> tags
+            // Convert markdown blockquotes to HTML
+            text = text.replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>');
 
-            text = text.replace(/^\s*\d+\.\s(.*$)/gm, '<li>$1</li>'); // For ordered lists (numbered)
-            text = text.replace(/(<li>.*<\/li>(\n<li>.*<\/li>)*)/g, (match) => {
-                // Check if it's an ordered list that wasn't caught by the previous ul wrap
-                if (match.match(/^\s*\d+\./m)) {
-                    return `<ol>${match}</ol>`;
+            // Handle lists (unordered and ordered)
+            const lines = text.split('\n');
+            let inUnorderedList = false;
+            let inOrderedList = false;
+            let formattedLines = [];
+
+            lines.forEach(line => {
+                const trimmedLine = line.trim();
+                // Check for unordered list items
+                if (trimmedLine.match(/^[\*\-]\s/)) {
+                    if (!inUnorderedList) {
+                        formattedLines.push('<ul>');
+                        inUnorderedList = true;
+                        inOrderedList = false; // Close ordered if open
+                    }
+                    formattedLines.push(`<li>${trimmedLine.substring(1).trim()}</li>`);
                 }
-                return match;
+                // Check for ordered list items
+                else if (trimmedLine.match(/^\d+\.\s/)) {
+                    if (!inOrderedList) {
+                        formattedLines.push('<ol>');
+                        inOrderedList = true;
+                        inUnorderedList = false; // Close unordered if open
+                    }
+                    formattedLines.push(`<li>${trimmedLine.substring(trimmedLine.indexOf('.') + 1).trim()}</li>`);
+                }
+                // If not a list item, close current list if any
+                else {
+                    if (inUnorderedList) {
+                        formattedLines.push('</ul>');
+                        inUnorderedList = false;
+                    }
+                    if (inOrderedList) {
+                        formattedLines.push('</ol>');
+                        inOrderedList = false;
+                    }
+                    formattedLines.push(line); // Add the line as is
+                }
             });
-            text = text.replace(/<\/ol>\n<ol>/g, ''); // Fix for multiple <ol> tags
-            
-            // Convert newlines to paragraphs where appropriate
+
+            // Close any open lists at the end
+            if (inUnorderedList) formattedLines.push('</ul>');
+            if (inOrderedList) formattedLines.push('</ol>');
+
+            text = formattedLines.join('\n');
+
+            // Convert newlines to paragraphs where appropriate, but preserve pre-existing block elements
             text = text.split('\n\n').map(paragraph => {
-                if (!paragraph.startsWith('<h') && !paragraph.startsWith('<ul') && !paragraph.startsWith('<ol') && !paragraph.startsWith('<table>') && !paragraph.startsWith('<blockquote>')) {
-                    return `<p>${paragraph.trim()}</p>`;
+                // If the paragraph already starts with a block-level HTML tag (h, ul, ol, table, blockquote), return as is
+                if (paragraph.match(/^(<h[1-4]>|<ul|<ol|<table|<blockquote)/i)) {
+                    return paragraph.trim();
                 }
-                return paragraph.trim();
+                // Otherwise, wrap in a paragraph tag
+                return `<p>${paragraph.trim()}</p>`;
             }).join('');
 
-            // Remove empty paragraph tags that might be generated by splitting
+            // Clean up empty paragraph tags that might occur after splitting
             text = text.replace(/<p>\s*<\/p>/g, '');
             
             return text;
@@ -2458,60 +2499,65 @@
         }
 
         // Format and display bot response with professional tables
-        function formatBotResponse(response, container) {
-            const chatBox = container || document.getElementById("chat-box");
-            const message = container || document.createElement("div");
-            
-            if (!container) {
-                message.classList.add("message", "bot-message");
-            }
+        function formatBotResponse(response, messageElement) {
+            // Regex to find Markdown tables (lines starting and ending with '|', with a separator line)
+            const tableRegex = /^\|.*\|(?:\r?\n\|[-: ]+\|)+\r?\n(?:\|.*\|(?:\r?\n|$))*|^\|.*\|(?:\r?\n(?:\|.*\|\r?\n?)*)/gm;
+            let htmlContent = response;
 
-            // Regular expression to find Markdown tables
-            const tableRegex = /^\|.*?\|\r?\n\|---.*?\|\r?\n((?:\|.*?\|\r?\n)*)/gm;
-            let formattedResponse = response;
-            let match;
+            // Process tables first
+            let tableMatch;
+            while ((tableMatch = tableRegex.exec(htmlContent)) !== null) {
+                const markdownTable = tableMatch[0];
+                const lines = markdownTable.split('\n').filter(line => line.trim() !== '');
 
-            while ((match = tableRegex.exec(response)) !== null) {
-                const markdownTable = match[0];
-                const rows = markdownTable.trim().split('\n').filter(row => row.includes('|'));
-                
-                let htmlTable = `<table>`;
-                rows.forEach((row, rowIndex) => {
-                    // Skip the separator line (e.g., |---|---|)
-                    if (row.trim().match(/^\|[-=\s]+\|/)) {
-                        return;
-                    }
-                    const tag = rowIndex === 0 ? 'th' : 'td';
-                    const cells = row.split('|').map(cell => cell.trim()).filter(cell => cell !== '');
-                    
-                    htmlTable += `<tr>`;
-                    cells.forEach(cell => {
-                        let cellContent = formatTextResponse(cell); // Apply general formatting to cell content
-                        // Check for bullet points within table cells
-                        if (cellContent.startsWith('<ul>') || cellContent.startsWith('<ol>')) {
-                            // Already formatted as a list
-                        } else if (cellContent.includes('\n- ') || cellContent.includes('\n* ')) {
-                            // Convert newline separated items to a list
-                            cellContent = '<ul>' + cellContent.split('\n').map(item => `<li>${item.replace(/[\-\*]\s*/, '').trim()}</li>`).join('') + '</ul>';
+                if (lines.length < 2) continue; // Needs at least header and separator
+
+                let tableHtml = '<table>';
+                let headerProcessed = false;
+
+                lines.forEach((line, index) => {
+                    const trimmedLine = line.trim();
+                    if (trimmedLine.startsWith('|') && trimmedLine.endsWith('|')) {
+                        const cells = trimmedLine.split('|').slice(1, -1).map(cell => cell.trim());
+
+                        // This is the separator line, skip it but mark header as processed
+                        if (trimmedLine.match(/^\|[-=\s:]+\|$/)) {
+                            headerProcessed = true;
+                            return;
                         }
-                        htmlTable += `<${tag}>${cellContent}</${tag}>`;
-                    });
-                    htmlTable += `</tr>`;
-                });
-                htmlTable += `</table>`;
 
-                // Replace the Markdown table with the HTML table
-                formattedResponse = formattedResponse.replace(markdownTable, htmlTable);
+                        if (!headerProcessed) {
+                            // This is the header row
+                            tableHtml += '<thead><tr>';
+                            cells.forEach(cell => {
+                                tableHtml += `<th>${formatTextResponse(cell)}</th>`;
+                            });
+                            tableHtml += '</tr></thead><tbody>';
+                        } else {
+                            // Data rows
+                            tableHtml += '<tr>';
+                            cells.forEach(cell => {
+                                tableHtml += `<td>${formatTextResponse(cell)}</td>`;
+                            });
+                            tableHtml += '</tr>';
+                        }
+                    }
+                });
+                if (headerProcessed) { // Only close tbody if it was opened
+                    tableHtml += '</tbody>';
+                }
+                tableHtml += '</table>';
+
+                // Replace the markdown table with the generated HTML table
+                htmlContent = htmlContent.replace(markdownTable, tableHtml);
+                // Reset regex lastIndex to ensure it continues from the correct position after replacement
+                tableRegex.lastIndex = 0; 
             }
             
-            // Apply general text formatting for the rest of the content
-            message.innerHTML = formatTextResponse(formattedResponse);
-            
-            if (!container) {
-                chatBox.appendChild(message);
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }
+            // Now apply general formatting to the rest of the text content
+            messageElement.innerHTML = formatTextResponse(htmlContent);
         }
+
 
         // Manual HR input fallback
         function updateHRManually() {
@@ -2569,9 +2615,16 @@
             
             try {
                 // Find current session
-                const currentSession = chatSessions.find(s => s.id === currentChatId);
+                let currentSession = chatSessions.find(s => s.id === currentChatId);
                 if (!currentSession) {
-                    throw new Error('Current chat session not found');
+                    console.error('Current chat session not found during analysis. Creating a new one.');
+                    await createNewChat(); // Try creating a new session if not found
+                    // Re-find the new session
+                    const newCurrentSession = chatSessions.find(s => s.id === currentChatId);
+                    if (!newCurrentSession) {
+                        throw new Error('Failed to create or find a current chat session for analysis.');
+                    }
+                    currentSession = newCurrentSession;
                 }
                 
                 // Prepare the prompt for GPT-3.5
@@ -2614,7 +2667,7 @@
                     appendMessage(data.message, 'error-message');
                 } else {
                     // Format and display the GPT-3.5 response
-                    formatBotResponse(data.response);
+                    appendMessage(data.response, 'bot-message'); // Append directly, formatBotResponse is called inside appendMessage
                     
                     // Add bot response to session
                     currentSession.messages.push({
@@ -2836,8 +2889,8 @@
                 
                 // Remove pulse animation from heart rate button
                 document.getElementById('heart-rate-button').classList.remove('pulse');
-            },
-
+            }
+            ,
             updateUI(connected) {
                 document.getElementById('connect-btn').style.display = connected ? 'none' : 'flex';
                 document.getElementById('disconnect-btn').style.display = connected ? 'flex' : 'none';
