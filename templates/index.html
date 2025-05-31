@@ -90,8 +90,11 @@
             display: flex;
             height: 100vh;
             overflow: hidden;
+            /* Apply safe area insets directly to the body */
             padding-top: var(--safe-area-inset-top);
             padding-bottom: var(--safe-area-inset-bottom);
+            padding-left: var(--safe-area-inset-left);
+            padding-right: var(--safe-area-inset-right);
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
@@ -182,7 +185,8 @@
             border-right: 1px solid var(--bg-dark); /* Blend border with main background */
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            /* Height now accounts for safe areas if applied to body directly */
+            height: 100%; /* Fill remaining viewport height */
             overflow: hidden;
             transition: all 0.3s ease;
             position: relative;
@@ -700,6 +704,7 @@
         .main-container {
             display: flex;
             width: 100%;
+            /* Calculate height based on 100vh minus header and any safe area padding */
             height: calc(100vh - 60px - var(--safe-area-inset-top) - var(--safe-area-inset-bottom));
             gap: 20px;
             padding: 15px;
@@ -708,7 +713,7 @@
 
         .chat-container {
             width: 100%;
-            height: 100%;
+            height: 100%; /* Fill the main-container's height */
             display: flex;
             flex-direction: column;
             position: relative;
@@ -751,6 +756,8 @@
             flex-grow: 1;
             overflow-y: auto;
             padding: 20px;
+            /* Added padding-bottom to ensure last messages are visible above the input area */
+            padding-bottom: 100px; /* Adjust as needed to clear input/pre-prompts */
             display: flex;
             flex-direction: column;
             gap: 15px;
@@ -910,12 +917,14 @@
             position: sticky;
             bottom: 0;
             z-index: 50;
+            /* Adjust padding-bottom for mobile safe area */
+            padding-bottom: calc(15px + var(--safe-area-inset-bottom));
         }
 
         .pre-prompts {
             display: flex;
             gap: 10px;
-            margin-bottom: 15px;
+            margin-bottom: 15px; /* Ensure space above input */
             justify-content: center;
             flex-wrap: wrap;
         }
@@ -1418,6 +1427,10 @@
                 width: 280px;
                 transition: transform 0.3s ease;
                 box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+                /* Ensure sidebar also respects safe areas on iOS */
+                padding-top: var(--safe-area-inset-top);
+                padding-bottom: var(--safe-area-inset-bottom);
+                height: 100%; /* Fill available height */
             }
 
             .sidebar.open {
@@ -1425,13 +1438,14 @@
             }
 
             .sidebar.collapsed {
-                width: 280px;
-                left: -280px;
+                width: 280px; /* Keep consistent width for mobile sidebar */
+                left: -280px; /* Hidden position */
             }
 
             .sidebar.collapsed.open {
-                transform: translateX(280px);
+                transform: translateX(280px); /* Re-open to full width */
             }
+
 
             .sidebar-toggle {
                 display: flex;
@@ -1445,15 +1459,21 @@
 
             .main-container {
                 flex-direction: column;
-                height: auto;
+                height: auto; /* Allow content to dictate height, but responsive to keyboard */
                 width: 100%;
                 padding: 10px;
-                padding-bottom: calc(10px + var(--safe-area-inset-bottom));
+                /* Remove bottom padding here, it's now applied to input-container */
+                padding-bottom: 0; 
+                /* Added padding-bottom to input-container directly */
             }
             
             .chat-container {
                 width: 100%;
-                height: calc(100vh - 60px - var(--safe-area-inset-top) - var(--safe-area-inset-bottom));
+                /* Height here needs to dynamically adjust to keyboard.
+                   Using flex-grow on chat-box and proper padding on input-container helps.
+                   This is a complex mobile browser issue often requiring JS for perfect fit. */
+                height: 100%; /* Allow chat-box to scroll within this */
+                position: relative; /* Ensure it respects its parent's height */
             }
             
             .pre-prompts {
@@ -1499,7 +1519,12 @@
 
             .input-container {
                 padding: 15px;
+                /* Crucial: Add safe area inset to the *bottom* of the input container
+                   so the entire input area is visible above the home indicator/keyboard */
                 padding-bottom: calc(15px + var(--safe-area-inset-bottom));
+                position: sticky; /* Keep it at the bottom of its scrollable parent */
+                bottom: 0;
+                z-index: 50; /* Ensure it's above chat messages */
             }
 
             /* Profile menu mobile styles */
@@ -1540,33 +1565,22 @@
                 max-width: none;
             }
 
-            /* Fix mobile scrolling */
+            /* Fix mobile scrolling - ensuring body and main-content can scroll */
             body, html {
-                overflow: auto;
+                overflow: hidden; /* Keep body overflow hidden to prevent double scrollbar */
                 height: 100%;
             }
 
             .main-content {
-                overflow: auto;
+                overflow-y: auto; /* Enable scrolling for main content */
                 -webkit-overflow-scrolling: touch;
+                height: 100%; /* Fill available height for scrolling */
             }
 
             .chat-box {
-                overflow-y: scroll;
+                overflow-y: scroll; /* Allow chat messages to scroll */
                 -webkit-overflow-scrolling: touch;
-                padding-bottom: 20px;
-            }
-
-            /* Adjust for iOS notch */
-            @supports (padding-top: env(safe-area-inset-top)) {
-                .sidebar {
-                    padding-top: env(safe-area-inset-top);
-                    height: calc(100vh - env(safe-area-inset-top));
-                }
-
-                .header {
-                    padding-top: calc(10px + env(safe-area-inset-top));
-                }
+                padding-bottom: 20px; /* Ensure space below messages */
             }
         }
 
@@ -1692,15 +1706,7 @@
             <div class="hr-history">
                 <h4>Recent Readings</h4>
                 <div class="hr-history-list" id="hr-history-list">
-                    <div class="hr-history-item">
-                        <span>10:30 AM</span>
-                        <span class="hr-history-value">72 bpm</span>
                     </div>
-                    <div class="hr-history-item">
-                        <span>10:15 AM</span>
-                        <span class="hr-history-value">68 bpm</span>
-                    </div>
-                </div>
             </div>
             
             <div class="bluetooth-note">(Chrome on Windows/Mac/Android only for Bluetooth)</div>
