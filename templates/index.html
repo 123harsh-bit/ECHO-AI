@@ -527,34 +527,61 @@
         }
 
         .profile-menu-dropdown {
-            display: none;
-            /* Position absolutely relative to .user-profile-section */
-            position: absolute;
-            bottom: calc(100% + 5px); /* Position above the .profile-label-container + small gap */
-            left: 0; /* Align to the left edge of the parent (.user-profile-section) */
-            /* Or right: 0; if you want it aligned to the right edge */
-            
-            width: 100%; /* Default width when sidebar is open */
-            min-width: 200px; /* Minimum width when sidebar is collapsed */
-            max-width: 250px; /* Maximum width for the dropdown */
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 5px); /* Position above the .profile-label-container + small gap */
+    /* REMOVE or comment out the 'left: 0;' or 'right: 0;' if it's there */
+    /* left: 0; */
+    /* right: 0; */ /* These are problematic when sidebar is collapsed */
 
-            background: var(--bg-darkest);
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3); /* Stronger shadow for floating element */
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            z-index: 1050; /* Ensure it's above most content */
-            transform: translateY(0); /* Reset transform for smooth transition */
-            opacity: 0;
-            pointer-events: none; /* Disable interaction when hidden */
-            transition: opacity 0.2s ease, transform 0.2s ease;
-        }
+    width: 100%; /* Default width when sidebar is open */
+    min-width: 200px; /* Minimum width for the dropdown */
+    max-width: 250px; /* Maximum width for the dropdown */
+
+    background: var(--bg-darkest);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    z-index: 1050;
+    transform: translateY(0);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
 
         .profile-menu-dropdown.show {
             display: block; /* Make it block to enable transitions */
             opacity: 1;
             pointer-events: auto; /* Enable interaction when shown */
         }
+        .sidebar.collapsed .user-profile-section {
+    /* Ensure it's still a positioning context for the dropdown */
+    position: relative;
+    /* Center the avatar/button within the collapsed sidebar's width */
+    align-items: center;
+    justify-content: center;
+    padding: 10px; /* Adjust padding as needed */
+}
+
+.sidebar.collapsed .profile-menu-dropdown {
+    /* This rule specifically handles positioning when the sidebar is collapsed */
+    left: calc(var(--sidebar-collapsed) + 10px); /* Position to the right of the collapsed sidebar + some margin */
+    bottom: 10px; /* Adjust as needed, e.g., align with bottom of sidebar */
+    transform-origin: bottom left; /* Adjust transform origin for animations */
+    /* Also ensure the width is appropriate */
+    width: max-content; /* Allow content to dictate width, but respect min/max */
+    min-width: 200px; /* Keep the min-width */
+    max-width: 250px;
+}
+
+/* Optional: Hide the default dropdown icon if present in collapsed state for cleaner look */
+.sidebar.collapsed .profile-label-container i.fa-chevron-up,
+.sidebar.collapsed .profile-label-container i.fa-chevron-down {
+    display: none;
+}
+        
 
         .profile-menu-item {
             width: 100%;
