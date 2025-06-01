@@ -86,6 +86,15 @@
             --active-chat-border: var(--primary-color); /* Cyan border for active chat */
         }
 
+        /* Fix for light theme sidebar background on mobile */
+        [data-theme="light"] .sidebar {
+            background: var(--bg-darker); /* Ensure solid background for light theme sidebar */
+        }
+        [data-theme="light"] .overlay.active {
+            background: rgba(0, 0, 0, 0.5); /* Slightly less opaque overlay for light theme if preferred */
+        }
+
+
         html, body {
             font-family: -apple-system, BlinkMacMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             height: 100%; /* Important for proper flex height calculations */
@@ -188,20 +197,17 @@
 
         /* Sidebar styles */
         .sidebar {
-  width: var(--sidebar-width);
-  background: var(--bg-darker);
-  border-right: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow-y: auto;       /* ✅ allows scroll inside */
-  overflow-x: hidden;
-  transition: all 0.3s ease;
-  position: relative;
-  z-index: 1000;
-  flex-shrink: 0;          /* ✅ prevent sidebar from shrinking */
-}
-
+            width: var(--sidebar-width);
+            background: var(--bg-darker); /* Use darker shade for sidebar background */
+            border-right: 1px solid var(--bg-dark); /* Blend border with main background */
+            display: flex;
+            flex-direction: column;
+            height: 100%; /* Fill remaining viewport height */
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1000;
+        }
 
         .sidebar.collapsed {
             width: var(--sidebar-collapsed);
@@ -740,9 +746,8 @@
             z-index: 100;
         }
 
-        /* Center the header text correctly for desktop */
-        .header > div:nth-child(2) {
-            /* This targets the "Echo AI" text specifically */
+        /* Center the header title on desktop, and position correctly */
+        .header-title-center {
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
@@ -763,8 +768,7 @@
             min-height: 44px;
             min-width: 44px;
             position: relative;
-            /* Ensure it's not squished by the center title */
-            flex-shrink: 0; 
+            flex-shrink: 0; /* Prevent it from shrinking */
             margin-left: auto; /* Push to the far right when using flex on desktop */
         }
 
@@ -785,11 +789,10 @@
 
         .main-container {
             display: flex;
-            flex-direction: column; /* Changed to column for mobile layout */
+            flex-direction: column; 
             width: 100%;
-            flex-grow: 1; /* Allow it to fill main-content height */
-            /* Removed fixed height here, let flex grow handle it with its parent */
-            padding: 15px; /* General padding, adjusted for chat-box content to be visible */
+            flex-grow: 1; 
+            padding: 15px; /* General padding */
             padding-bottom: 0; /* Handled by input-container */
             overflow: hidden; /* Important for inner scrolling */
         }
@@ -870,7 +873,7 @@
         .message {
             padding: 15px; /* Base padding for message content area */
             border-radius: 18px;
-            max-width: 75%; /* Adjusted max-width for chat bubbles */
+            max-width: 75vw; /* FIX: Set max-width based on viewport width for consistency */
             min-width: 80px; /* Ensure a minimum width for short messages like "Hi" */
             width: fit-content;
             word-wrap: break-word; /* Ensure long words break */
@@ -899,7 +902,7 @@
             flex-direction: row; /* Avatar and message content side-by-side */
             align-items: flex-start;
             gap: 10px;
-            max-width: 75%; /* Adjusted max-width for chat bubbles */
+            max-width: 75vw; /* FIX: Set max-width based on viewport width for consistency */
             min-width: 80px; /* Also ensure a minimum width for short bot messages */
             width: fit-content;
             padding: 10px; /* Adjust padding due to avatar */
@@ -933,7 +936,7 @@
             color: white;
             border-radius: 18px 18px 18px 0;
             padding: 15px;
-            max-width: 75%; /* Adjusted max-width */
+            max-width: 75vw; /* Adjusted max-width */
         }
 
         .typing-indicator {
@@ -1117,18 +1120,16 @@
         }
 
         /* Send button GENERATING state (subtle animation while AI is thinking) */
-        @keyframes generatingAnimation {
-            0% { transform: scale(1) rotate(0deg); opacity: 1; }
-            25% { transform: scale(1.1) rotate(5deg); opacity: 0.9; }
-            50% { transform: scale(1) rotate(0deg); opacity: 0.8; }
-            75% { transform: scale(0.9) rotate(-5deg); opacity: 0.9; }
-            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        /* New unique animation for send button */
+        @keyframes pulseDotSpread {
+            0% { transform: scale(0.8); opacity: 0.5; color: var(--primary-color); }
+            50% { transform: scale(1.2); opacity: 1; color: var(--secondary-color); }
+            100% { transform: scale(0.8); opacity: 0.5; color: var(--primary-color); }
         }
 
         /* Apply this to the icon inside the send button when generating */
         .send-btn.generating i {
-            animation: generatingAnimation 1.8s ease-in-out infinite; /* Continuous, subtle movement */
-            color: var(--secondary-color); /* Optional: Change color while generating */
+            animation: pulseDotSpread 1.5s ease-in-out infinite; /* Continuous, subtle movement */
         }
 
         /* Hide the default icon and show spinner-like effect only when loading */
@@ -1502,9 +1503,9 @@
             color: var(--secondary-color); /* Gold/Yellow for premium */
             font-size: 20px; /* Adjust size as needed */
         }
-        /* Make sure default Font Awesome icons inherit appropriate color variables */
+        /* Make sure default Font Awesome icons inherit appropriate color variables by default */
         i.fas, i.far, i.fab {
-            color: inherit; /* Inherit color from parent by default */
+            color: inherit; 
         }
 
         /* Mobile responsiveness */
@@ -1553,7 +1554,7 @@
             }
 
             /* Center the header text correctly within the grid */
-            .header > div:nth-child(2) {
+            .header-title-center { /* Changed from .header > div:nth-child(2) */
                 position: static; /* Reset absolute positioning for grid */
                 transform: none; /* Reset transform for grid */
                 text-align: center; /* Center text within its grid cell */
@@ -1575,6 +1576,8 @@
 
             .overlay.active {
                 display: block;
+                background: rgba(0, 0, 0, 0.7); /* Ensure dark, opaque overlay */
+                backdrop-filter: blur(5px); /* Keep blur for effect */
             }
 
             .main-content {
@@ -1634,7 +1637,7 @@
             }
 
             .message {
-                max-width: 90%; /* On mobile, give messages a bit more width to fill screen */
+                max-width: 90vw; /* On mobile, give messages a bit more width, relative to viewport width */
                 min-width: 80px; /* Ensure a minimum width for short messages */
             }
 
@@ -2701,7 +2704,7 @@
                 welcomeMessage.style.display = "none";
             }
 
-            // Append user message with current timestamp
+            // Append user message
             appendMessage(userInput, 'user-message');
             userInputElement.value = ""; // Clear textarea
             userInputElement.style.height = 'auto'; // Reset textarea height
@@ -2790,13 +2793,7 @@
             
             messageBody.appendChild(messageTextContent);
 
-            /* REMOVED TIMESTAMP LOGIC
-            const timestamp = document.createElement('div');
-            timestamp.classList.add('message-timestamp');
-            const now = new Date();
-            timestamp.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            messageBody.appendChild(timestamp);
-            */
+            /* Removed the timestamp related elements creation */
 
             message.appendChild(messageBody);
 
@@ -3068,7 +3065,7 @@
                 
             } catch (error) {
                 chatBox.removeChild(typingIndicator);
-                appendMessage(`Analysis error: ${error.message}`, 'error-message');
+                appendMessage(`Error: ${error.message}`, 'error-message');
                 console.error('Analysis error:', error);
                 showFlashMessage(`Failed to get analysis: ${error.message}`, 'error');
             } finally {
