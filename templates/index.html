@@ -206,16 +206,15 @@
             display: none;
         }
         
-        .sidebar.collapsed .new-chat-btn span,
-        .sidebar.collapsed .chat-history-item span,
-        .sidebar.collapsed .chat-history-date {
+        .sidebar.collapsed .new-chat-btn span {
             display: none;
         }
-        /* Profile label text also hidden when collapsed */
-        .sidebar.collapsed .profile-label { /* Hiding the full profile label text */
+        /* New: Hide the full email and "Settings", "Contact Us", "Logout" text when collapsed */
+        .sidebar.collapsed .profile-email-display span,
+        .sidebar.collapsed .profile-menu-item span {
             display: none;
         }
-        
+
         /* Adjustments to visible elements in collapsed state */
         .sidebar.collapsed .new-chat-btn {
             justify-content: center;
@@ -238,76 +237,61 @@
             justify-content: center;
         }
 
+        /* New: Collapsed state for user profile section */
         .sidebar.collapsed .user-profile-section {
             padding: 10px;
-            border-top: 1px solid var(--border-color); /* Keep border for separation from main content */
+            border-top: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0;
-            background: var(--bg-darkest); /* Keep distinct background for profile section */
+            align-items: center; /* Center avatar and icons */
+            gap: 10px; /* Space between avatar and direct buttons */
+            background: var(--bg-darkest);
             flex-shrink: 0;
-            margin-top: auto; /* Push to the bottom */
-            position: relative; /* IMPORTANT: for absolute positioning of dropdown */
+            margin-top: auto;
         }
 
-        .sidebar.collapsed .profile-label-container {
-            width: auto; /* Allow shrink-wrap */
-            padding: 0;
-            justify-content: center;
-            border-radius: 50%;
-            height: 40px; /* Match avatar height */
-            margin: 0 auto;
-            flex-direction: column;
-            display: flex; 
-            position: relative; /* Make it a positioning context for its direct children */
-        }
-        /* Specific sizing for avatar inside collapsed profile label container */
-        .sidebar.collapsed .profile-label-container .profile-avatar {
+        .sidebar.collapsed .profile-avatar {
             margin: 0;
             flex-shrink: 0;
             width: 40px;
             height: 40px;
         }
 
-
-        .sidebar.collapsed .profile-menu-dropdown {
-            position: fixed; /* Position relative to viewport */
-            /* Calculate `left` relative to the right edge of the collapsed sidebar */
-            left: calc(var(--sidebar-collapsed) + 5px); /* Sidebar width + small gap */
-            top: auto; /* Reset top for bottom alignment */
-            /* Bottom position calculation: 
-               safe-area-inset-bottom (device specific) 
-               + user-profile-section padding-bottom (10px) 
-               + profile-label-container height (40px) 
-               + gap (5px) for the dropdown to sit slightly above the icon. */
-            bottom: calc(var(--safe-area-inset-bottom) + 10px + 40px + 5px); 
-            
-            /* Remove transform if you want it to appear without extra slide */
-            transform: translateX(0); /* Ensure no extra translation */
-            right: auto; /* Reset right property */
-
-            z-index: 1050; /* Ensure it's above most content */
+        /* New: Make profile-email-display (now just for icon/avatar) visible for collapsed */
+        .sidebar.collapsed .profile-email-display {
+            padding: 0; /* Remove padding */
+            justify-content: center; /* Center the avatar */
             width: auto;
-            min-width: 180px; /* Keep a readable width */
-            max-width: 250px;
+            height: auto;
+            border-radius: 50%; /* Make it round */
+            margin-bottom: 10px; /* Space from buttons below */
         }
-
-        /* Show the three-dots button in the collapsed state */
-        .sidebar.collapsed #profile-options-btn {
-            display: flex !important; /* Override inline style or other rules */
-            position: absolute; /* Position relative to profile-label-container */
-            right: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            z-index: 10; /* Ensure it's clickable */
-            opacity: 1; /* Always visible in collapsed state */
-        }
-        /* Hide default profile-label-container span on collapsed state */
-        .sidebar.collapsed .profile-label-container span {
+        /* New: Hide the icon in profile-email-display when sidebar is collapsed (as avatar is already there) */
+        .sidebar.collapsed .profile-email-display i {
             display: none;
         }
+
+        /* New: Direct menu items (Settings, Contact, Logout) when sidebar is collapsed */
+        .sidebar.collapsed .profile-menu-item {
+            justify-content: center; /* Center the icon */
+            padding: 0;
+            width: 40px; /* Make it square for icon */
+            height: 40px;
+            border-radius: 50%;
+            margin: 5px auto; /* Space between icons */
+            flex-shrink: 0;
+            background: var(--bg-darker); /* Provide a subtle background */
+            border: 1px solid transparent; /* Default transparent border */
+        }
+
+        .sidebar.collapsed .profile-menu-item:hover {
+            background: var(--primary-dark); /* Hover effect */
+            border-color: var(--primary-color);
+        }
+
+        /* Remove the 'three dots' button from collapsed state - it's removed entirely now */
+        /* .sidebar.collapsed #profile-options-btn { display: none !important; } */
+
 
         .sidebar-header {
             padding: 15px;
@@ -424,12 +408,10 @@
             cursor: pointer;
             display: flex;
             align-items: center;
-            /* gap: 8px; Removed, let flex grow and margin manage space */
             color: var(--text-light); /* Default text color */
-            position: relative; /* For the options menu to position relative to it */
+            position: relative; /* For the delete button to position relative to it */
             transition: all 0.2s ease;
-            /* overflow: hidden; Removed from parent, applied to span */
-            /* text-overflow: ellipsis; Removed from parent, applied to span */
+            padding-right: 45px; /* Make space for the delete button */
         }
 
         .chat-history-item span {
@@ -438,15 +420,16 @@
             overflow: hidden; /* Hide overflow */
             text-overflow: ellipsis; /* Add ellipsis for long titles */
             min-width: 0; /* Crucial: Allows text to shrink */
-            margin-right: 40px; /* Make space for the options button */
+            /* margin-right: 40px; Removed, as delete button will be positioned absolutely */
         }
 
         .chat-history-item:hover {
             background: var(--bg-darker);
             transform: translateX(2px);
         }
-        /* Show options button on hover */
-        .chat-history-item:hover .options-btn {
+
+        /* Show delete button on hover */
+        .chat-history-item:hover .delete-chat-item-btn {
             opacity: 1;
             transform: translateX(0);
         }
@@ -470,8 +453,8 @@
             color: var(--primary-color); /* Icon matches primary color when active */
         }
 
-        /* New styles for the three-dots options button and menu */
-        .options-btn {
+        /* New styles for the direct delete button in chat history */
+        .delete-chat-item-btn {
             background: none;
             border: none;
             color: var(--text-muted);
@@ -493,87 +476,91 @@
             transform: translateY(-50%);
             z-index: 10; /* Ensure it's clickable above text */
         }
-        /* Specific rule for profile options button */
-        #profile-options-btn {
-            position: absolute; /* Relative to profile-label-container */
-            right: 0; /* Align to the right of profile-label-container */
-            top: 50%;
-            transform: translateY(-50%);
-            z-index: 10; /* Ensure clickable */
-            opacity: 1; /* Always visible if JS sets display to flex */
-            display: none; /* Controlled by JS initially */
+
+        .delete-chat-item-btn:hover {
+            color: var(--error-color); /* Red on hover */
+            background-color: rgba(255, 77, 77, 0.1);
+            border-radius: 50%;
         }
 
-
-        .options-btn:hover {
-            color: var(--text-light);
-        }
-
-        .rename-delete-menu {
-            display: none; /* Controlled by JS 'show' class */
-            position: absolute;
-            /* Positioning relative to its parent .chat-history-item */
-            right: 15px; /* Align with right padding of the list item */
-            top: 100%; /* Position below the current chat item */
-            
-            background: var(--bg-darkest);
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            z-index: 200; /* Above other sidebar elements */
-            min-width: 120px;
-        }
-
-        .rename-delete-menu.show {
-            display: block;
-        }
-
-        .rename-delete-menu button {
-            width: 100%;
-            background: transparent;
-            color: var(--text-light);
-            border: none;
-            padding: 10px 15px;
-            cursor: pointer;
-            text-align: left;
-            transition: background-color 0.2s;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .rename-delete-menu button:hover {
-            background: var(--bg-darker);
-        }
-
-        .rename-delete-menu button:last-child {
-            color: var(--error-color); /* Make delete red */
-        }
-
-        .rename-delete-menu button:last-child:hover {
-            background: rgba(255, 77, 77, 0.2);
-        }
-
-        /* Profile menu dropdown specific styling for the email display */
-        .profile-menu-item.email-display {
+        /* Profile menu dropdown specific styling for the email display - this is now the inline display */
+        .profile-email-display {
             background: transparent;
             color: var(--text-muted); /* Muted text for email */
             cursor: default; /* Not clickable */
             padding: 10px 15px;
-            border-bottom: 1px solid var(--border-color);
             font-size: 13px; /* Slightly smaller */
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%; /* Full width */
+            margin-bottom: 5px; /* Space between email and first button */
+            border-radius: 8px; /* Match button border-radius */
+            transition: background-color 0.2s;
         }
-        .profile-menu-item.email-display:hover {
-            background: transparent; /* No hover effect */
-        }
-        .profile-menu-item.email-display i {
+        .profile-email-display i {
             color: var(--text-muted); /* Ensure icon color matches */
         }
+        .profile-email-display:hover {
+            background: var(--bg-darker); /* Allow hover effect for the whole block */
+        }
+
+        /* Profile menu items (Settings, Contact Us, Logout) - now directly in the sidebar */
+        .profile-menu-item {
+            width: 100%;
+            background: var(--bg-darker); /* Darker background for buttons */
+            color: var(--text-light);
+            border: 1px solid var(--border-color); /* Subtle border */
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            transition: background-color 0.2s, border-color 0.2s;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px; /* Space between buttons */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .profile-menu-item:last-of-type {
+            margin-bottom: 0; /* No margin after the last one */
+        }
+
+        .profile-menu-item:hover {
+            background: var(--primary-dark); /* Highlight on hover */
+            color: white;
+            border-color: var(--primary-color);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .profile-menu-item i {
+            font-size: 16px; /* Icon size consistent */
+            color: var(--text-muted); /* Default icon color */
+        }
+        .profile-menu-item:hover i {
+            color: white; /* Icon color on hover */
+        }
+
+        .profile-menu-item#logout-btn { /* Specific style for logout button */
+            color: var(--error-color);
+            border-color: var(--error-color);
+            background: rgba(255, 77, 77, 0.1);
+        }
+        .profile-menu-item#logout-btn:hover {
+            background: var(--error-color);
+            color: white;
+        }
+        .profile-menu-item#logout-btn:hover i {
+            color: white;
+        }
+
+        /* No longer a dropdown menu, so remove these specific styles */
+        /* .profile-menu-dropdown { display: none; ... } */
+        /* .profile-menu-dropdown.show { display: block; ... } */
 
 
         .chat-history-date {
@@ -600,28 +587,27 @@
             padding: 15px;
             border-top: 1px solid var(--border-color);
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
+            flex-direction: column; /* Changed to column */
+            align-items: flex-start; /* Align items to the start */
+            gap: 10px; /* Space between elements */
             background: var(--bg-darkest);
             flex-shrink: 0;
             margin-top: auto; /* Push to the bottom */
-            position: relative; /* Crucial for positioning dropdown */
+            position: relative; /* Not for dropdown, but if something needs abs positioning relative to this section */
         }
 
-        .profile-label-container {
+        /* Original profile-label-container is no longer a wrapper for dropdown, it's just the label.
+           But given the new design, the entire .profile-email-display will serve this purpose.
+           Removing .profile-label-container styles if they conflict.
+        */
+        .profile-label-container { /* This element is now acting as the username display */
             display: flex;
             align-items: center;
             width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            position: relative; /* For the three dots button positioning */
-        }
-
-        .profile-label-container:hover {
-            background-color: var(--bg-darker);
+            padding: 10px 0; /* Adjust padding for better look with new inline buttons */
+            /* Removed cursor, hover, and position related to the old dropdown */
+            position: static; /* No longer relative */
+            gap: 12px; /* Gap between avatar and name */
         }
 
         .profile-avatar {
@@ -637,8 +623,9 @@
             text-transform: uppercase;
             background-size: cover;
             background-position: center;
-            margin-right: 12px;
+            margin-right: 0; /* No margin-right as elements are stacked/arranged differently */
             flex-shrink: 0;
+            margin-bottom: 5px; /* Space between avatar and email */
         }
 
         .profile-label {
@@ -651,34 +638,6 @@
             text-overflow: ellipsis;
         }
 
-        /* Profile menu dropdown general styles (for both expanded and collapsed sidebar) */
-        .profile-menu-dropdown {
-            display: none;
-            position: absolute; /* Default to absolute for general positioning */
-            bottom: calc(100% + 5px); /* Position above the .profile-label-container + small gap */
-            left: 0; /* Align to the left edge of the parent (.user-profile-section) */
-            
-            width: 100%; /* Default width when sidebar is open */
-            min-width: 180px; /* Minimum width for dropdown */
-            max-width: 250px; /* Maximum width for dropdown */
-
-            background: var(--bg-darkest);
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3); /* Stronger shadow for floating element */
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            z-index: 1050; /* Ensure it's above most content */
-            opacity: 0;
-            pointer-events: none; /* Disable interaction when hidden */
-            transition: opacity 0.2s ease, transform 0.2s ease;
-        }
-
-        .profile-menu-dropdown.show {
-            display: block; /* Make it block to enable transitions */
-            opacity: 1;
-            pointer-events: auto; /* Enable interaction when shown */
-            transform: translateY(0); /* Ensure no unwanted transform from display: none */
-        }
 
         /* Settings dropdown */
         .settings-dropdown {
@@ -1281,543 +1240,494 @@
             line-height: 1.5;
         }
         
-.bot-message ul li {
-    list-style-type: disc;
-}
-
-.bot-message ol li {
-    list-style-type: decimal;
-}
-
-/* Heart Rate Panel Styles - Now in top-right corner */
-.heart-rate-panel {
-    position: fixed;
-    top: calc(70px + var(--safe-area-inset-top)); /* Adjust for safe area */
-    right: calc(20px + var(--safe-area-inset-right)); /* Adjust for safe area */
-    background: var(--bg-darker);
-    padding: 15px;
-    border-radius: 12px;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-    width: 280px;
-    z-index: 1000;
-    border: 1px solid var(--border-color);
-    display: none;
-    transform: translateY(-10px);
-    opacity: 0;
-    transition: all 0.3s ease;
-}
-
-.heart-rate-panel.visible {
-    display: block;
-    transform: translateY(0);
-    opacity: 1;
-}
-
-.heart-rate-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-.heart-rate-header h3 {
-    margin: 0;
-    font-size: 16px;
-    color: var(--primary-color);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.heart-rate-header h3 i {
-    font-size: 18px;
-    color: var(--error-color);
-}
-
-.heart-rate-content {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.heart-rate-display {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-    padding: 10px;
-    background: var(--bg-darkest);
-    border-radius: 10px;
-}
-
-.current-hr {
-    font-size: 32px;
-    font-weight: bold;
-    color: var(--error-color);
-    font-family: 'Courier New', monospace;
-}
-
-.hr-status {
-    font-size: 12px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.heart-rate-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-}
-
-.heart-rate-btn {
-    padding: 10px 15px;
-    border-radius: 20px;
-    border: none;
-    color: white;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.3s ease;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    flex: 1;
-}
-
-.heart-rate-btn i {
-    font-size: 14px;
-}
-
-.heart-rate-btn.connect {
-    background: var(--primary-dark); /* Connect uses primary-dark */
-}
-
-.heart-rate-btn.disconnect {
-    background: var(--text-muted);
-}
-
-.heart-rate-btn.analyze {
-    background: var(--success-color);
-}
-
-.heart-rate-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-.heart-rate-btn:active {
-    transform: translateY(0);
-}
-
-.heart-rate-btn:disabled {
-    background: var(--border-color);
-    cursor: not-allowed;
-    opacity: 0.7;
-}
-
-.manual-hr-input {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-#manual-hr {
-    flex-grow: 1;
-    padding: 10px 15px;
-    border-radius: 20px;
-    border: 1px solid var(--border-color);
-    background: var(--bg-darkest);
-    color: var(--text-light);
-    font-size: 14px;
-    outline: none;
-    min-height: 44px;
-}
-
-#manual-hr:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2);
-}
-
-#submit-hr {
-    padding: 10px 15px;
-    background: var(--primary-dark); /* Submit uses primary-dark */
-    color: white;
-    border: none;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 14px;
-    min-height: 44px;
-    min-width: 80px;
-    transition: all 0.3s ease;
-}
-
-#submit-hr:hover {
-    background: var(--primary-color); /* Hover to primary color */
-    transform: translateY(-1px);
-}
-
-.hr-history {
-    margin-top: 10px;
-    max-height: 120px;
-    overflow-y: auto;
-    background: var(--bg-darkest);
-    border-radius: 10px;
-    padding: 10px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--primary-color) var(--bg-darker);
-}
-
-.hr-history::-webkit-scrollbar {
-    width: 6px;
-}
-
-.hr-history::-webkit-scrollbar-track {
-    background: var(--bg-darker);
-}
-
-.hr-history::-webkit-scrollbar-thumb {
-    background-color: var(--primary-color);
-    border-radius: 3px;
-}
-
-.hr-history h4 {
-    color: var(--primary-color);
-    margin-bottom: 10px;
-    text-align: center;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.hr-history-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.hr-history-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 10px;
-    background: var(--bg-darker);
-    border-radius: 6px;
-    font-size: 13px;
-    transition: all 0.2s ease;
-}
-
-.hr-history-item:hover {
-    background: var(--border-color);
-    transform: translateX(2px);
-}
-
-.hr-history-value {
-    font-weight: bold;
-    color: var(--error-color);
-    font-family: 'Courier New', monospace;
-}
-
-.bluetooth-note {
-    font-size: 11px;
-    color: var(--text-muted);
-    text-align: center;
-    margin-top: 10px;
-    line-height: 1.4;
-}
-
-/* Delete Confirmation Modal */
-.delete-modal-overlay {
-    display: none; /* Hidden by default */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7); /* Dark semi-transparent background */
-    z-index: 2500; /* Higher than other overlays */
-    backdrop-filter: blur(5px);
-    justify-content: center;
-    align-items: center;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.delete-modal-overlay.show {
-    display: flex;
-    opacity: 1;
-}
-
-.delete-modal-content {
-    background: var(--bg-darkest);
-    border-radius: 12px;
-    padding: 25px;
-    width: 90%;
-    max-width: 400px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-    text-align: center;
-    transform: translateY(20px);
-    transition: transform 0.3s ease, opacity 0.3s ease;
-    color: var(--text-light);
-    border: 1px solid var(--border-color);
-    box-sizing: border-box; /* Ensure padding doesn't make it overflow */
-}
-
-.delete-modal-overlay.show .delete-modal-content {
-    transform: translateY(0);
-}
-
-.delete-modal-title {
-    font-size: 18px;
-    font-weight: bold;
-    color: var(--text-light);
-    margin-bottom: 15px;
-}
-
-.delete-modal-message {
-    font-size: 14px;
-    color: var(--text-muted);
-    margin-bottom: 25px;
-    line-height: 1.5;
-}
-/* Highlight the item name in the message */
-.delete-modal-message strong {
-    color: var(--primary-color);
-}
-
-
-.delete-modal-actions {
-    display: flex;
-    gap: 15px;
-    justify-content: flex-end;
-}
-
-.delete-modal-btn {
-    padding: 10px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    min-height: 44px; /* Ensure good touch target */
-}
-
-.delete-modal-btn.cancel {
-    background: var(--bg-darker);
-    color: var(--text-light);
-    border: 1px solid var(--border-color);
-}
-
-.delete-modal-btn.cancel:hover {
-    background: var(--border-color);
-}
-
-.delete-modal-btn.delete {
-    background: var(--error-color);
-    color: white;
-    border: none;
-}
-
-.delete-modal-btn.delete:hover {
-    background: #cc3939; /* A slightly darker red */
-}
-
-
-/* Mobile responsiveness */
-@media (max-width: 768px) {
-    .sidebar {
-        position: fixed;
-        top: 0;
-        left: -280px;
-        bottom: 0;
-        z-index: 1000;
-        width: 280px;
-        transition: transform 0.3s ease;
-        box-shadow: 2px 0 10px rgba(0,0,0,0.3);
-        /* Ensure sidebar also respects safe areas on iOS */
-        padding-top: var(--safe-area-inset-top);
-        padding-bottom: var(--safe-area-inset-bottom);
-        height: 100%; /* Fill available height */
-    }
-
-    .sidebar.open {
-        transform: translateX(280px);
-    }
-
-    .sidebar.collapsed {
-        width: 280px; /* Keep consistent width for mobile sidebar */
-        left: -280px; /* Hidden position */
-    }
-
-    .sidebar.collapsed.open {
-        transform: translateX(280px); /* Re-open to full width */
-    }
-
-
-    .sidebar-toggle {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .overlay.active {
-        display: block;
-    }
-
-    .main-container {
-        flex-direction: column;
-        height: auto; /* Allow content to dictate height, but responsive to keyboard */
-        width: 100%;
-        padding: 10px;
-        /* Remove bottom padding here, it's now applied to input-container */
-        padding-bottom: 0; 
-        /* Added padding-bottom to input-container directly */
-    }
-    
-    .chat-container {
-        width: 100%;
-        /* Height here needs to dynamically adjust to keyboard.
-            Using flex-grow on chat-box and proper padding on input-container helps.
-            This is a complex mobile browser issue often requiring JS for perfect fit. */
-        height: 100%; /* Allow chat-box to scroll within this */
-        position: relative; /* Ensure it respects its parent's height */
-    }
-    
-    .pre-prompts {
-        flex-direction: row; /* Ensure row direction */
-        flex-wrap: nowrap; /* Prevent wrapping on mobile */
-        justify-content: flex-start; /* Align to start on mobile */
-        overflow-x: auto;
-        padding-bottom: 10px;
-        scrollbar-width: none;
-        -webkit-overflow-scrolling: touch;
-        scroll-snap-type: x mandatory;
-    }
-
-    .pre-prompts::-webkit-scrollbar {
-        display: none;
-    }
-    
-    .pre-prompts button {
-        width: auto;
-        white-space: nowrap;
-        flex-shrink: 0;
-        scroll-snap-align: start;
-    }
-
-    .bot-message table {
-        display: block;
-        overflow-x: auto;
-        white-space: nowrap;
-    }
-
-    .welcome-message {
-        padding: 30px 15px;
-        font-size: 16px;
-    }
-
-    .welcome-message h1 {
-        font-size: 24px;
-    }
-
-    .message {
-        max-width: 90%;
-    }
-
-    .input-container {
-        padding: 15px;
-        /* Crucial: Add safe area inset to the *bottom* of the input container
-            so the entire input area is visible above the home indicator/keyboard */
-        padding-bottom: calc(15px + var(--safe-area-inset-bottom));
-        position: sticky; /* Keep it at the bottom of its scrollable parent */
-        bottom: 0;
-        z-index: 50; /* Ensure it's above chat messages */
-    }
-
-    /* Profile menu mobile styles - when sidebar is closed it's effectively a mobile scenario */
-    .profile-menu-dropdown {
-        /* When sidebar is collapsed on desktop, this needs to behave like a pop-out menu */
-        /* For desktop collapsed sidebar, it should appear right next to it */
-        /* And for true mobile (sidebar.open), it should be static as currently defined */
-        position: absolute; /* Default to absolute for contained behavior */
-        left: 0; /* Default to left alignment */
-        right: auto;
-        transform: none; /* No transform by default */
-        z-index: 1050; /* Ensure it's above most content */
-
-        /* Override for collapsed state */
-        .sidebar.collapsed & { /* This syntax won't work in plain CSS. Requires nesting. */
-                                /* This indicates a fixed position is better if it breaks out. */
-            position: fixed;
-            left: calc(var(--sidebar-collapsed) + 5px); /* Aligned to the right edge of the collapsed sidebar */
-            transform: translateX(0); /* No translation, let 'left' handle it */
-            top: auto;
-            bottom: calc(var(--safe-area-inset-bottom) + 15px + 40px + 10px); /* Position it above the icon and padding */
-            /* Ensure text is visible in collapsed state */
-            width: auto;
-            min-width: 180px;
-            max-width: 250px;
+        .bot-message ul li {
+            list-style-type: disc;
         }
-    }
-    
-    .profile-menu-item {
-        padding: 12px 15px;
-        border-radius: 0;
-        border-bottom: 1px solid var(--border-color);
-    }
-    
-    .profile-menu-item:last-child {
-        border-bottom: none;
-    }
 
-    /* Heart rate panel mobile styles */
-    .heart-rate-panel {
-        position: fixed;
-        top: auto;
-        bottom: calc(80px + var(--safe-area-inset-bottom));
-        right: 15px;
-        left: 15px;
-        width: auto;
-        max-width: 350px;
-        margin: 0 auto;
-    }
+        .bot-message ol li {
+            list-style-type: decimal;
+        }
 
-    /* Settings dropdown mobile styles */
-    .settings-dropdown {
-        width: 95%;
-        max-width: none;
-    }
+        /* Heart Rate Panel Styles - Now in top-right corner */
+        .heart-rate-panel {
+            position: fixed;
+            top: calc(70px + var(--safe-area-inset-top)); /* Adjust for safe area */
+            right: calc(20px + var(--safe-area-inset-right)); /* Adjust for safe area */
+            background: var(--bg-darker);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            width: 280px;
+            z-index: 1000;
+            border: 1px solid var(--border-color);
+            display: none;
+            transform: translateY(-10px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
 
-    /* Fix mobile scrolling - ensuring body and main-content can scroll */
-    body, html {
-        overflow: hidden; /* Keep body overflow hidden to prevent double scrollbar */
-        height: 100%;
-    }
+        .heart-rate-panel.visible {
+            display: block;
+            transform: translateY(0);
+            opacity: 1;
+        }
 
-    .main-content {
-        overflow-y: auto; /* Enable scrolling for main content */
-        -webkit-overflow-scrolling: touch;
-        height: 100%; /* Fill available height for scrolling */
-    }
+        .heart-rate-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
 
-    .chat-box {
-        overflow-y: scroll; /* Allow chat messages to scroll */
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 20px; /* Ensure space below messages */
-    }
-}
+        .heart-rate-header h3 {
+            margin: 0;
+            font-size: 16px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-/* Animation for heart rate button when active */
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-}
+        .heart-rate-header h3 i {
+            font-size: 18px;
+            color: var(--error-color);
+        }
 
-.heart-rate-button.pulse {
-    animation: pulse 1s infinite;
-}
-</style>
+        .heart-rate-content {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .heart-rate-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            padding: 10px;
+            background: var(--bg-darkest);
+            border-radius: 10px;
+        }
+
+        .current-hr {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--error-color);
+            font-family: 'Courier New', monospace;
+        }
+
+        .hr-status {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .heart-rate-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .heart-rate-btn {
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .heart-rate-btn i {
+            font-size: 14px;
+        }
+
+        .heart-rate-btn.connect {
+            background: var(--primary-dark); /* Connect uses primary-dark */
+        }
+
+        .heart-rate-btn.disconnect {
+            background: var(--text-muted);
+        }
+
+        .heart-rate-btn.analyze {
+            background: var(--success-color);
+        }
+
+        .heart-rate-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .heart-rate-btn:active {
+            transform: translateY(0);
+        }
+
+        .heart-rate-btn:disabled {
+            background: var(--border-color);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .manual-hr-input {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        #manual-hr {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-darkest);
+            color: var(--text-light);
+            font-size: 14px;
+            outline: none;
+            min-height: 44px;
+        }
+
+        #manual-hr:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2);
+        }
+
+        #submit-hr {
+            padding: 10px 15px;
+            background: var(--primary-dark); /* Submit uses primary-dark */
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            min-height: 44px;
+            min-width: 80px;
+            transition: all 0.3s ease;
+        }
+
+        #submit-hr:hover {
+            background: var(--primary-color); /* Hover to primary color */
+            transform: translateY(-1px);
+        }
+
+        .hr-history {
+            margin-top: 10px;
+            max-height: 120px;
+            overflow-y: auto;
+            background: var(--bg-darkest);
+            border-radius: 10px;
+            padding: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) var(--bg-darker);
+        }
+
+        .hr-history::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .hr-history::-webkit-scrollbar-track {
+            background: var(--bg-darker);
+        }
+
+        .hr-history::-webkit-scrollbar-thumb {
+            background-color: var(--primary-color);
+            border-radius: 3px;
+        }
+
+        .hr-history h4 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .hr-history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .hr-history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 10px;
+            background: var(--bg-darker);
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .hr-history-item:hover {
+            background: var(--border-color);
+            transform: translateX(2px);
+        }
+
+        .hr-history-value {
+            font-weight: bold;
+            color: var(--error-color);
+            font-family: 'Courier New', monospace;
+        }
+
+        .bluetooth-note {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 10px;
+            line-height: 1.4;
+        }
+
+        /* Delete Confirmation Modal */
+        .delete-modal-overlay {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7); /* Dark semi-transparent background */
+            z-index: 2500; /* Higher than other overlays */
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .delete-modal-overlay.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .delete-modal-content {
+            background: var(--bg-darkest);
+            border-radius: 12px;
+            padding: 25px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            transform: translateY(20px);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            color: var(--text-light);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box; /* Ensure padding doesn't make it overflow */
+        }
+
+        .delete-modal-overlay.show .delete-modal-content {
+            transform: translateY(0);
+        }
+
+        .delete-modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--text-light);
+            margin-bottom: 15px;
+        }
+
+        .delete-modal-message {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+        /* Highlight the item name in the message */
+        .delete-modal-message strong {
+            color: var(--primary-color);
+        }
+
+
+        .delete-modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+        }
+
+        .delete-modal-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            min-height: 44px; /* Ensure good touch target */
+        }
+
+        .delete-modal-btn.cancel {
+            background: var(--bg-darker);
+            color: var(--text-light);
+            border: 1px solid var(--border-color);
+        }
+
+        .delete-modal-btn.cancel:hover {
+            background: var(--border-color);
+        }
+
+        .delete-modal-btn.delete {
+            background: var(--error-color);
+            color: white;
+            border: none;
+        }
+
+        .delete-modal-btn.delete:hover {
+            background: #cc3939; /* A slightly darker red */
+        }
+
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: -280px;
+                bottom: 0;
+                z-index: 1000;
+                width: 280px;
+                transition: transform 0.3s ease;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+                /* Ensure sidebar also respects safe areas on iOS */
+                padding-top: var(--safe-area-inset-top);
+                padding-bottom: var(--safe-area-inset-bottom);
+                height: 100%; /* Fill available height */
+            }
+
+            .sidebar.open {
+                transform: translateX(280px);
+            }
+
+            .sidebar.collapsed { /* On mobile, collapsed sidebar is still just closed */
+                width: 280px;
+                left: -280px;
+            }
+
+            .sidebar.collapsed.open { /* When sidebar is opened on mobile, it should be full width */
+                transform: translateX(280px);
+            }
+
+
+            .sidebar-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .overlay.active {
+                display: block;
+            }
+
+            .main-container {
+                flex-direction: column;
+                height: auto; /* Allow content to dictate height, but responsive to keyboard */
+                width: 100%;
+                padding: 10px;
+                /* Remove bottom padding here, it's now applied to input-container */
+                padding-bottom: 0; 
+                /* Added padding-bottom to input-container directly */
+            }
+            
+            .chat-container {
+                width: 100%;
+                /* Height here needs to dynamically adjust to keyboard.
+                    Using flex-grow on chat-box and proper padding on input-container helps.
+                    This is a complex mobile browser issue often requiring JS for perfect fit. */
+                height: 100%; /* Allow chat-box to scroll within this */
+                position: relative; /* Ensure it respects its parent's height */
+            }
+            
+            .pre-prompts {
+                flex-direction: row; /* Ensure row direction */
+                flex-wrap: nowrap; /* Prevent wrapping on mobile */
+                justify-content: flex-start; /* Align to start on mobile */
+                overflow-x: auto;
+                padding-bottom: 10px;
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+                scroll-snap-type: x mandatory;
+            }
+
+            .pre-prompts::-webkit-scrollbar {
+                display: none;
+            }
+            
+            .pre-prompts button {
+                width: auto;
+                white-space: nowrap;
+                flex-shrink: 0;
+                scroll-snap-align: start;
+            }
+
+            .bot-message table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            .welcome-message {
+                padding: 30px 15px;
+                font-size: 16px;
+            }
+
+            .welcome-message h1 {
+                font-size: 24px;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+
+            .input-container {
+                padding: 15px;
+                /* Crucial: Add safe area inset to the *bottom* of the input container
+                    so the entire input area is visible above the home indicator/keyboard */
+                padding-bottom: calc(15px + var(--safe-area-inset-bottom));
+                position: sticky; /* Keep it at the bottom of its scrollable parent */
+                bottom: 0;
+                z-index: 50; /* Ensure it's above chat messages */
+            }
+
+            /* Profile menu mobile styles */
+            /* When sidebar is open on mobile, these elements are stacked vertically */
+            .profile-email-display {
+                margin-bottom: 10px; /* More space from buttons */
+            }
+            .profile-email-display i {
+                display: inline-block; /* Show icon on mobile */
+            }
+
+            .profile-menu-item {
+                padding: 12px 15px;
+                border-radius: 8px; /* Maintain rounded corners */
+                margin-bottom: 8px; /* Space between items */
+            }
+            .profile-menu-item:last-of-type {
+                margin-bottom: 0;
+            }
+            /* The collapsed state for mobile means the sidebar is closed.
+               When open, it behaves like desktop, so no special "pop-out" menu.
+               The previous complex rules for .sidebar.collapsed & should be unnecessary.
+            */
+            /* .sidebar.collapsed & { ... } should be removed or adjusted if still present */
+        }
+
+        /* Animation for heart rate button when active */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .heart-rate-button.pulse {
+            animation: pulse 1s infinite;
+        }
+    </style>
 </head>
 <body>
 <div id="flash-messages-container">
@@ -1871,32 +1781,24 @@
     </div>
     
     <div class="user-profile-section">
-        <div class="profile-label-container" id="profile-menu-btn">
-            <div class="profile-avatar" id="user-avatar"></div>
-            <div class="profile-label" id="profile-label">Loading...</div>
-            <button class="options-btn" id="profile-options-btn" style="display: none;"><i class="fas fa-ellipsis-h"></i></button>
-        </div>
+        <div class="profile-avatar" id="user-avatar"></div>
+        <div class="profile-label" id="profile-label">Loading...</div>
         
-        <div class="user-profile-menu">
-            <div class="profile-menu-dropdown" id="profile-menu-dropdown">
-                <div class="profile-menu-item email-display" id="profile-email-item">
-                    <i class="fas fa-envelope"></i>
-                    <span>user@example.com</span>
-                </div>
-                <button class="profile-menu-item" id="settings-btn">
-                    <i class="fas fa-cog"></i>
-                    <span>Settings</span>
-                </button>
-                <button class="profile-menu-item" id="contact-btn">
-                    <i class="fas fa-envelope"></i>
-                    <span>Contact Us</span>
-                </button>
-                <button class="profile-menu-item" id="logout-btn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </button>
-            </div>
+        <div class="profile-email-display" id="profile-email-item">
+            <i class="fas fa-envelope"></i>
+            <span>user@example.com</span>
         </div>
+        <button class="profile-menu-item" id="settings-btn">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+        </button>
+        <button class="profile-menu-item" id="contact-btn">
+            <i class="fas fa-paper-plane"></i> <span>Contact Us</span>
+        </button>
+        <button class="profile-menu-item" id="logout-btn">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+        </button>
     </div>
 </div>
 
@@ -2085,20 +1987,11 @@
         document.getElementById('heart-rate-button').addEventListener('click', toggleHeartRatePanel);
         document.getElementById('close-hr-panel').addEventListener('click', toggleHeartRatePanel);
         
-        // Profile menu button (both profile label and options button)
-        // Click on the container itself to toggle the profile menu
-        document.getElementById('profile-menu-btn').addEventListener('click', toggleProfileMenu);
-        // Special handler for the three-dots button when sidebar is collapsed
-        document.getElementById('profile-options-btn').addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent the parent profile-menu-btn's click from firing
-            toggleProfileMenu(e); // Still call toggleProfileMenu, but stop propagation here
-        });
-        
-        // Profile menu items
+        // Profile menu items - now directly clickable buttons
         document.getElementById('settings-btn').addEventListener('click', showSettings);
         document.getElementById('contact-btn').addEventListener('click', () => {
             alert('For support, please contact us at support@echoai.com');
-            document.getElementById('profile-menu-dropdown').classList.remove('show');
+            // No need to hide dropdown, as it's not a dropdown anymore
         });
         document.getElementById('logout-btn').addEventListener('click', logout);
         
@@ -2134,22 +2027,11 @@
         
         // Universal click handler to close floating menus when clicking outside
         document.addEventListener('click', (e) => {
-            // Close Profile menu if open and click is outside
-            const profileMenu = document.getElementById('profile-menu-dropdown');
-            const profileBtnContainer = document.getElementById('profile-menu-btn'); 
-            const profileOptionsBtn = document.getElementById('profile-options-btn');
-            
-            // Check if profile menu is open AND the click is outside the menu AND outside both associated buttons
-            if (profileMenu.classList.contains('show') && 
-                !profileMenu.contains(e.target) && 
-                !profileBtnContainer.contains(e.target) &&
-                (profileOptionsBtn && !profileOptionsBtn.contains(e.target))) { 
-                profileMenu.classList.remove('show');
-            }
-
-            // Close all chat history options menus if open and click is outside
+            // Note: Profile menu is no longer a dropdown, so this part is simplified/removed.
+            // Only need to close chat history options menus now.
             document.querySelectorAll('.rename-delete-menu.show').forEach(menu => {
-                // Check if the clicked element is part of the menu or its trigger button
+                // This menu type is now removed, so this selector won't find anything.
+                // It's left for context, but it won't execute if .rename-delete-menu no longer exists.
                 const optionsBtn = menu.previousElementSibling; 
                 if (!menu.contains(e.target) && !optionsBtn.contains(e.target)) {
                     menu.classList.remove('show');
@@ -2160,7 +2042,7 @@
         // Delete modal interaction
         document.getElementById('delete-modal-cancel-btn').addEventListener('click', hideDeleteConfirmation);
         document.getElementById('delete-chat-modal-overlay').addEventListener('click', (e) => {
-            if (e.target.id === 'delete-chat-modal-overlay') { 
+            if (e.target.id === 'delete-chat-modal-overlay') {  
                 hideDeleteConfirmation();
             }
         });
@@ -2172,7 +2054,7 @@
     // Set theme (dark/light)
     function setTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
-        document.body.classList.remove('light-theme'); 
+        document.body.classList.remove('light-theme');  
         if (theme === 'light') {
             document.body.classList.add('light-theme');
         }
@@ -2193,24 +2075,20 @@
         setTheme(savedTheme);
     }
 
-    // Toggle profile menu
-    function toggleProfileMenu(e) {
-        e.stopPropagation(); /* Prevents the document click listener from instantly closing the menu */
-        const profileMenu = document.getElementById('profile-menu-dropdown');
-        
-        // Close any other open chat options menus
-        document.querySelectorAll('.rename-delete-menu.show').forEach(menu => {
-            menu.classList.remove('show');
-        });
-
-        profileMenu.classList.toggle('show');
-    }
+    // No longer toggling a profile dropdown menu directly
+    // This function can be removed or repurposed if needed for future interactive profile elements
+    /* function toggleProfileMenu(e) {
+        // e.stopPropagation(); // Not needed if no dropdown to stop propagation for
+        // const profileMenu = document.getElementById('profile-menu-dropdown');
+        // profileMenu.classList.toggle('show');
+    } */
 
     // Show settings dialog
     function showSettings() {
         document.getElementById('settings-dropdown').classList.add('show');
         document.getElementById('settings-overlay').classList.add('active');
-        document.getElementById('profile-menu-dropdown').classList.remove('show');
+        // No profile menu dropdown to hide now:
+        // document.getElementById('profile-menu-dropdown').classList.remove('show');
     }
 
     // Hide settings dialog
@@ -2222,14 +2100,17 @@
     // Handle window resize
     function handleResize() {
         const sidebar = document.getElementById('sidebar');
-        const profileOptionsBtn = document.getElementById('profile-options-btn');
-        const profileMenuDropdown = document.getElementById('profile-menu-dropdown');
+        // The profileOptionsBtn is now removed, so this logic is simplified
+        // const profileOptionsBtn = document.getElementById('profile-options-btn');
+        // const profileMenuDropdown = document.getElementById('profile-menu-dropdown');
 
         if (sidebar.classList.contains('collapsed') && window.innerWidth > 768) {
-            profileOptionsBtn.style.display = 'flex';
+            // No profileOptionsBtn anymore, so hide relevant elements
+            // profileOptionsBtn.style.display = 'flex'; // This line is effectively removed
+            // profileMenuDropdown.classList.remove('show'); /* Ensure menu closes if sidebar expands */
         } else {
-            profileOptionsBtn.style.display = 'none';
-            profileMenuDropdown.classList.remove('show'); /* Ensure menu closes if sidebar expands */
+            // profileOptionsBtn.style.display = 'none'; // This line is effectively removed
+            // profileMenuDropdown.classList.remove('show'); /* Ensure menu closes if sidebar expands */
         }
 
         if (window.innerWidth > 768) {
@@ -2363,7 +2244,8 @@
         panel.classList.toggle('visible');
         button.classList.toggle('active');
         
-        document.getElementById('profile-menu-dropdown').classList.remove('show');
+        // No profile menu dropdown to hide now:
+        // document.getElementById('profile-menu-dropdown').classList.remove('show');
     }
 
     // Show notification
@@ -2391,17 +2273,19 @@
     // Toggle sidebar collapse state
     function toggleCollapseSidebar() {
         const sidebar = document.getElementById('sidebar');
-        const profileOptionsBtn = document.getElementById('profile-options-btn');
-        const profileMenuDropdown = document.getElementById('profile-menu-dropdown');
+        // profileOptionsBtn and profileMenuDropdown are now removed from HTML
+        // const profileOptionsBtn = document.getElementById('profile-options-btn'); 
+        // const profileMenuDropdown = document.getElementById('profile-menu-dropdown');
 
         sidebar.classList.toggle('collapsed');
         
         if (sidebar.classList.contains('collapsed')) {
-            profileOptionsBtn.style.display = 'flex';
-            profileMenuDropdown.classList.remove('show'); 
+            // If collapsed, hide the user/email text and show only icons for buttons
+            // profileOptionsBtn.style.display = 'flex'; // No longer needed
+            // profileMenuDropdown.classList.remove('show'); // No longer needed
         } else {
-            profileOptionsBtn.style.display = 'none';
-            profileMenuDropdown.classList.remove('show'); 
+            // profileOptionsBtn.style.display = 'none'; // No longer needed
+            // profileMenuDropdown.classList.remove('show'); // No longer needed
         }
 
         const isCollapsed = sidebar.classList.contains('collapsed');
@@ -2520,6 +2404,7 @@
     function addChatSessionToHistory(session, container) {
         const sessionElement = document.createElement('div');
         sessionElement.className = `chat-history-item ${session.id === currentChatId ? 'active' : ''}`;
+        sessionElement.dataset.sessionId = session.id; // Store session ID for easy access
         
         let iconClass = 'fa-comment-alt';
         const firstMessageContent = session.first_message_content ? session.first_message_content.toLowerCase() : '';
@@ -2546,57 +2431,22 @@
         textSpan.textContent = session.title || "New Chat";
         sessionElement.appendChild(textSpan);
 
-        const optionsBtn = document.createElement('button');
-        optionsBtn.className = 'options-btn';
-        optionsBtn.innerHTML = '<i class="fas fa-ellipsis-h"></i>';
-        sessionElement.appendChild(optionsBtn);
-        
-        const menu = document.createElement('div');
-        menu.className = 'rename-delete-menu';
-        menu.innerHTML = `
-            <button class="rename-btn"><i class="fas fa-pencil-alt"></i> Rename</button>
-            <button class="delete-btn"><i class="fas fa-trash-alt"></i> Delete</button>
-        `;
-        sessionElement.appendChild(menu); /* Menu is a child of the sessionElement */
+        // NEW: Add direct delete button
+        const deleteChatBtn = document.createElement('button');
+        deleteChatBtn.className = 'delete-chat-item-btn';
+        deleteChatBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+        sessionElement.appendChild(deleteChatBtn);
 
-        optionsBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); /* Stop propagation to prevent loading chat when clicking options button */
-            
-            /* Close any other open menus */
-            document.querySelectorAll('.rename-delete-menu.show').forEach(openMenu => {
-                if (openMenu !== menu) { /* Don't close self */
-                    openMenu.classList.remove('show');
-                }
-            });
-            menu.classList.toggle('show');
-        });
-        
-        menu.querySelector('.rename-btn').addEventListener('click', async (e) => {
-            e.stopPropagation();
-            menu.classList.remove('show'); /* Hide menu */
-            const newTitle = prompt('Enter new title for this chat:', session.title);
-            if (newTitle && newTitle.trim() !== '' && newTitle.trim() !== session.title) {
-                await renameChatSession(session.id, newTitle.trim());
-            } else if (newTitle !== null) { /* If user clicked OK but entered empty/same title */
-                showFlashMessage('Chat title cannot be empty or the same.', 'info');
-            }
-        });
-
-        menu.querySelector('.delete-btn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            menu.classList.remove('show'); /* Hide menu */
+        deleteChatBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent loading chat when clicking delete
             showDeleteConfirmation(session.id, session.title);
         });
         
-        /* Add click handler to load chat for the main session element, but only if not clicking the options button */
+        /* Add click handler to load chat for the main session element, but only if not clicking the delete button */
         sessionElement.addEventListener('click', async (e) => {
-            /* Check if the click target or any of its parents is the options button or menu */
-            const isClickOnOptionsMenu = e.target.closest('.options-btn') || e.target.closest('.rename-delete-menu');
-            if (!isClickOnOptionsMenu) {
-                /* Before loading, ensure no menus are open */
-                document.querySelectorAll('.rename-delete-menu.show').forEach(openMenu => {
-                    openMenu.classList.remove('show');
-                });
+            // Check if the click target or any of its parents is the delete button
+            const isClickOnDeleteButton = e.target.closest('.delete-chat-item-btn');
+            if (!isClickOnDeleteButton) {
                 await loadChatSession(session.id);
             }
         });
@@ -2620,10 +2470,13 @@
         const modalOverlay = document.getElementById('delete-chat-modal-overlay');
         modalOverlay.classList.remove('show');
         const confirmBtn = document.getElementById('delete-modal-confirm-btn');
-        confirmBtn.onclick = null; 
+        confirmBtn.onclick = null;  
     }
 
     async function renameChatSession(sessionId, newTitle) {
+        // This function is still present but not used in the UI now,
+        // as the rename button was part of the 'three dots' menu.
+        // Keeping it for backend functionality or if you add a rename feature later.
         try {
             const response = await fetch(`/api/chat-sessions/${sessionId}`, {
                 method: 'PUT',
@@ -2670,11 +2523,30 @@
             
             if (data.success) {
                 showFlashMessage('Chat deleted successfully!', 'success');
-                if (data.message.includes('session reset')) {
+                if (data.message.includes('session reset')) { // Check if backend indicates session reset
                     currentChatId = null;
-                    await createNewChat();
+                    await createNewChat(); // Automatically start a new chat if the active one was deleted
+                } else if (currentChatId === sessionId) { // If the deleted chat was the active one, but no reset from backend
+                    currentChatId = null; // Clear current chat
+                    // Try to load the most recent chat if any remain, otherwise create new
+                    if (chatSessions.length > 1) { // More than just the one we're deleting
+                        await fetchChatSessions(); // Re-fetch to get updated list
+                        const remainingSessions = chatSessions.filter(s => s.id !== sessionId);
+                        if (remainingSessions.length > 0) {
+                            const mostRecentRemaining = remainingSessions.reduce((latest, session) => {
+                                return (new Date(session.updated_at) > new Date(latest.updated_at)) ? session : latest;
+                            }, remainingSessions[0]);
+                            currentChatId = mostRecentRemaining.id;
+                            await loadChatSession(currentChatId);
+                        } else {
+                             await createNewChat();
+                        }
+                    } else { // No other chats left, or only one was deleted
+                        await createNewChat();
+                    }
+                } else { // Deleted a chat that was not active
+                    await fetchChatSessions(); // Just refresh the list
                 }
-                await fetchChatSessions();
             } else {
                 showFlashMessage(`Failed to delete chat: ${data.error}`, 'error');
             }
@@ -2683,6 +2555,52 @@
             showFlashMessage('Failed to delete chat. Please try again.', 'error');
         }
     }
+
+    // Function to load a specific chat session's messages
+    async function loadChatSession(sessionId) {
+        if (currentChatId === sessionId) return; // Already on this chat
+
+        try {
+            const response = await fetch(`/api/chat-sessions/${sessionId}/messages`, {
+                method: 'GET',
+                credentials: 'include'
+            });
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const messages = await response.json();
+            
+            currentChatId = sessionId;
+            document.getElementById('chat-box').innerHTML = '';
+            document.getElementById('welcome-message').style.display = 'none';
+
+            messages.forEach(msg => {
+                appendMessage(msg.content, msg.role === 'user' ? 'user-message' : 'bot-message');
+            });
+            document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
+
+            // Update active state in sidebar
+            document.querySelectorAll('.chat-history-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.sessionId === sessionId) {
+                    item.classList.add('active');
+                }
+            });
+
+            if (window.innerWidth <= 768) {
+                toggleSidebar(); // Close sidebar on mobile after loading chat
+            }
+
+        } catch (error) {
+            console.error(`Error loading chat session ${sessionId}:`, error);
+            showFlashMessage('Failed to load chat. Please try again.', 'error');
+        }
+    }
+
 
     document.addEventListener('DOMContentLoaded', async () => {
         try {
@@ -2703,14 +2621,15 @@
                 
                 const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
                 const sidebar = document.getElementById('sidebar');
-                const profileOptionsBtn = document.getElementById('profile-options-btn');
+                // Removed reference to profileOptionsBtn here as it's no longer used
+                // const profileOptionsBtn = document.getElementById('profile-options-btn');
 
                 if (isCollapsed && window.innerWidth > 768) {
                     sidebar.classList.add('collapsed');
-                    profileOptionsBtn.style.display = 'flex';
+                    // profileOptionsBtn.style.display = 'flex'; // No longer needed
                 } else {
                     sidebar.classList.remove('collapsed');
-                    profileOptionsBtn.style.display = 'none';
+                    // profileOptionsBtn.style.display = 'none'; // No longer needed
                 }
                 
                 await fetchChatSessions();
@@ -2780,7 +2699,7 @@
             const emailDisplayItem = document.getElementById('profile-email-item');
 
             if (data && data.username) {
-                profileLabel.textContent = data.username;
+                profileLabel.textContent = data.username; // Display username
                 
                 if (data.profile_picture) {
                     avatar.style.backgroundImage = `url(${data.profile_picture})`;
@@ -2870,9 +2789,9 @@
                 appendMessage(data.message, 'error-message');
                 showFlashMessage(`Chat error: ${data.message}`, 'error');
             } else {
-                appendMessage(data.response, 'bot-message'); 
+                appendMessage(data.response, 'bot-message');  
                 currentChatId = data.chat_session_id;
-                await fetchChatSessions();
+                await fetchChatSessions(); // Re-fetch to update chat title if it was a new chat
                 
                 sendBtn.classList.add('clicked');
                 setTimeout(() => {
@@ -3014,6 +2933,8 @@
         let htmlContent = response;
 
         let tableMatch;
+        // Reset regex lastIndex before each use if using global flag
+        tableRegex.lastIndex = 0; 
         while ((tableMatch = tableRegex.exec(htmlContent)) !== null) {
             const markdownTable = tableMatch[0];
             const lines = markdownTable.split('\n').filter(line => line.trim() !== '');
@@ -3054,7 +2975,7 @@
             tableHtml += '</table>';
 
             htmlContent = htmlContent.replace(markdownTable, tableHtml);
-            tableRegex.lastIndex = 0;  
+            tableRegex.lastIndex = 0; // Reset lastIndex after replacement to re-scan from start
         }
         
         targetElement.innerHTML = formatTextResponse(htmlContent);
@@ -3145,8 +3066,8 @@
                 appendMessage(data.message, 'error-message');
                 showFlashMessage(`Analysis error: ${data.message}`, 'error');
             } else {
-                appendMessage(data.response, 'bot-message'); 
-                currentChatId = data.chat_session_id; 
+                appendMessage(data.response, 'bot-message');  
+                currentChatId = data.chat_session_id;  
                 await fetchChatSessions();
             }
             
@@ -3240,7 +3161,7 @@
                 this.updateUI(true);
                 document.getElementById('analyze-btn').disabled = false;
                 document.getElementById('hr-status').textContent = "Connected";
-                document.getElementById('hr-status').style.color = "#00ff00";
+                document.getElementById('hr-status').style.color = "#00ff00"; // Should use CSS variable like --success-color
                 
                 document.getElementById('heart-rate-button').classList.add('pulse');
                 showNotification("Heart rate monitor connected!", 'success'); /* Changed to showNotification */
@@ -3253,6 +3174,7 @@
                 } else if (error.name === 'NotAllowedError') {
                     errorMessage = 'Bluetooth permission denied by user.';
                 } else if (error.message.includes('Bluetooth is turned off')) {
+                    // Specific message already from the error
                 } else if (error.message.includes('User cancelled the request')) {
                     errorMessage = 'Bluetooth device selection cancelled.';
                 }
@@ -3388,7 +3310,7 @@
             document.getElementById('current-hr').textContent = '--';
             document.getElementById('current-hr').style.color = 'var(--error-color)';
             document.getElementById('hr-status').textContent = "Not connected";
-            document.getElementById('hr-status').style.color = "var(--error-color)";
+            document.getElementById('hr-status').style.color = "var(--error-color)"; // Should use CSS variable like --error-color
             document.getElementById('analyze-btn').disabled = true;
             
             document.getElementById('heart-rate-button').classList.remove('pulse');
