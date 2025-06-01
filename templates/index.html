@@ -209,8 +209,11 @@
         
         .sidebar.collapsed .new-chat-btn span,
         .sidebar.collapsed .chat-history-item span,
-        .sidebar.collapsed .chat-history-date,
-        .sidebar.collapsed .profile-menu-btn span {
+        .sidebar.collapsed .chat-history-date {
+            display: none;
+        }
+        /* Profile label text also hidden when collapsed */
+        .sidebar.collapsed .profile-label {
             display: none;
         }
         
@@ -247,6 +250,7 @@
             background: var(--bg-darkest); /* Keep distinct background for profile section */
             flex-shrink: 0;
             margin-top: auto; /* Push to the bottom */
+            position: relative; /* IMPORTANT: for absolute positioning of dropdown */
         }
 
         .sidebar.collapsed .profile-label-container {
@@ -257,15 +261,18 @@
             height: 40px;
             margin: 0 auto;
             flex-direction: column;
+            /* Allow profile menu to be directly clickable without expanding sidebar */
+            display: flex; /* Ensure it's visible even when collapsed */
         }
 
         .sidebar.collapsed .profile-avatar {
             margin-right: 0;
         }
 
-        .sidebar.collapsed .profile-menu-dropdown {
+        /* REMOVED: This rule prevented the dropdown from showing when collapsed */
+        /* .sidebar.collapsed .profile-menu-dropdown {
             display: none;
-        }
+        } */
 
         .sidebar-header {
             padding: 15px;
@@ -475,6 +482,7 @@
             background: var(--bg-darkest);
             flex-shrink: 0;
             margin-top: auto; /* Push to the bottom */
+            position: relative; /* Crucial for positioning dropdown */
         }
 
         .profile-label-container {
@@ -520,18 +528,32 @@
 
         .profile-menu-dropdown {
             display: none;
-            width: 100%;
+            /* Position absolutely relative to .user-profile-section */
+            position: absolute;
+            bottom: calc(100% + 5px); /* Position above the .profile-label-container + small gap */
+            left: 0; /* Align to the left edge of the parent (.user-profile-section) */
+            /* Or right: 0; if you want it aligned to the right edge */
+            
+            width: 100%; /* Default width when sidebar is open */
+            min-width: 200px; /* Minimum width when sidebar is collapsed */
+            max-width: 250px; /* Maximum width for the dropdown */
+
             background: var(--bg-darkest);
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); /* Stronger shadow for floating element */
             border: 1px solid var(--border-color);
-            margin-top: 5px;
             overflow: hidden;
-            z-index: 10;
+            z-index: 1050; /* Ensure it's above most content */
+            transform: translateY(0); /* Reset transform for smooth transition */
+            opacity: 0;
+            pointer-events: none; /* Disable interaction when hidden */
+            transition: opacity 0.2s ease, transform 0.2s ease;
         }
 
         .profile-menu-dropdown.show {
-            display: block;
+            display: block; /* Make it block to enable transitions */
+            opacity: 1;
+            pointer-events: auto; /* Enable interaction when shown */
         }
 
         .profile-menu-item {
@@ -925,18 +947,11 @@
             display: flex;
             gap: 10px;
             margin-bottom: 15px; /* Ensure space above input */
-            justify-content: center;
-            flex-wrap: wrap;
+            justify-content: center; /* Default for desktop */
+            flex-wrap: wrap; /* Default for desktop */
             opacity: 1;
             transition: opacity 0.3s ease, height 0.3s ease, margin-bottom 0.3s ease;
             overflow: hidden; /* Hide content when collapsed */
-        }
-
-        .pre-prompts.hidden-on-focus {
-            opacity: 0;
-            height: 0;
-            margin-bottom: 0;
-            pointer-events: none; /* Disable interaction when hidden */
         }
 
         .pre-prompts button {
@@ -1517,9 +1532,9 @@
             }
             
             .pre-prompts {
-                flex-direction: row;
-                align-items: center;
-                justify-content: flex-start;
+                flex-direction: row; /* Ensure row direction */
+                flex-wrap: nowrap; /* Prevent wrapping on mobile */
+                justify-content: flex-start; /* Align to start on mobile */
                 overflow-x: auto;
                 padding-bottom: 10px;
                 scrollbar-width: none;
@@ -1569,12 +1584,7 @@
 
             /* Profile menu mobile styles */
             .profile-menu-dropdown {
-                position: static;
-                margin-top: 10px;
-                box-shadow: none;
-                border: none;
-                padding: 0;
-                background: transparent;
+                /* No changes needed here, handled by global .profile-menu-dropdown positioning */
             }
             
             .profile-menu-item {
@@ -1857,23 +1867,14 @@
                     const message = targetButton.dataset.prompt;
                     const userInputElement = document.getElementById('user-input');
                     userInputElement.value = message;
-                    userInputElement.dispatchEvent(new Event('input')); // Trigger input event for auto-resize/pre-prompt hide
+                    userInputElement.dispatchEvent(new Event('input')); // Trigger input event for auto-resize
                     sendMessage();
                 });
             });
             
             // Chat input (now textarea)
             const userInputElement = document.getElementById('user-input');
-            const prePrompts = document.getElementById('pre-prompts');
-
-            userInputElement.addEventListener('focus', () => {
-                prePrompts.classList.add('hidden-on-focus');
-            });
-            userInputElement.addEventListener('blur', () => {
-                if (userInputElement.value.trim() === '') {
-                    prePrompts.classList.remove('hidden-on-focus');
-                }
-            });
+            const prePrompts = document.getElementById('pre-prompts'); /* Added prePrompts variable */
 
             userInputElement.addEventListener('keypress', (e) => {
                 // Allow Shift+Enter for new line, Enter to send
@@ -1886,12 +1887,6 @@
                 // Auto-resize textarea based on content
                 userInputElement.style.height = 'auto';
                 userInputElement.style.height = userInputElement.scrollHeight + 'px';
-                // Hide pre-prompts immediately if user starts typing
-                if (userInputElement.value.trim() !== '') {
-                    prePrompts.classList.add('hidden-on-focus');
-                } else {
-                    prePrompts.classList.remove('hidden-on-focus');
-                }
             });
 
             document.getElementById('send-btn').addEventListener('click', () => {
@@ -1948,6 +1943,8 @@
                 const profileMenu = document.getElementById('profile-menu-dropdown');
                 const profileBtn = document.getElementById('profile-menu-btn');
                 
+                // Check if the click is outside the profile menu AND outside the profile button
+                // This ensures clicks on the button toggle it, and clicks outside close it.
                 if (profileMenu.classList.contains('show') && !profileMenu.contains(e.target) && !profileBtn.contains(e.target)) {
                     profileMenu.classList.remove('show');
                 }
@@ -1985,8 +1982,9 @@
 
         // Toggle profile menu
         function toggleProfileMenu(e) {
-            e.stopPropagation();
-            document.getElementById('profile-menu-dropdown').classList.toggle('show');
+            e.stopPropagation(); // Prevent document click listener from immediately closing it
+            const profileMenu = document.getElementById('profile-menu-dropdown');
+            profileMenu.classList.toggle('show');
         }
 
         // Show settings dialog
@@ -2584,7 +2582,7 @@
             const userInputElement = document.getElementById("user-input");
             const userInput = userInputElement.value.trim();
             const sendBtn = document.getElementById("send-btn");
-            const prePrompts = document.getElementById('pre-prompts');
+            /* const prePrompts = document.getElementById('pre-prompts'); // Removed prePrompts variable as its logic is removed */
 
             if (userInput === "" || isWaitingForResponse) return;
 
@@ -2601,8 +2599,7 @@
             userInputElement.style.height = 'auto'; // Reset textarea height
             userInputElement.focus(); // Keep focus on textarea, might open keyboard
             
-            // Hide pre-prompts and disable send button immediately
-            prePrompts.classList.add('hidden-on-focus');
+            // Enable loading state for send button and disable it
             sendBtn.classList.add('loading');
             sendBtn.disabled = true;
             isWaitingForResponse = true;
@@ -2655,10 +2652,6 @@
                 isWaitingForResponse = false;
                 sendBtn.classList.remove('loading');
                 sendBtn.disabled = false;
-                // Re-evaluate pre-prompts visibility after response if input is empty
-                if (userInputElement.value.trim() === '') {
-                    prePrompts.classList.remove('hidden-on-focus');
-                }
             }
         }
 
@@ -2911,13 +2904,13 @@
             
             const currentHR = hrHistory[0].rate;
             const sendBtn = document.getElementById("send-btn");
-            const prePrompts = document.getElementById('pre-prompts');
+            /* const prePrompts = document.getElementById('pre-prompts'); // Removed prePrompts variable as its logic is removed */
 
             const typingIndicator = showTypingIndicator();
             isWaitingForResponse = true;
             sendBtn.classList.add('loading');
             sendBtn.disabled = true;
-            prePrompts.classList.add('hidden-on-focus'); // Ensure pre-prompts are hidden during analysis request too
+            /* prePrompts.classList.add('hidden-on-focus'); // Removed as per new logic */
             
             try {
                 // Prepare the prompt for GPT-3.5
@@ -2969,10 +2962,6 @@
                 isWaitingForResponse = false;
                 sendBtn.classList.remove('loading');
                 sendBtn.disabled = false;
-                // Re-evaluate pre-prompts visibility after response if input is empty
-                if (document.getElementById('user-input').value.trim() === '') {
-                    prePrompts.classList.remove('hidden-on-focus');
-                }
             }
         }
 
