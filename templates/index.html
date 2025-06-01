@@ -751,6 +751,8 @@
             min-height: 44px;
             min-width: 44px;
             position: relative;
+            /* Ensure the icon itself is centered and fully visible */
+            line-height: 1; 
         }
 
         .heart-rate-button:hover {
@@ -964,22 +966,7 @@
             }
         }
 
-        .message-timestamp {
-            font-size: 10px;
-            color: var(--text-muted); /* Default muted text */
-            align-self: flex-end; /* Align timestamp to the right within the message bubble */
-            margin-top: 5px; /* Space between message content and timestamp */
-            opacity: 0.8;
-            flex-shrink: 0;
-        }
-        /* Specific colors for timestamps within user/bot messages based on background contrast */
-        .user-message .message-timestamp {
-            color: rgba(255, 255, 255, 0.7); /* Lighter white for user messages on primary-dark */
-        }
-        [data-theme="light"] .user-message .message-timestamp {
-            color: rgba(255, 255, 255, 0.7); /* Keep light for user messages in light mode too, as user message bg is still primary-color */
-        }
-
+        /* Removed .message-timestamp styles entirely as per request */
         .input-container {
             display: flex;
             flex-direction: column;
@@ -1662,7 +1649,7 @@
             .heart-rate-panel {
                 position: fixed;
                 top: auto;
-                bottom: calc(80px + var(--safe-area-inset-bottom)); /* Pushed up above input area */
+                bottom: calc(15px + var(--safe-area-inset-bottom)); /* Pushed up above input area, more space */
                 right: 15px;
                 left: 15px;
                 width: auto;
@@ -2699,7 +2686,7 @@
                 welcomeMessage.style.display = "none";
             }
 
-            // Append user message with current timestamp
+            // Append user message
             appendMessage(userInput, 'user-message');
             userInputElement.value = ""; // Clear textarea
             userInputElement.style.height = 'auto'; // Reset textarea height
@@ -2788,11 +2775,12 @@
             
             messageBody.appendChild(messageTextContent);
 
-            const timestamp = document.createElement('div');
-            timestamp.classList.add('message-timestamp');
-            const now = new Date();
-            timestamp.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            messageBody.appendChild(timestamp);
+            // Removed timestamp creation and appending here as per request
+            // const timestamp = document.createElement('div');
+            // timestamp.classList.add('message-timestamp');
+            // const now = new Date();
+            // timestamp.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            // messageBody.appendChild(timestamp);
 
             message.appendChild(messageBody);
 
