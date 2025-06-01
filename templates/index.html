@@ -79,7 +79,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            font-family: -apple-system, BlinkMacMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             -webkit-tap-highlight-color: transparent;
             -webkit-font-smoothing: antialiased;
         }
@@ -237,6 +237,10 @@
             padding: 12px;
             display: flex;
             justify-content: center;
+            /* Hide the delete button when collapsed for space */
+            .delete-btn {
+                display: none;
+            }
         }
 
         .sidebar.collapsed .user-profile-section {
@@ -251,6 +255,7 @@
             flex-shrink: 0;
             margin-top: auto; /* Push to the bottom */
             position: relative; /* IMPORTANT: for absolute positioning of dropdown */
+            overflow: visible; /* Allow the profile menu to pop out */
         }
 
         .sidebar.collapsed .profile-label-container {
@@ -393,6 +398,7 @@
             color: var(--text-light); /* Default text color */
             position: relative;
             transition: all 0.2s ease;
+            justify-content: space-between; /* Space out icon/text and delete button */
         }
 
         .chat-history-item span {
@@ -400,7 +406,8 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            min-width: 0; /* Crucial: Allows text to shrink */
+            min-width: 0; /* Crucial: Allows text to shrink and not overlap delete button */
+            padding-right: 30px; /* Provide space for the delete button */
         }
 
         .chat-history-item:hover {
@@ -427,14 +434,14 @@
 
         .chat-history-item .delete-btn {
             position: absolute;
-            right: 10px;
+            right: 5px; /* Position delete button slightly inwards */
             top: 50%;
             transform: translateY(-50%);
             background: transparent;
             border: none;
             color: var(--text-muted);
             cursor: pointer;
-            opacity: 0;
+            opacity: 0; /* Hidden by default */
             transition: opacity 0.2s;
             min-height: 44px;
             min-width: 44px;
@@ -442,10 +449,11 @@
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+            z-index: 10; /* Ensure it's above text */
         }
 
         .chat-history-item:hover .delete-btn {
-            opacity: 1;
+            opacity: 1; /* Show on hover */
         }
 
         .chat-history-item .delete-btn:hover {
@@ -483,6 +491,7 @@
             flex-shrink: 0;
             margin-top: auto; /* Push to the bottom */
             position: relative; /* Crucial for positioning dropdown */
+            overflow: visible; /* Allow the dropdown to be visible outside its bounds */
         }
 
         .profile-label-container {
@@ -493,6 +502,7 @@
             border-radius: 8px;
             cursor: pointer;
             transition: background-color 0.2s;
+            justify-content: flex-start; /* Align content to the left */
         }
 
         .profile-label-container:hover {
@@ -524,64 +534,49 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            min-width: 0; /* Allow text to truncate */
         }
 
         .profile-menu-dropdown {
-    display: none;
-    position: absolute;
-    bottom: calc(100% + 5px); /* Position above the .profile-label-container + small gap */
-    /* REMOVE or comment out the 'left: 0;' or 'right: 0;' if it's there */
-    /* left: 0; */
-    /* right: 0; */ /* These are problematic when sidebar is collapsed */
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 5px); /* Position above the .profile-label-container + small gap */
+            
+            /* Align with the padding of the user-profile-section */
+            left: 15px;
+            right: 15px;
+            width: auto; /* Let left/right define width, but respect min/max */
 
-    width: 100%; /* Default width when sidebar is open */
-    min-width: 200px; /* Minimum width for the dropdown */
-    max-width: 250px; /* Maximum width for the dropdown */
+            min-width: 200px; /* Minimum width when it expands */
+            max-width: 250px; /* Maximum width for the dropdown */
 
-    background: var(--bg-darkest);
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    border: 1px solid var(--border-color);
-    overflow: hidden;
-    z-index: 1050;
-    transform: translateY(0);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
+            background: var(--bg-darkest);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); /* Stronger shadow for floating element */
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            z-index: 1050; /* Ensure it's above most content */
+            opacity: 0;
+            pointer-events: none; /* Disable interaction when hidden */
+            transition: opacity 0.2s ease, transform 0.2s ease; /* Keep transition for smooth appearance */
+        }
 
         .profile-menu-dropdown.show {
             display: block; /* Make it block to enable transitions */
             opacity: 1;
             pointer-events: auto; /* Enable interaction when shown */
         }
-        .sidebar.collapsed .user-profile-section {
-    /* Ensure it's still a positioning context for the dropdown */
-    position: relative;
-    /* Center the avatar/button within the collapsed sidebar's width */
-    align-items: center;
-    justify-content: center;
-    padding: 10px; /* Adjust padding as needed */
-}
 
-.sidebar.collapsed .profile-menu-dropdown {
-    /* This rule specifically handles positioning when the sidebar is collapsed */
-    left: calc(var(--sidebar-collapsed) + 10px); /* Position to the right of the collapsed sidebar + some margin */
-    bottom: 10px; /* Adjust as needed, e.g., align with bottom of sidebar */
-    transform-origin: bottom left; /* Adjust transform origin for animations */
-    /* Also ensure the width is appropriate */
-    width: max-content; /* Allow content to dictate width, but respect min/max */
-    min-width: 200px; /* Keep the min-width */
-    max-width: 250px;
-}
-
-/* Optional: Hide the default dropdown icon if present in collapsed state for cleaner look */
-.sidebar.collapsed .profile-label-container i.fa-chevron-up,
-.sidebar.collapsed .profile-label-container i.fa-chevron-down {
-    display: none;
-}
-        
+        /* Specific positioning for collapsed sidebar */
+        .sidebar.collapsed .profile-menu-dropdown {
+            left: calc(var(--sidebar-collapsed) + 10px); /* Position to the right of the collapsed sidebar */
+            bottom: 10px; /* Align it visually with the bottom of the collapsed section */
+            /* Ensure it has enough width and isn't constrained by collapsed parent */
+            width: max-content; /* Allow content to dictate width */
+            min-width: 200px;
+            max-width: 250px;
+            transform: none; /* Reset any previous transforms */
+        }
 
         .profile-menu-item {
             width: 100%;
@@ -610,6 +605,25 @@
         .profile-menu-item i {
             width: 20px;
             text-align: center;
+        }
+
+        /* Style for the non-clickable email item */
+        .profile-menu-item.profile-email {
+            cursor: default; /* Not clickable */
+            opacity: 0.8; /* Slightly muted */
+            font-size: 0.9em; /* Slightly smaller */
+            background: transparent; /* Ensure no hover effect */
+        }
+        .profile-menu-item.profile-email:hover {
+            background: transparent;
+        }
+
+        /* Ensure text inside profile menu items also truncates if too long */
+        .profile-menu-item span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0; /* Essential for flex items to shrink */
         }
 
         /* Settings dropdown */
@@ -1503,7 +1517,7 @@
             .sidebar {
                 position: fixed;
                 top: 0;
-                left: -280px;
+                left: -280px; /* Initially off-screen */
                 bottom: 0;
                 z-index: 1000;
                 width: 280px;
@@ -1516,9 +1530,14 @@
             }
 
             .sidebar.open {
-                transform: translateX(280px);
+                transform: translateX(280px); /* Slide in */
             }
 
+            /* When the sidebar is collapsed on mobile, it means it's hidden.
+               The user-profile-section and its dropdown should thus be hidden too.
+               If we are referring to the *visual style* of collapsed on desktop,
+               but the sidebar is open on mobile, then the above .sidebar.open rules apply.
+            */
             .sidebar.collapsed {
                 width: 280px; /* Keep consistent width for mobile sidebar */
                 left: -280px; /* Hidden position */
@@ -1611,7 +1630,10 @@
 
             /* Profile menu mobile styles */
             .profile-menu-dropdown {
-                /* No changes needed here, handled by global .profile-menu-dropdown positioning */
+                /* When the sidebar is mobile-open, the dropdown should be within it */
+                left: 15px; /* Aligned with sidebar padding */
+                right: 15px; /* Aligned with sidebar padding */
+                width: auto; /* Let left/right define width */
             }
             
             .profile-menu-item {
@@ -1711,13 +1733,16 @@
             </div>
         
         <div class="user-profile-section">
-        <div class="profile-label-container" id="profile-menu-btn">
-            <div class="profile-avatar" id="user-avatar"></div>
-            <div class="profile-label" id="profile-label">Loading...</div>
-        </div>
-        
-        <div class="user-profile-menu">
+            <div class="profile-label-container" id="profile-menu-btn">
+                <div class="profile-avatar" id="user-avatar"></div>
+                <div class="profile-label" id="profile-label">Loading...</div>
+            </div>
+            
             <div class="profile-menu-dropdown" id="profile-menu-dropdown">
+                <div class="profile-menu-item profile-email" id="profile-email-item">
+                    <i class="fas fa-envelope"></i>
+                    <span>user@example.com</span>
+                </div>
                 <button class="profile-menu-item" id="settings-btn">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
@@ -1731,7 +1756,6 @@
                     <span>Logout</span>
                 </button>
             </div>
-        </div>
         </div>
     </div>
 
@@ -2341,11 +2365,23 @@
                 iconClass = 'fa-notes-medical';
             }
             
-            sessionElement.innerHTML = `
-                <i class="fas ${iconClass}"></i>
-                <span>${session.title || "New Chat"}</span>
-            `;
-            
+            // Create a wrapper for icon and text to ensure proper flex behavior
+            const textWrapper = document.createElement('div');
+            textWrapper.style.display = 'flex';
+            textWrapper.style.alignItems = 'center';
+            textWrapper.style.gap = '8px';
+            textWrapper.style.flexGrow = '1';
+            textWrapper.style.minWidth = '0'; // Allow text to shrink
+
+            const iconElement = document.createElement('i');
+            iconElement.className = `fas ${iconClass}`;
+            textWrapper.appendChild(iconElement);
+
+            const titleSpan = document.createElement('span');
+            titleSpan.textContent = session.title || "New Chat";
+            textWrapper.appendChild(titleSpan);
+
+            sessionElement.appendChild(textWrapper);
             sessionElement.dataset.id = session.id;
             
             // Add delete button
@@ -2573,10 +2609,10 @@
 
                     // Prepend email to the profile menu dropdown only if it doesn't exist
                     if (!document.getElementById('profile-email-item')) {
-                        const emailItem = document.createElement('button');
-                        emailItem.className = 'profile-menu-item';
+                        // Changed to div
+                        const emailItem = document.createElement('div');
+                        emailItem.className = 'profile-menu-item profile-email'; // Added new class 'profile-email'
                         emailItem.id = 'profile-email-item'; // Add ID to easily check existence
-                        emailItem.disabled = true; // Make it non-clickable
                         emailItem.innerHTML = `
                             <i class="fas fa-envelope"></i>
                             <span>${data.email || 'user@example.com'}</span>
@@ -2751,7 +2787,7 @@
                         inUnorderedList = true;
                         inOrderedList = false; // Close ordered if open
                     }
-                    formattedLines.push(`<li>${trimmedLine.substring(1).trim()}</li>`);
+                    formattedLines.push(`<li>${trimmedLine.substring(trimmedLine.indexOf(trimmedLine.match(/^[\*\-]\s/)[0]) + trimmedLine.match(/^[\*\-]\s/)[0].length).trim()}</li>`);
                 }
                 // Check for ordered list items
                 else if (trimmedLine.match(/^\d+\.\s/)) {
