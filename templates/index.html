@@ -187,21 +187,18 @@
         }
 
         /* Sidebar styles */
-        /* Sidebar styles */
-       .sidebar {
-  width: var(--sidebar-width);
-  background: var(--bg-darker);
-  border-right: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow-y: auto;       /* ✅ allows scroll inside */
-  overflow-x: hidden;
-  transition: all 0.3s ease;
-  position: relative;
-  z-index: 1000;
-  flex-shrink: 0;          /* ✅ prevent sidebar from shrinking */
-}
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-darker); /* Use darker shade for sidebar background */
+            border-right: 1px solid var(--bg-dark); /* Blend border with main background */
+            display: flex;
+            flex-direction: column;
+            height: 100%; /* Fill remaining viewport height */
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1000;
+        }
 
         .sidebar.collapsed {
             width: var(--sidebar-collapsed);
@@ -870,7 +867,7 @@
         .message {
             padding: 15px; /* Base padding for message content area */
             border-radius: 18px;
-            max-width: 75%; /* Adjusted max-width */
+            max-width: 75%; /* Adjusted max-width for chat bubbles */
             min-width: 80px; /* Ensure a minimum width for short messages like "Hi" */
             width: fit-content;
             word-wrap: break-word; /* Ensure long words break */
@@ -899,7 +896,7 @@
             flex-direction: row; /* Avatar and message content side-by-side */
             align-items: flex-start;
             gap: 10px;
-            max-width: 75%; /* Adjusted max-width */
+            max-width: 75%; /* Adjusted max-width for chat bubbles */
             min-width: 80px; /* Also ensure a minimum width for short bot messages */
             width: fit-content;
             padding: 10px; /* Adjust padding due to avatar */
@@ -980,7 +977,7 @@
             }
         }
 
-        /* Removed .message-timestamp styles as they are no longer needed */
+        /* REMOVED .message-timestamp styles as they are no longer needed */
 
         .input-container {
             display: flex;
@@ -1819,7 +1816,7 @@
     <div class="main-content" id="main-content">
         <div class="header">
             <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
-            <div>Echo AI</div>
+            <div class="header-title-center">Echo AI</div>
             <button class="heart-rate-button" id="heart-rate-button" aria-label="Heart rate monitor"><i class="fas fa-heartbeat"></i></button>
         </div>
 
@@ -1980,7 +1977,11 @@
             // Overlay click to close sidebar on mobile
             document.getElementById('overlay').addEventListener('click', () => {
                 if (window.innerWidth <= 768) {
-                    toggleSidebar();
+                    const sidebar = document.getElementById('sidebar');
+                    const overlay = document.getElementById('overlay');
+                    if (sidebar.classList.contains('open')) {
+                        toggleSidebar(); // Close sidebar if it's open and overlay is clicked
+                    }
                 }
             });
 
@@ -3064,7 +3065,7 @@
                 
             } catch (error) {
                 chatBox.removeChild(typingIndicator);
-                appendMessage(`Error: ${error.message}`, 'error-message');
+                appendMessage(`Analysis error: ${error.message}`, 'error-message');
                 console.error('Analysis error:', error);
                 showFlashMessage(`Failed to get analysis: ${error.message}`, 'error');
             } finally {
