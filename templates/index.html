@@ -202,7 +202,8 @@
 
         .sidebar.collapsed .sidebar-header-text,
         .sidebar.collapsed .chat-history-search,
-        .sidebar.collapsed .chat-history {
+        .sidebar.collapsed .chat-history,
+        .sidebar.collapsed .profile-label { /* Hiding the full profile label text */
             display: none;
         }
         
@@ -210,10 +211,6 @@
         .sidebar.collapsed .chat-history-item span,
         .sidebar.collapsed .chat-history-date {
             display: none;
-        }
-        /* Profile label text also hidden when collapsed */
-        .sidebar.collapsed .profile-label {
-            display: none; /* Hide the full username/email */
         }
         
         /* Adjustments to visible elements in collapsed state */
@@ -424,14 +421,12 @@
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
+            /* gap: 8px; Removed, let flex grow and margin manage space */
             color: var(--text-light); /* Default text color */
             position: relative; /* For the options menu to position relative to it */
             transition: all 0.2s ease;
-            /* Remove fixed white-space to allow ellipsis */
-            /* white-space: nowrap; */ 
-            overflow: hidden; /* Hide overflow */
-            /* text-overflow: ellipsis; Already on span */
+            /* overflow: hidden; Removed from parent, applied to span */
+            /* text-overflow: ellipsis; Removed from parent, applied to span */
         }
 
         .chat-history-item span {
@@ -440,7 +435,7 @@
             overflow: hidden; /* Hide overflow */
             text-overflow: ellipsis; /* Add ellipsis for long titles */
             min-width: 0; /* Crucial: Allows text to shrink */
-            margin-right: 5px; /* Space for the options button */
+            /* margin-right: 5px; Removed, let options-btn position control gap */
         }
 
         .chat-history-item:hover {
@@ -465,6 +460,7 @@
             font-size: 14px;
             color: var(--text-muted);
             flex-shrink: 0;
+            margin-right: 8px; /* Standard gap for the icon */
         }
 
         .chat-history-item.active i {
@@ -488,10 +484,23 @@
             transition: opacity 0.2s, transform 0.2s;
             transform: translateX(5px); /* Slightly off-screen */
             flex-shrink: 0;
-            /* margin-left: auto; Removed, let parent flex manage */
-            position: relative; /* To position its own dropdown */
-            z-index: 5; /* Ensure clickable above parent hover */
+            position: absolute; /* Position relative to .chat-history-item */
+            right: 5px; /* Adjust to sit inside the item padding */
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10; /* Ensure it's clickable above text */
         }
+        /* Specific rule for profile options button */
+        #profile-options-btn {
+            position: absolute; /* Relative to profile-label-container */
+            right: 0; /* Align to the right of profile-label-container */
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10; /* Ensure clickable */
+            opacity: 1; /* Always visible if JS sets display to flex */
+            display: none; /* Controlled by JS initially */
+        }
+
 
         .options-btn:hover {
             color: var(--text-light);
@@ -500,7 +509,7 @@
         .rename-delete-menu {
             display: none; /* Controlled by JS 'show' class */
             position: absolute;
-            right: 0; /* Align to the right of the options button */
+            right: 0; /* Align to the right of the options button (its parent) */
             top: 100%; /* Position below the options button */
             background: var(--bg-darkest);
             border-radius: 8px;
@@ -540,6 +549,25 @@
 
         .rename-delete-menu button:last-child:hover {
             background: rgba(255, 77, 77, 0.2);
+        }
+
+        /* Profile menu dropdown specific styling for the email display */
+        .profile-menu-item.email-display {
+            background: transparent;
+            color: var(--text-muted); /* Muted text for email */
+            cursor: default; /* Not clickable */
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px; /* Slightly smaller */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .profile-menu-item.email-display:hover {
+            background: transparent; /* No hover effect */
+        }
+        .profile-menu-item.email-display i {
+            color: var(--text-muted); /* Ensure icon color matches */
         }
 
 
@@ -1756,7 +1784,7 @@
                 .sidebar.collapsed & { /* This syntax won't work in plain CSS. Requires nesting. */
                                         /* This indicates a fixed position is better if it breaks out. */
                     position: fixed;
-                    left: calc(var(--sidebar-collapsed) + 5px); /* Aligned to the right edge of the collapsed sidebar + 5px gap */
+                    left: calc(var(--sidebar-collapsed) + 5px); /* Aligned to the right edge of the collapsed sidebar */
                     transform: translateX(0); /* No translation, let 'left' handle it */
                     top: auto;
                     bottom: calc(var(--safe-area-inset-bottom) + 15px + 40px + 10px); /* Position it above the icon and padding */
@@ -1886,6 +1914,10 @@
         
         <div class="user-profile-menu">
             <div class="profile-menu-dropdown" id="profile-menu-dropdown">
+                <div class="profile-menu-item email-display" id="profile-email-item">
+                    <i class="fas fa-envelope"></i>
+                    <span>user@example.com</span>
+                </div>
                 <button class="profile-menu-item" id="settings-btn">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
@@ -2586,10 +2618,12 @@
             `;
             
             // Append icon, text span, options button, and menu
-            sessionElement.appendChild(document.createElement('i')).className = `fas ${iconClass}`;
+            const iconElement = document.createElement('i');
+            iconElement.className = `fas ${iconClass}`;
+            sessionElement.appendChild(iconElement);
             sessionElement.appendChild(textSpan);
             sessionElement.appendChild(optionsBtn);
-            sessionElement.appendChild(menu);
+            sessionElement.appendChild(menu); /* Menu is a child of the sessionElement */
 
             optionsBtn.addEventListener('click', (e) => {
                 e.stopPropagation(); // Prevent loading chat when clicking options button
@@ -2841,20 +2875,18 @@
                         avatar.style.backgroundImage = 'none';
                     }
 
-                    // Prepend email to the profile menu dropdown only if it doesn't exist
-                    if (!document.getElementById('profile-email-item')) {
-                        const emailItem = document.createElement('button');
-                        emailItem.className = 'profile-menu-item';
-                        emailItem.id = 'profile-email-item'; // Add ID to easily check existence
-                        emailItem.disabled = true; // Make it non-clickable
-                        emailItem.innerHTML = `
-                            <i class="fas fa-envelope"></i>
-                            <span>${data.email || 'user@example.com'}</span>
-                        `;
-                        document.getElementById('profile-menu-dropdown').prepend(emailItem);
+                    // Update email display in profile menu
+                    const emailDisplayItem = document.getElementById('profile-email-item');
+                    if (emailDisplayItem) {
+                        emailDisplayItem.querySelector('span').textContent = data.email || 'user@example.com';
                     } else {
-                        // Update existing email item
-                        document.getElementById('profile-email-item').querySelector('span').textContent = data.email || 'user@example.com';
+                        // This block might not be strictly necessary if the HTML is always present,
+                        // but good for robustness if structure changes.
+                        const newEmailItem = document.createElement('div'); /* Changed to div */
+                        newEmailItem.className = 'profile-menu-item email-display';
+                        newEmailItem.id = 'profile-email-item';
+                        newEmailItem.innerHTML = `<i class="fas fa-envelope"></i><span>${data.email || 'user@example.com'}</span>`;
+                        document.getElementById('profile-menu-dropdown').prepend(newEmailItem);
                     }
 
                 } else {
@@ -2863,6 +2895,11 @@
                     const avatar = document.getElementById('user-avatar');
                     avatar.textContent = 'GU';
                     avatar.style.backgroundImage = 'none';
+                    // Update email display for guest
+                    const emailDisplayItem = document.getElementById('profile-email-item');
+                    if (emailDisplayItem) {
+                        emailDisplayItem.querySelector('span').textContent = 'guest@example.com';
+                    }
                 }
             } catch (error) {
                 console.error('Error loading user data:', error);
@@ -2871,6 +2908,10 @@
                 const avatar = document.getElementById('user-avatar');
                 avatar.textContent = 'U';
                 avatar.style.backgroundImage = 'none';
+                const emailDisplayItem = document.getElementById('profile-email-item');
+                if (emailDisplayItem) {
+                    emailDisplayItem.querySelector('span').textContent = 'error@example.com';
+                }
             }
         }
 
@@ -3241,7 +3282,6 @@
                     appendMessage(data.message, 'error-message');
                     showFlashMessage(`Analysis error: ${data.message}`, 'error');
                 } else {
-                    // Handle successful responses
                     appendMessage(data.response, 'bot-message'); 
                     currentChatId = data.chat_session_id; 
                     await fetchChatSessions();
@@ -3477,41 +3517,4 @@
                         console.error('Failed to send HR to backend:', errorData.message);
                         showFlashMessage('Failed to save HR data to server.', 'error');
                     }
-                } catch (error) {
-                    console.error('Network error sending HR to backend:', error);
-                    showFlashMessage('Network issue: Could not save HR data.', 'error');
                 }
-            },
-
-            handleDisconnect() {
-                if (this.device && this.device.gatt.connected) {
-                    this.characteristic.stopNotifications()
-                        .then(() => {
-                            console.log('Notifications stopped.');
-                            this.device.gatt.disconnect();
-                        })
-                        .catch(error => console.error('Error stopping notifications or disconnecting:', error));
-                }
-                this.device = null;
-                this.characteristic = null;
-                this.isConnected = false;
-                this.updateUI(false);
-                
-                document.getElementById('current-hr').textContent = '--';
-                document.getElementById('current-hr').style.color = 'var(--error-color)';
-                document.getElementById('hr-status').textContent = "Not connected";
-                document.getElementById('hr-status').style.color = "var(--error-color)";
-                document.getElementById('analyze-btn').disabled = true;
-                
-                // Remove pulse animation from heart rate button
-                document.getElementById('heart-rate-button').classList.remove('pulse');
-            },
-
-            updateUI(connected) {
-                document.getElementById('connect-btn').style.display = connected ? 'none' : 'flex';
-                document.getElementById('disconnect-btn').style.display = connected ? 'flex' : 'none';
-            }
-        };
-    </script>
-</body>
-</html>
