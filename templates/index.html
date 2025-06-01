@@ -202,14 +202,17 @@
 
         .sidebar.collapsed .sidebar-header-text,
         .sidebar.collapsed .chat-history-search,
-        .sidebar.collapsed .chat-history,
-        .sidebar.collapsed .profile-label { /* Hiding the full profile label text */
+        .sidebar.collapsed .chat-history {
             display: none;
         }
         
         .sidebar.collapsed .new-chat-btn span,
         .sidebar.collapsed .chat-history-item span,
         .sidebar.collapsed .chat-history-date {
+            display: none;
+        }
+        /* Profile label text also hidden when collapsed */
+        .sidebar.collapsed .profile-label { /* Hiding the full profile label text */
             display: none;
         }
         
@@ -2441,17 +2444,17 @@
         function toggleCollapseSidebar() {
             const sidebar = document.getElementById('sidebar');
             const profileOptionsBtn = document.getElementById('profile-options-btn');
-            const profileMenuDropdown = document.getElementById('profile-menu-dropdown'); /* Get dropdown element */
+            const profileMenuDropdown = document.getElementById('profile-menu-dropdown');
 
             sidebar.classList.toggle('collapsed');
             
-            // Show/hide profile options button based on collapsed state
+            // Update profile options button visibility and close menu on collapse/expand
             if (sidebar.classList.contains('collapsed')) {
                 profileOptionsBtn.style.display = 'flex'; /* Show three dots */
-                profileMenuDropdown.classList.remove('show'); /* Ensure profile menu is closed when collapsing */
+                profileMenuDropdown.classList.remove('show'); /* Ensure profile menu is closed */
             } else {
                 profileOptionsBtn.style.display = 'none'; /* Hide three dots */
-                profileMenuDropdown.classList.remove('show'); /* Ensure profile menu is closed when expanding */
+                profileMenuDropdown.classList.remove('show'); /* Ensure profile menu is closed */
             }
 
             // Save state to localStorage
@@ -2492,23 +2495,16 @@
                 }
                 const data = await response.json();
                 
-                // Update currentChatId from the backend response
                 currentChatId = data.id;
                 
-                // Clear the chat box
                 document.getElementById('chat-box').innerHTML = '';
-                
-                // Show welcome message
                 document.getElementById('welcome-message').style.display = 'block';
                 
-                // Refresh chat history from server
                 await fetchChatSessions();
 
-                // Close sidebar on mobile
                 if (window.innerWidth <= 768) {
                     toggleSidebar();
                 }
-                // showFlashMessage("New chat started!", 'info'); // COMMENTED OUT: As per user request
             } catch (error) {
                 console.error('Error creating new chat:', error);
                 showFlashMessage('Failed to create new chat. Please try again.', 'error');
@@ -2531,7 +2527,7 @@
                 }
                 const data = await response.json();
                 chatSessions = data;
-                updateChatHistoryUI(); // Update UI after fetching
+                updateChatHistoryUI();
             } catch (error) {
                 console.error('Error fetching chat sessions:', error);
                 document.getElementById('chat-history').innerHTML = '<div class="no-results">Failed to load chat history.</div>';
@@ -2542,16 +2538,14 @@
         // Update the chat history sidebar UI based on fetched data
         function updateChatHistoryUI() {
             const historyContainer = document.getElementById('chat-history');
-            historyContainer.innerHTML = ''; // Clear existing
+            historyContainer.innerHTML = '';
             
             if (chatSessions.length === 0) {
                 historyContainer.innerHTML = '<div class="no-results">No chat history yet. Start a new chat!</div>';
                 return;
             }
 
-            // Sort sessions by updated_at for display order
             const sortedSessions = [...chatSessions].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-            
             const groupedSessions = groupChatSessionsByDate(sortedSessions);
             
             const groupOrder = ['today', 'yesterday', 'last7Days', 'last30Days', 'older'];
@@ -2582,8 +2576,7 @@
             const sessionElement = document.createElement('div');
             sessionElement.className = `chat-history-item ${session.id === currentChatId ? 'active' : ''}`;
             
-            // Determine icon based on session content heuristic
-            let iconClass = 'fa-comment-alt'; // Default icon
+            let iconClass = 'fa-comment-alt';
             const firstMessageContent = session.first_message_content ? session.first_message_content.toLowerCase() : '';
             
             if (firstMessageContent.includes('exercise') || firstMessageContent.includes('workout') || session.title.toLowerCase().includes('exercise')) {
@@ -2600,33 +2593,30 @@
                 iconClass = 'fa-notes-medical';
             }
             
-            // Text content span
+            const iconElement = document.createElement('i');
+            iconElement.className = `fas ${iconClass}`;
+            sessionElement.appendChild(iconElement);
+
             const textSpan = document.createElement('span');
             textSpan.textContent = session.title || "New Chat";
+            sessionElement.appendChild(textSpan);
 
-            // Options button (three dots)
             const optionsBtn = document.createElement('button');
             optionsBtn.className = 'options-btn';
             optionsBtn.innerHTML = '<i class="fas fa-ellipsis-h"></i>';
+            sessionElement.appendChild(optionsBtn);
             
-            // Options menu
             const menu = document.createElement('div');
             menu.className = 'rename-delete-menu';
             menu.innerHTML = `
                 <button class="rename-btn"><i class="fas fa-pencil-alt"></i> Rename</button>
                 <button class="delete-btn"><i class="fas fa-trash-alt"></i> Delete</button>
             `;
-            
-            // Append icon, text span, options button, and menu
-            const iconElement = document.createElement('i');
-            iconElement.className = `fas ${iconClass}`;
-            sessionElement.appendChild(iconElement);
-            sessionElement.appendChild(textSpan);
-            sessionElement.appendChild(optionsBtn);
-            sessionElement.appendChild(menu); /* Menu is a child of the sessionElement */
+            sessionElement.appendChild(menu);
 
             optionsBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent loading chat when clicking options button
+                e.stopPropagation(); // Stop propagation to prevent loading chat when clicking options button
+                
                 // Close any other open menus
                 document.querySelectorAll('.rename-delete-menu.show').forEach(openMenu => {
                     if (openMenu !== menu) { // Don't close self
@@ -2653,13 +2643,17 @@
                 showDeleteConfirmation(session.id, session.title);
             });
             
-            // Add click handler to load chat for the main session element
-            sessionElement.addEventListener('click', async () => {
-                // Before loading, ensure no menus are open
-                document.querySelectorAll('.rename-delete-menu.show').forEach(openMenu => {
-                    openMenu.classList.remove('show');
-                });
-                await loadChatSession(session.id);
+            // Add click handler to load chat for the main session element, but only if not clicking the options button
+            sessionElement.addEventListener('click', async (e) => {
+                // Check if the click target or any of its parents is the options button or menu
+                const isClickOnOptionsMenu = e.target.closest('.options-btn') || e.target.closest('.rename-delete-menu');
+                if (!isClickOnOptionsMenu) {
+                    // Before loading, ensure no menus are open
+                    document.querySelectorAll('.rename-delete-menu.show').forEach(openMenu => {
+                        openMenu.classList.remove('show');
+                    });
+                    await loadChatSession(session.id);
+                }
             });
             
             container.appendChild(sessionElement);
@@ -2671,7 +2665,6 @@
             document.getElementById('delete-chat-title').textContent = chatTitle;
             modalOverlay.classList.add('show');
 
-            // Set up confirm action
             const confirmBtn = document.getElementById('delete-modal-confirm-btn');
             confirmBtn.onclick = async () => {
                 await deleteChatSession(sessionId);
@@ -2686,7 +2679,6 @@
             const confirmBtn = document.getElementById('delete-modal-confirm-btn');
             confirmBtn.onclick = null; // Clear handler
         }
-
 
         // Rename chat session via API
         async function renameChatSession(sessionId, newTitle) {
@@ -2709,11 +2701,6 @@
                 if (data.success) {
                     showFlashMessage('Chat renamed successfully!', 'success');
                     await fetchChatSessions(); // Refresh sidebar
-                    // If current chat was renamed, update its title in the header if displayed
-                    if (currentChatId === sessionId) {
-                        // If you have a chat title in the main header, update it here:
-                        // document.getElementById('main-chat-title').textContent = newTitle;
-                    }
                 } else {
                     showFlashMessage(`Failed to rename chat: ${data.error}`, 'error');
                 }
@@ -2742,12 +2729,11 @@
                 
                 if (data.success) {
                     showFlashMessage('Chat deleted successfully!', 'success');
-                    // If the deleted chat was the current one, force a new chat
                     if (data.message.includes('session reset')) {
-                        currentChatId = null; // Clear current chat ID on client
-                        await createNewChat(); // This will create a new chat and set currentChatId
+                        currentChatId = null;
+                        await createNewChat();
                     }
-                    await fetchChatSessions(); // Refresh chat history sidebar to reflect deletion
+                    await fetchChatSessions();
                 } else {
                     showFlashMessage(`Failed to delete chat: ${data.error}`, 'error');
                 }
@@ -2759,55 +2745,54 @@
 
         // Initial setup on DOMContentLoaded
         document.addEventListener('DOMContentLoaded', async () => {
+            // Check login status first, will redirect if not authenticated
             await checkLoginStatus();
-            await loadUserData();
-            initTheme(); // Initialize theme
-            initEventListeners();
-            initSearch(); // Initialize search functionality
-            bluetoothManager.updateUI(false);
-            
-            // Load HR history from local storage (not persistent across devices)
-            const savedHrHistory = localStorage.getItem('hrHistory');
-            if (savedHrHistory) {
-                hrHistory = JSON.parse(savedHrHistory);
-                bluetoothManager.updateHistoryUI();
-            }
-            
-            // Load sidebar collapsed state
-            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            const sidebar = document.getElementById('sidebar');
-            const profileOptionsBtn = document.getElementById('profile-options-btn');
 
-            if (isCollapsed && window.innerWidth > 768) {
-                sidebar.classList.add('collapsed');
-                profileOptionsBtn.style.display = 'flex'; // Show three dots if desktop & collapsed
-            } else {
-                sidebar.classList.remove('collapsed');
-                profileOptionsBtn.style.display = 'none'; // Hide three dots otherwise
-            }
-            
-            // Always fetch and display chat sessions from backend on load
-            await fetchChatSessions();
-
-            // After fetching sessions, decide which one to load or create a new one
-            if (chatSessions.length === 0 || shouldStartNewChat()) {
-                await createNewChat(); // This will create a new chat on backend and set currentChatId
-            } else {
-                // If there are sessions and not a "new chat" scenario, load the most recent one
-                const mostRecentSession = chatSessions.reduce((latest, session) => {
-                    return (new Date(session.updated_at) > new Date(latest.updated_at)) ? session : latest;
-                }, chatSessions[0]); 
+            // Only proceed if authenticated
+            if (isLoggedIn) {
+                await loadUserData();
+                initTheme();
+                initEventListeners();
+                initSearch();
+                bluetoothManager.updateUI(false);
                 
-                if (mostRecentSession) {
-                    currentChatId = mostRecentSession.id; 
-                    await loadChatSession(currentChatId);
-                } else {
-                    await createNewChat();
+                const savedHrHistory = localStorage.getItem('hrHistory');
+                if (savedHrHistory) {
+                    hrHistory = JSON.parse(savedHrHistory);
+                    bluetoothManager.updateHistoryUI();
                 }
+                
+                const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+                const sidebar = document.getElementById('sidebar');
+                const profileOptionsBtn = document.getElementById('profile-options-btn');
+
+                if (isCollapsed && window.innerWidth > 768) {
+                    sidebar.classList.add('collapsed');
+                    profileOptionsBtn.style.display = 'flex';
+                } else {
+                    sidebar.classList.remove('collapsed');
+                    profileOptionsBtn.style.display = 'none';
+                }
+                
+                await fetchChatSessions();
+
+                if (chatSessions.length === 0 || shouldStartNewChat()) {
+                    await createNewChat();
+                } else {
+                    const mostRecentSession = chatSessions.reduce((latest, session) => {
+                        return (new Date(session.updated_at) > new Date(latest.updated_at)) ? session : latest;
+                    }, chatSessions[0]); 
+                    
+                    if (mostRecentSession) {
+                        currentChatId = mostRecentSession.id; 
+                        await loadChatSession(currentChatId);
+                    } else {
+                        await createNewChat();
+                    }
+                }
+                
+                localStorage.setItem('lastActiveTime', Date.now());
             }
-            
-            // Store current time as last active time (for shouldStartNewChat logic)
-            localStorage.setItem('lastActiveTime', Date.now());
         });
 
         // Check if user is logged in
@@ -2821,17 +2806,14 @@
                 if (response.ok) {
                     const data = await response.json();
                     isLoggedIn = data.authenticated;
-                    
                     if (!isLoggedIn) {
                         window.location.href = '/login'; // Redirect to login if not authenticated
                     }
                 } else {
-                    // If response is not OK (e.g., 401, 500), assume not authenticated
                     window.location.href = '/login';
                 }
             } catch (error) {
                 console.error('Error checking auth status:', error);
-                // In case of network error or server unreachable, redirect to login as a fallback
                 window.location.href = '/login';
             }
         }
@@ -2854,19 +2836,15 @@
                 const data = await response.json();
                 
                 if (data && data.username) {
-                    // Update profile label
                     const profileLabel = document.getElementById('profile-label');
                     profileLabel.textContent = data.username;
                     
-                    // Update avatar
                     const avatar = document.getElementById('user-avatar');
                     
                     if (data.profile_picture) {
-                        // If we have a profile picture URL
                         avatar.style.backgroundImage = `url(${data.profile_picture})`;
                         avatar.textContent = '';
                     } else {
-                        // Fallback to initials
                         const initials = data.username.split(' ')
                             .map(n => n[0])
                             .join('')
@@ -2875,27 +2853,15 @@
                         avatar.style.backgroundImage = 'none';
                     }
 
-                    // Update email display in profile menu
                     const emailDisplayItem = document.getElementById('profile-email-item');
                     if (emailDisplayItem) {
                         emailDisplayItem.querySelector('span').textContent = data.email || 'user@example.com';
-                    } else {
-                        // This block might not be strictly necessary if the HTML is always present,
-                        // but good for robustness if structure changes.
-                        const newEmailItem = document.createElement('div'); /* Changed to div */
-                        newEmailItem.className = 'profile-menu-item email-display';
-                        newEmailItem.id = 'profile-email-item';
-                        newEmailItem.innerHTML = `<i class="fas fa-envelope"></i><span>${data.email || 'user@example.com'}</span>`;
-                        document.getElementById('profile-menu-dropdown').prepend(newEmailItem);
                     }
-
                 } else {
-                    // Fallback if data or username is missing
                     document.getElementById('profile-label').textContent = 'Guest User';
                     const avatar = document.getElementById('user-avatar');
                     avatar.textContent = 'GU';
                     avatar.style.backgroundImage = 'none';
-                    // Update email display for guest
                     const emailDisplayItem = document.getElementById('profile-email-item');
                     if (emailDisplayItem) {
                         emailDisplayItem.querySelector('span').textContent = 'guest@example.com';
@@ -2903,14 +2869,13 @@
                 }
             } catch (error) {
                 console.error('Error loading user data:', error);
-                // Set default values if there's an error
-                document.getElementById('profile-label').textContent = 'User';
+                document.getElementById('profile-label').textContent = 'User Error';
                 const avatar = document.getElementById('user-avatar');
-                avatar.textContent = 'U';
+                avatar.textContent = '!U';
                 avatar.style.backgroundImage = 'none';
                 const emailDisplayItem = document.getElementById('profile-email-item');
                 if (emailDisplayItem) {
-                    emailDisplayItem.querySelector('span').textContent = 'error@example.com';
+                    emailDisplayItem.querySelector('span').textContent = 'loading_error@example.com';
                 }
             }
         }
@@ -2931,13 +2896,11 @@
                 welcomeMessage.style.display = "none";
             }
 
-            // Append user message with current timestamp
             appendMessage(userInput, 'user-message');
-            userInputElement.value = ""; // Clear textarea
-            userInputElement.style.height = 'auto'; // Reset textarea height
-            userInputElement.focus(); // Keep focus on textarea, might open keyboard
+            userInputElement.value = "";
+            userInputElement.style.height = 'auto';
+            userInputElement.focus();
             
-            // Enable loading state for send button and disable it
             sendBtn.classList.add('loading');
             sendBtn.disabled = true;
             isWaitingForResponse = true;
@@ -2974,7 +2937,6 @@
                     currentChatId = data.chat_session_id;
                     await fetchChatSessions();
                     
-                    // Add flying animation to paper plane icon
                     sendBtn.classList.add('clicked');
                     setTimeout(() => {
                         sendBtn.classList.remove('clicked');
@@ -2993,7 +2955,6 @@
             }
         }
 
-        // Append message to chat box
         function appendMessage(text, className) {
             const chatBox = document.getElementById("chat-box");
             const message = document.createElement("div");
@@ -3032,22 +2993,17 @@
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // Format text with headings, bold, lists, etc.
         function formatTextResponse(text) {
-            // Convert markdown-style headings to HTML
             text = text.replace(/^# (.*$)/gm, '<h1>$1</h1>');
             text = text.replace(/^## (.*$)/gm, '<h2>$1</h2>');
             text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
-            text = text.replace(/^#### (.*$)/gm, '<h4>$1</h4>'); // Added H4
+            text = text.replace(/^#### (.*$)/gm, '<h4>$1</h4>');
 
-            // Convert markdown bold to HTML
             text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
             
-            // Convert markdown blockquotes to HTML
             text = text.replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>');
 
-            // Handle lists (unordered and ordered)
             const lines = text.split('\n');
             let inUnorderedList = false;
             let inOrderedList = false;
@@ -3055,25 +3011,22 @@
 
             lines.forEach(line => {
                 const trimmedLine = line.trim();
-                // Check for unordered list items
                 if (trimmedLine.match(/^[\*\-]\s/)) {
                     if (!inUnorderedList) {
                         formattedLines.push('<ul>');
                         inUnorderedList = true;
-                        inOrderedList = false; // Close ordered if open
+                        inOrderedList = false;
                     }
                     formattedLines.push(`<li>${trimmedLine.substring(1).trim()}</li>`);
                 }
-                // Check for ordered list items
                 else if (trimmedLine.match(/^\d+\.\s/)) {
                     if (!inOrderedList) {
                         formattedLines.push('<ol>');
                         inOrderedList = true;
-                        inUnorderedList = false; // Close unordered if open
+                        inUnorderedList = false;
                     }
                     formattedLines.push(`<li>${trimmedLine.substring(trimmedLine.indexOf('.') + 1).trim()}</li>`);
                 }
-                // If not a list item, close current list if any
                 else {
                     if (inUnorderedList) {
                         formattedLines.push('</ul>');
@@ -3083,33 +3036,27 @@
                         formattedLines.push('</ol>');
                         inOrderedList = false;
                     }
-                    formattedLines.push(line); // Add the line as is
+                    formattedLines.push(line);
                 }
             });
 
-            // Close any open lists at the end
             if (inUnorderedList) formattedLines.push('</ul>');
             if (inOrderedList) formattedLines.push('</ol>');
 
             text = formattedLines.join('\n');
 
-            // Convert newlines to paragraphs where appropriate, but preserve pre-existing block elements
             text = text.split('\n\n').map(paragraph => {
-                // If the paragraph already starts with a block-level HTML tag (h, ul, ol, table, blockquote), return as is
                 if (paragraph.match(/^(<h[1-4]>|<ul|<ol|<table|<blockquote)/i)) {
                     return paragraph.trim();
                 }
-                // Otherwise, wrap in a paragraph tag
                 return `<p>${paragraph.trim()}</p>`;
             }).join('');
 
-            // Clean up empty paragraph tags that might occur after splitting
             text = text.replace(/<p>\s*<\/p>/g, '');
             
             return text;
         }
 
-        // Show typing indicator
         function showTypingIndicator() {
             const chatBox = document.getElementById("chat-box");
             const typingIndicator = document.createElement("div");
@@ -3125,21 +3072,16 @@
             return typingIndicator;
         }
 
-        // Format and display bot response with professional tables
         function formatBotResponse(response, targetElement) {
-            // Regex to find Markdown tables (lines starting and ending with '|', with a separator line)
-            // This regex attempts to capture the entire table block.
             const tableRegex = /^\|.*\|(?:\r?\n\|[-: ]+\|)+\r?\n(?:\|.*\|(?:\r?\n|$))*|^\|.*\|(?:\r?\n(?:\|.*\|\r?\n?)*)/gm;
             let htmlContent = response;
 
-            // Process tables first
             let tableMatch;
-            // Use a loop with exec to find all matches and replace them
             while ((tableMatch = tableRegex.exec(htmlContent)) !== null) {
                 const markdownTable = tableMatch[0];
                 const lines = markdownTable.split('\n').filter(line => line.trim() !== '');
 
-                if (lines.length < 2) continue; // Need at least header and separator
+                if (lines.length < 2) continue;
 
                 let tableHtml = '<table>';
                 let headerProcessed = false;
@@ -3149,48 +3091,39 @@
                     if (trimmedLine.startsWith('|') && trimmedLine.endsWith('|')) {
                         const cells = trimmedLine.split('|').slice(1, -1).map(cell => cell.trim());
 
-                        // This is the separator line (e.g., |---|:--:|---)
                         if (trimmedLine.match(/^\|[-=\s:]+\|$/)) {
                             headerProcessed = true;
-                            return; // Skip this line
+                            return;
                         }
 
                         if (!headerProcessed) {
-                            // This is the header row
                             tableHtml += '<thead><tr>';
                             cells.forEach(cell => {
                                 tableHtml += `<th>${formatTextResponse(cell)}</th>`;
                             });
                             tableHtml += '</tr></thead><tbody>';
                         } else {
-                            // Data rows
                             tableHtml += '<tr>';
                             cells.forEach(cell => {
-                                // Apply general formatting to cell content
                                 tableHtml += `<td>${formatTextResponse(cell)}</td>`;
                             });
                             tableHtml += '</tr>';
                         }
                     }
                 });
-                if (headerProcessed) { // Only close tbody if it was opened
+                if (headerProcessed) {
                     tableHtml += '</tbody>';
                 }
                 tableHtml += '</table>';
 
-                // Replace the markdown table with the generated HTML table in the original string
                 htmlContent = htmlContent.replace(markdownTable, tableHtml);
-                // Reset regex lastIndex to ensure it continues from the correct position after replacement
-                // This is crucial when using `exec` in a loop with a global regex.
                 tableRegex.lastIndex = 0;  
             }
             
-            // Now apply general formatting to the rest of the text content (which might include converted tables)
             targetElement.innerHTML = formatTextResponse(htmlContent);
         }
 
 
-        // Manual HR input fallback
         function updateHRManually() {
             const hrInput = document.getElementById('manual-hr');
             const hr = parseInt(hrInput.value);
@@ -3211,14 +3144,11 @@
             hrInput.value = '';
             appendMessage(`Manual HR submitted: ${hr} BPM`, 'bot-message');
             
-            // Enable analyze button after manual input
             document.getElementById('analyze-btn').disabled = false;
             
-            // Check for alerts
             checkHRAlerts(hr);
         }
 
-        // Check for heart rate alerts
         function checkHRAlerts(hr) {
             const now = new Date();
             const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -3232,7 +3162,6 @@
             }
         }
 
-        // Heart rate analysis function using GPT-3.5
         async function analyzeHeartRate() {
             if (hrHistory.length === 0) {
                 appendMessage("No heart rate data available for analysis. Please input or connect a device first.", 'error-message');
@@ -3249,7 +3178,6 @@
             sendBtn.disabled = true;
             
             try {
-                // Prepare the prompt for GPT-3.5
                 const prompt = `I need an analysis of my heart rate. My most recent reading is ${currentHR} BPM. Please provide: 
                 1. What this heart rate generally means in context (e.g., normal, high, low).
                 2. Potential common physiological or lifestyle factors that could influence this reading.
@@ -3257,7 +3185,6 @@
                 4. General recommended actions or next steps for someone with this reading.
                 Please present this information clearly, using bullet points or a structured format, and always include a strong reminder to consult a healthcare professional.`;
                 
-                // We send this analysis request as a user message to the backend
                 const response = await fetch("/chat", {
                     method: "POST",
                     headers: {  
@@ -3268,12 +3195,11 @@
                 });
 
                 const data = await response.json();
-                const chatBox = document.getElementById('chat-box');
                 chatBox.removeChild(typingIndicator);
 
                 if (!response.ok) {
                     if (data.type === 'auth_required') {
-                        window.location.href = '/login';
+                        showFlashMessage('Your session has expired. Please log in again.', 'error');
                         setTimeout(() => window.location.href = '/login', 2000);
                         return;
                     }
@@ -3288,7 +3214,6 @@
                 }
                 
             } catch (error) {
-                const chatBox = document.getElementById('chat-box');
                 chatBox.removeChild(typingIndicator);
                 appendMessage(`Analysis error: ${error.message}`, 'error-message');
                 console.error('Analysis error:', error);
@@ -3300,16 +3225,13 @@
             }
         }
 
-        // Logout Function
         async function logout() {
             try {
                 if (bluetoothManager.device && bluetoothManager.device.gatt.connected) {
                     bluetoothManager.handleDisconnect();
                 }
 
-                // Clear HR history from local storage
                 localStorage.removeItem('hrHistory');
-                // Chat sessions are handled by the backend, no need to clear local copy or localStorage for sessions.
 
                 const response = await fetch('/logout', {
                     method: 'POST',
@@ -3328,7 +3250,6 @@
             }
         }
 
-        // Bluetooth connection manager
         const bluetoothManager = {
             device: null,
             characteristic: null,
@@ -3343,11 +3264,9 @@
                 appendMessage("Attempting to connect to heart rate monitor...", 'bot-message');
                 
                 try {
-                    // Check if Bluetooth is supported
                     if (!navigator.bluetooth) {
                         throw new Error('Web Bluetooth is not supported in this browser. Try Chrome on Windows, Mac, or Android.');
                     }
-                    // Check for Bluetooth availability (permission might be needed first time)
                     const isAvailable = await navigator.bluetooth.getAvailability();
                     if (!isAvailable) {
                         throw new Error('Bluetooth is turned off or unavailable on your device.');
@@ -3355,13 +3274,11 @@
 
                     showFlashMessage("Searching for devices...", 'info');
                     
-                    // Request Bluetooth device
                     this.device = await navigator.bluetooth.requestDevice({
-                        filters: [{ services: ['heart_rate'] }], // Filter for heart rate service
+                        filters: [{ services: ['heart_rate'] }],
                         optionalServices: ['heart_rate']
                     });
                     
-                    // Add disconnect listener
                     this.device.addEventListener('gattserverdisconnected', () => {
                         this.handleDisconnect();
                         appendMessage("Heart rate monitor disconnected.", 'bot-message');
@@ -3386,9 +3303,8 @@
                     this.updateUI(true);
                     document.getElementById('analyze-btn').disabled = false;
                     document.getElementById('hr-status').textContent = "Connected";
-                    document.getElementById('hr-status').style.color = "#00ff00"; // Green
+                    document.getElementById('hr-status').style.color = "#00ff00";
                     
-                    // Add pulse animation to heart rate button
                     document.getElementById('heart-rate-button').classList.add('pulse');
                     showFlashMessage("Heart rate monitor connected!", 'success');
                     
@@ -3400,14 +3316,13 @@
                     } else if (error.name === 'NotAllowedError') {
                         errorMessage = 'Bluetooth permission denied by user.';
                     } else if (error.message.includes('Bluetooth is turned off')) {
-                        // Custom error from getAvailability check
                     } else if (error.message.includes('User cancelled the request')) {
                         errorMessage = 'Bluetooth device selection cancelled.';
                     }
                     
                     appendMessage(`Bluetooth Error: ${errorMessage}. Please try entering heart rate manually.`, 'error-message');
                     showFlashMessage(`Bluetooth connection failed: ${errorMessage}`, 'error');
-                    this.handleDisconnect(); // Ensure UI is reset on failure
+                    this.handleDisconnect();
                 } finally {
                     this.isConnecting = false;
                 }
@@ -3419,15 +3334,14 @@
                     const flags = value.getUint8(0);
                     let rate = value.getUint8(1);
                     
-                    if (flags & 0x1) { // If the first bit of the flags is set, it's a 16-bit heart rate value
-                        rate = value.getUint16(1, true); // true for little-endian
+                    if (flags & 0x1) {
+                        rate = value.getUint16(1, true);
                     }
                     
                     this.displayHeartRate(rate);
                     this.addToHistory(rate);
                     this.sendToBackend(rate);
                     
-                    // Check for alerts
                     checkHRAlerts(rate);
                 } catch (error) {
                     console.error('Failed to parse HR:', error);
@@ -3441,11 +3355,11 @@
                 
                 let color;
                 if (rate > 100) {
-                    color = 'var(--error-color)'; // Red for high
+                    color = 'var(--error-color)';
                 } else if (rate < 60) {
-                    color = 'var(--warning-color)'; // Orange for low
+                    color = 'var(--warning-color)';
                 } else {
-                    color = 'var(--success-color)'; // Green for normal
+                    color = 'var(--success-color)';
                 }
                 
                 hrElement.style.color = color;
@@ -3455,21 +3369,18 @@
                 const now = new Date();
                 const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 
-                // Add to beginning of array
                 hrHistory.unshift({
                     rate: rate,
                     time: timeString,
                     timestamp: now.getTime()
                 });
                 
-                // Keep only last 10 readings
                 if (hrHistory.length > 10) {
                     hrHistory.pop();
                 }
                 
                 this.updateHistoryUI();
                 
-                // Save to localStorage (HR history is client-side only for this demo)
                 localStorage.setItem('hrHistory', JSON.stringify(hrHistory));
             },
 
@@ -3517,4 +3428,40 @@
                         console.error('Failed to send HR to backend:', errorData.message);
                         showFlashMessage('Failed to save HR data to server.', 'error');
                     }
+                } catch (error) {
+                    console.error('Network error sending HR to backend:', error);
+                    showFlashMessage('Network issue: Could not save HR data.', 'error');
                 }
+            },
+
+            handleDisconnect() {
+                if (this.device && this.device.gatt.connected) {
+                    this.characteristic.stopNotifications()
+                        .then(() => {
+                            console.log('Notifications stopped.');
+                            this.device.gatt.disconnect();
+                        })
+                        .catch(error => console.error('Error stopping notifications or disconnecting:', error));
+                }
+                this.device = null;
+                this.characteristic = null;
+                this.isConnected = false;
+                this.updateUI(false);
+                
+                document.getElementById('current-hr').textContent = '--';
+                document.getElementById('current-hr').style.color = 'var(--error-color)';
+                document.getElementById('hr-status').textContent = "Not connected";
+                document.getElementById('hr-status').style.color = "var(--error-color)";
+                document.getElementById('analyze-btn').disabled = true;
+                
+                document.getElementById('heart-rate-button').classList.remove('pulse');
+            },
+
+            updateUI(connected) {
+                document.getElementById('connect-btn').style.display = connected ? 'none' : 'flex';
+                document.getElementById('disconnect-btn').style.display = connected ? 'flex' : 'none';
+            }
+        };
+    </script>
+</body>
+</html>
