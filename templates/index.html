@@ -867,11 +867,11 @@
         .message {
             padding: 15px; /* Base padding for message content area */
             border-radius: 18px;
-            max-width: 85%;
-            min-width: 80px; /* FIX: Ensure a minimum width for short messages like "Hi" */
+            max-width: 75%; /* Adjusted max-width */
+            min-width: 80px; /* Ensure a minimum width for short messages like "Hi" */
             width: fit-content;
-            word-wrap: break-word; /* FIX: Ensure long words break */
-            overflow-wrap: break-word; /* FIX: Modern equivalent for word-wrap */
+            word-wrap: break-word; /* Ensure long words break */
+            overflow-wrap: break-word; /* Modern equivalent for word-wrap */
             line-height: 1.5;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             transition: all 0.2s ease;
@@ -896,8 +896,8 @@
             flex-direction: row; /* Avatar and message content side-by-side */
             align-items: flex-start;
             gap: 10px;
-            max-width: 85%;
-            min-width: 80px; /* FIX: Also ensure a minimum width for short bot messages */
+            max-width: 75%; /* Adjusted max-width */
+            min-width: 80px; /* Also ensure a minimum width for short bot messages */
             width: fit-content;
             padding: 10px; /* Adjust padding due to avatar */
         }
@@ -919,8 +919,8 @@
 
         .bot-message-content {
             flex-grow: 1;
-            overflow-wrap: break-word; /* FIX: Crucial for text wrapping inside flex items */
-            min-width: 0; /* FIX: Ensures the flex item can shrink below its content's intrinsic width */
+            overflow-wrap: break-word; /* Crucial for text wrapping inside flex items */
+            min-width: 0; /* Ensures the flex item can shrink below its content's intrinsic width */
             padding-right: 5px; /* Small right padding to ensure content doesn't touch the edge */
         }
 
@@ -930,7 +930,7 @@
             color: white;
             border-radius: 18px 18px 18px 0;
             padding: 15px;
-            max-width: 85%;
+            max-width: 75%; /* Adjusted max-width */
         }
 
         .typing-indicator {
@@ -977,21 +977,7 @@
             }
         }
 
-        .message-timestamp {
-            font-size: 10px;
-            color: var(--text-muted); /* Default muted text */
-            align-self: flex-end; /* Align timestamp to the right within the message bubble */
-            margin-top: 5px; /* Space between message content and timestamp */
-            opacity: 0.8;
-            flex-shrink: 0;
-        }
-        /* Specific colors for timestamps within user/bot messages based on background contrast */
-        .user-message .message-timestamp {
-            color: rgba(255, 255, 255, 0.7); /* Lighter white for user messages on primary-dark */
-        }
-        [data-theme="light"] .user-message .message-timestamp {
-            color: rgba(255, 255, 255, 0.7); /* Keep light for user messages in light mode too, as user message bg is still primary-color */
-        }
+        /* Removed .message-timestamp styles as they are no longer needed */
 
         .input-container {
             display: flex;
@@ -1009,8 +995,8 @@
         .pre-prompts {
             display: flex;
             gap: 10px;
-            /* FIX: Ensure pre-prompts don't get pushed out */
-            flex-shrink: 0; /* Prevents this container from shrinking */
+            /* FIX: Ensure pre-prompts don't get pushed out by making them unshrinkable */
+            flex-shrink: 0; 
             margin-bottom: 15px; /* Ensure space above input */
             justify-content: center; /* Default for desktop */
             flex-wrap: wrap; /* Default for desktop */
@@ -1142,7 +1128,7 @@
             color: var(--secondary-color); /* Optional: Change color while generating */
         }
 
-        /* Hide the default icon and show spinner-like effect only when loading (e.g., initial API call setup) */
+        /* Hide the default icon and show spinner-like effect only when loading */
         .send-btn.loading i {
             display: none; /* Hide Font Awesome icon */
         }
@@ -1645,8 +1631,8 @@
             }
 
             .message {
-                max-width: 90%;
-                min-width: 80px; /* FIX: Ensure a minimum width for short messages */
+                max-width: 90%; /* On mobile, give messages a bit more width to fill screen */
+                min-width: 80px; /* Ensure a minimum width for short messages */
             }
 
             .input-container {
@@ -2797,11 +2783,13 @@
             
             messageBody.appendChild(messageTextContent);
 
+            /* REMOVED TIMESTAMP LOGIC
             const timestamp = document.createElement('div');
             timestamp.classList.add('message-timestamp');
             const now = new Date();
             timestamp.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             messageBody.appendChild(timestamp);
+            */
 
             message.appendChild(messageBody);
 
@@ -3047,7 +3035,6 @@
                 });
 
                 const data = await response.json();
-                const chatBox = document.getElementById('chat-box');
                 chatBox.removeChild(typingIndicator);
 
                 if (!response.ok) {
@@ -3074,7 +3061,7 @@
                 
             } catch (error) {
                 chatBox.removeChild(typingIndicator);
-                appendMessage(`Analysis error: ${error.message}`, 'error-message');
+                appendMessage(`Error: ${error.message}`, 'error-message');
                 console.error('Analysis error:', error);
                 showFlashMessage(`Failed to get analysis: ${error.message}`, 'error');
             } finally {
