@@ -9,6 +9,8 @@
         /* General Reset & Box Sizing */
         *, *::before, *::after {
             box-sizing: border-box; /* Ensure padding and border are included in the element's total width and height */
+            margin: 0; /* Reset default margins */
+            padding: 0; /* Reset default paddings */
             -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
             -webkit-font-smoothing: antialiased; /* Smoother fonts */
         }
@@ -85,8 +87,6 @@
         }
 
         html, body {
-            margin: 0;
-            padding: 0;
             font-family: -apple-system, BlinkMacMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             height: 100%; /* Important for proper flex height calculations */
             width: 100%;
@@ -737,7 +737,7 @@
             z-index: 100;
         }
 
-        /* Center the header text correctly */
+        /* Center the header text correctly for desktop */
         .header > div:nth-child(2) {
             /* This targets the "Echo AI" text specifically */
             position: absolute;
@@ -747,7 +747,7 @@
             color: var(--primary-color); /* Ensure consistent color */
         }
 
-        .heart-rate-button { /* Keep this specific selector here to ensure it's on the right */
+        .heart-rate-button { /* Keep this specific selector here to override default header styles */
             background: none;
             border: none;
             color: var(--error-color);
@@ -762,7 +762,7 @@
             position: relative;
             /* Ensure it's not squished by the center title */
             flex-shrink: 0; 
-            margin-left: auto; /* Push to the far right when using flex */
+            margin-left: auto; /* Push to the far right when using flex on desktop */
         }
 
         .heart-rate-button:hover {
@@ -1009,6 +1009,8 @@
         .pre-prompts {
             display: flex;
             gap: 10px;
+            /* FIX: Ensure pre-prompts don't get pushed out */
+            flex-shrink: 0; /* Prevents this container from shrinking */
             margin-bottom: 15px; /* Ensure space above input */
             justify-content: center; /* Default for desktop */
             flex-wrap: wrap; /* Default for desktop */
@@ -1114,7 +1116,7 @@
             transition: transform 0.3s ease, color 0.3s ease; /* Smooth transition for icon */
         }
 
-        /* Animation for paper plane icon when SENT */
+        /* Animation for paper plane icon when CLICKED (sent) */
         @keyframes fly {
             0% { transform: translateX(0) translateY(0) rotate(0deg); opacity: 1; }
             50% { transform: translateX(10px) translateY(-10px) rotate(20deg); opacity: 0.7; }
@@ -1125,38 +1127,38 @@
             animation: fly 0.5s ease;
         }
 
-        /* Send button GENERATING state (no loading spinner) */
+        /* Send button GENERATING state (subtle animation while AI is thinking) */
         @keyframes generatingAnimation {
-            0% { transform: rotate(0deg); opacity: 1; }
-            25% { transform: rotate(10deg); opacity: 0.9; }
-            50% { transform: rotate(-10deg); opacity: 0.8; }
-            75% { transform: rotate(10deg); opacity: 0.9; }
-            100% { transform: rotate(0deg); opacity: 1; }
+            0% { transform: scale(1) rotate(0deg); opacity: 1; }
+            25% { transform: scale(1.1) rotate(5deg); opacity: 0.9; }
+            50% { transform: scale(1) rotate(0deg); opacity: 0.8; }
+            75% { transform: scale(0.9) rotate(-5deg); opacity: 0.9; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
 
+        /* Apply this to the icon inside the send button when generating */
         .send-btn.generating i {
-            animation: generatingAnimation 1.5s ease-in-out infinite; /* Continuous, subtle movement */
+            animation: generatingAnimation 1.8s ease-in-out infinite; /* Continuous, subtle movement */
             color: var(--secondary-color); /* Optional: Change color while generating */
         }
 
-        /* Hide the default icon and show spinner-like effect only when loading */
+        /* Hide the default icon and show spinner-like effect only when loading (e.g., initial API call setup) */
         .send-btn.loading i {
-            display: none; /* Hide the paper plane icon */
+            display: none; /* Hide Font Awesome icon */
         }
 
         .send-btn.loading::before {
             content: '';
             position: absolute;
-            width: 24px; /* Size of the spinner */
+            width: 24px;
             height: 24px;
-            border: 3px solid rgba(255, 255, 255, 0.3); /* Softer border */
-            border-top-color: white; /* Visible part of spinner */
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
             border-radius: 50%;
-            animation: spin 0.8s linear infinite; /* Faster spin */
-            /* Ensure the spinner is centered */
+            animation: spin 0.8s linear infinite;
             left: 50%;
             top: 50%;
-            transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%); /* Center the spinner */
         }
 
         @keyframes spin {
@@ -1517,51 +1519,6 @@
         }
 
         /* Mobile responsiveness */
-        .sidebar-toggle {
-            display: none; /* Hidden on desktop */
-            background: none;
-            border: none;
-            color: var(--primary-color);
-            font-size: 20px;
-            cursor: pointer;
-            /* Adjust this if it's too close to logo on mobile */
-            padding: 5px; 
-            min-height: 44px;
-            min-width: 44px;
-        }
-
-        .heart-rate-button { /* Keep this specific selector here to override default header styles */
-            margin-left: auto; /* Push to the far right on desktop */
-        }
-
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 999;
-            backdrop-filter: blur(5px);
-        }
-
-        .settings-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1500;
-            backdrop-filter: blur(3px);
-        }
-
-        .settings-overlay.active {
-            display: block;
-        }
-
         @media (max-width: 768px) {
             .sidebar {
                 position: fixed;
@@ -1654,8 +1611,8 @@
                 flex-wrap: nowrap; 
                 justify-content: flex-start; 
                 overflow-x: auto;
-                padding: 0 15px 15px; 
-                margin: 0; 
+                padding: 0 15px 15px; /* Added horizontal padding, increased bottom */
+                margin: 0; /* Remove horizontal margin */
                 scrollbar-width: none;
                 -webkit-overflow-scrolling: touch;
                 scroll-snap-type: x mandatory;
@@ -1749,51 +1706,6 @@
 
         .heart-rate-button.pulse {
             animation: pulse 1s infinite;
-        }
-
-        /* New Animation for Send Button (Generating) */
-        @keyframes generatingAnimation {
-            0% { transform: rotate(0deg); opacity: 1; }
-            25% { transform: rotate(10deg); opacity: 0.9; }
-            50% { transform: rotate(-10deg); opacity: 0.8; }
-            75% { transform: rotate(10deg); opacity: 0.9; }
-            100% { transform: rotate(0deg); opacity: 1; }
-        }
-
-        /* Apply this to the icon inside the send button when generating */
-        .send-btn.generating i {
-            animation: generatingAnimation 1.5s ease-in-out infinite; /* Continuous, subtle movement */
-            color: var(--secondary-color); /* Optional: Change color while generating */
-        }
-
-        /* Ensure the default send icon is visible when not generating/loading */
-        /* This rule prevents conflicts with .loading and .generating */
-        .send-btn:not(.loading):not(.generating) i {
-            display: block; 
-        }
-
-        /* Override specific .send-btn.loading for cleaner animation */
-        .send-btn.loading {
-            background: var(--primary-dark); /* Keep background solid */
-            cursor: not-allowed;
-        }
-
-        .send-btn.loading i {
-            display: none; /* Hide Font Awesome icon */
-        }
-
-        .send-btn.loading::before {
-            content: '';
-            position: absolute;
-            width: 24px;
-            height: 24px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
         }
     </style>
 </head>
@@ -2765,8 +2677,9 @@
                 } else {
                     // Fallback if data or username is missing
                     document.getElementById('profile-label').textContent = 'Guest User';
-                    document.getElementById('user-avatar').textContent = 'GU';
-                    document.getElementById('user-avatar').style.backgroundImage = 'none';
+                    const avatar = document.getElementById('user-avatar');
+                    avatar.textContent = 'GU';
+                    avatar.style.backgroundImage = 'none';
                 }
             } catch (error) {
                 console.error('Error loading user data:', error);
@@ -3146,9 +3059,8 @@
                     throw new Error(data.message || `Server error: ${response.status}`);
                 } else if (data.status === "error") {
                     appendMessage(data.message, 'error-message');
-                    showFlashMessage(`Analysis error: ${data.message}`, 'error');
+                    showFlashMessage(`Chat error: ${data.message}`, 'error');
                 } else {
-                    // Handle successful responses
                     appendMessage(data.response, 'bot-message'); 
                     currentChatId = data.chat_session_id; 
                     await fetchChatSessions();
