@@ -86,9 +86,9 @@
             --active-chat-border: var(--primary-color); /* Cyan border for active chat */
         }
 
-        /* Fix for light theme sidebar background on mobile */
+        /* FIX: Ensure light theme sidebar has solid background and is not transparent */
         [data-theme="light"] .sidebar {
-            background: var(--bg-darker); /* Ensure solid background for light theme sidebar */
+            background: var(--bg-darker); /* Solid background for light theme sidebar */
         }
         [data-theme="light"] .overlay.active {
             background: rgba(0, 0, 0, 0.5); /* Slightly less opaque overlay for light theme if preferred */
@@ -748,7 +748,7 @@
 
         /* Center the header title on desktop, and position correctly */
         .header-title-center {
-            position: absolute;
+            position: absolute; /* Absolute for precise centering on desktop */
             left: 50%;
             transform: translateX(-50%);
             white-space: nowrap;
@@ -776,6 +776,7 @@
             color: var(--primary-color);
         }
 
+        /* FIX: Control the "active" dot more precisely, only show when HR panel is visible */
         .heart-rate-button.active::after {
             content: '';
             position: absolute;
@@ -783,7 +784,7 @@
             right: 0;
             width: 8px;
             height: 8px;
-            background-color: var(--error-color);
+            background-color: var(--error-color); /* Red dot */
             border-radius: 50%;
         }
 
@@ -792,8 +793,8 @@
             flex-direction: column; 
             width: 100%;
             flex-grow: 1; 
-            padding: 15px; /* General padding */
-            padding-bottom: 0; /* Handled by input-container */
+            padding: 15px; /* General padding around chat area */
+            padding-bottom: 0; /* Input container handles bottom padding */
             overflow: hidden; /* Important for inner scrolling */
         }
 
@@ -844,16 +845,16 @@
         }
 
         .chat-box {
-            flex-grow: 1;
-            overflow-y: auto;
+            flex-grow: 1; /* Allows chat messages to take up available space */
+            overflow-y: auto; /* Enables vertical scrolling */
             padding: 20px; 
-            padding-bottom: 100px; /* Adjust as needed to clear input/pre-prompts */
+            padding-bottom: 100px; /* Adjust as needed to ensure last messages are visible above the input area */
             display: flex;
             flex-direction: column;
             gap: 15px;
             scrollbar-width: thin;
             scrollbar-color: var(--primary-color) var(--bg-darker);
-            -webkit-overflow-scrolling: touch;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
             overscroll-behavior: contain;
         }
 
@@ -873,7 +874,7 @@
         .message {
             padding: 15px; /* Base padding for message content area */
             border-radius: 18px;
-            max-width: 75vw; /* FIX: Set max-width based on viewport width for consistency */
+            max-width: 75vw; /* FIX: Set max-width based on viewport width for better consistency */
             min-width: 80px; /* Ensure a minimum width for short messages like "Hi" */
             width: fit-content;
             word-wrap: break-word; /* Ensure long words break */
@@ -996,6 +997,7 @@
             z-index: 50;
             /* Adjust padding-bottom for mobile safe area */
             padding-bottom: calc(15px + var(--safe-area-inset-bottom));
+            flex-shrink: 0; /* FIX: Prevents this container from shrinking unexpectedly */
         }
 
         .pre-prompts {
@@ -1120,16 +1122,20 @@
         }
 
         /* Send button GENERATING state (subtle animation while AI is thinking) */
-        /* New unique animation for send button */
-        @keyframes pulseDotSpread {
-            0% { transform: scale(0.8); opacity: 0.5; color: var(--primary-color); }
-            50% { transform: scale(1.2); opacity: 1; color: var(--secondary-color); }
-            100% { transform: scale(0.8); opacity: 0.5; color: var(--primary-color); }
+        @keyframes generatePulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+                color: var(--primary-color);
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.7;
+                color: var(--secondary-color); /* Subtle color shift */
+            }
         }
-
-        /* Apply this to the icon inside the send button when generating */
         .send-btn.generating i {
-            animation: pulseDotSpread 1.5s ease-in-out infinite; /* Continuous, subtle movement */
+            animation: generatePulse 1.8s ease-in-out infinite; /* Continuous, subtle movement */
         }
 
         /* Hide the default icon and show spinner-like effect only when loading */
@@ -1498,11 +1504,6 @@
             line-height: 1.4;
         }
 
-        /* Premium Icon Class - Example */
-        .premium-feature {
-            color: var(--secondary-color); /* Gold/Yellow for premium */
-            font-size: 20px; /* Adjust size as needed */
-        }
         /* Make sure default Font Awesome icons inherit appropriate color variables by default */
         i.fas, i.far, i.fab {
             color: inherit; 
@@ -1554,7 +1555,7 @@
             }
 
             /* Center the header text correctly within the grid */
-            .header-title-center { /* Changed from .header > div:nth-child(2) */
+            .header-title-center { /* Targeted specifically for the title text */
                 position: static; /* Reset absolute positioning for grid */
                 transform: none; /* Reset transform for grid */
                 text-align: center; /* Center text within its grid cell */
@@ -1637,7 +1638,7 @@
             }
 
             .message {
-                max-width: 90vw; /* On mobile, give messages a bit more width, relative to viewport width */
+                max-width: 90vw; /* On mobile, messages take up more width relative to viewport */
                 min-width: 80px; /* Ensure a minimum width for short messages */
             }
 
@@ -2228,7 +2229,7 @@
             const button = document.getElementById('heart-rate-button');
             
             panel.classList.toggle('visible');
-            button.classList.toggle('active');
+            button.classList.toggle('active'); // Toggles the red dot
             
             // Close profile menu if open
             document.getElementById('profile-menu-dropdown').classList.remove('show');
