@@ -927,6 +927,16 @@
             margin-bottom: 15px; /* Ensure space above input */
             justify-content: center;
             flex-wrap: wrap;
+            opacity: 1;
+            transition: opacity 0.3s ease, height 0.3s ease, margin-bottom 0.3s ease;
+            overflow: hidden; /* Hide content when collapsed */
+        }
+
+        .pre-prompts.hidden-on-focus {
+            opacity: 0;
+            height: 0;
+            margin-bottom: 0;
+            pointer-events: none; /* Disable interaction when hidden */
         }
 
         .pre-prompts button {
@@ -1008,6 +1018,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative; /* Needed for spinner positioning */
         }
 
         button.send-btn:hover {
@@ -1034,6 +1045,35 @@
         .send-btn.clicked i {
             animation: fly 0.5s ease;
         }
+
+        /* Send button loading state and spinner */
+        .send-btn.loading {
+            background: var(--primary-dark); /* Keep color consistent */
+            cursor: not-allowed;
+            transform: none; /* No hover effect when loading */
+            box-shadow: none;
+        }
+
+        .send-btn.loading i {
+            display: none; /* Hide the paper plane icon */
+        }
+
+        .send-btn.loading::before {
+            content: '';
+            position: absolute;
+            width: 20px; /* Size of the spinner */
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
 
         /* Enhanced Text Formatting */
         .bot-message h1, 
@@ -1733,7 +1773,7 @@
 
                 <div class="chat-box" id="chat-box"></div>
 
-                <div class="pre-prompts">
+                <div class="pre-prompts" id="pre-prompts">
                     <button class="pre-prompt-btn" data-prompt="Best exercises for heart health">
                         <i class="fas fa-running"></i> Best Exercises
                     </button>
@@ -1815,13 +1855,26 @@
                     // Ensure we target the button itself, not its children (like the icon)
                     const targetButton = e.currentTarget;  
                     const message = targetButton.dataset.prompt;
-                    document.getElementById('user-input').value = message;
+                    const userInputElement = document.getElementById('user-input');
+                    userInputElement.value = message;
+                    userInputElement.dispatchEvent(new Event('input')); // Trigger input event for auto-resize/pre-prompt hide
                     sendMessage();
                 });
             });
             
             // Chat input (now textarea)
             const userInputElement = document.getElementById('user-input');
+            const prePrompts = document.getElementById('pre-prompts');
+
+            userInputElement.addEventListener('focus', () => {
+                prePrompts.classList.add('hidden-on-focus');
+            });
+            userInputElement.addEventListener('blur', () => {
+                if (userInputElement.value.trim() === '') {
+                    prePrompts.classList.remove('hidden-on-focus');
+                }
+            });
+
             userInputElement.addEventListener('keypress', (e) => {
                 // Allow Shift+Enter for new line, Enter to send
                 if (e.key === 'Enter' && !e.shiftKey && !isWaitingForResponse) {
@@ -1833,6 +1886,12 @@
                 // Auto-resize textarea based on content
                 userInputElement.style.height = 'auto';
                 userInputElement.style.height = userInputElement.scrollHeight + 'px';
+                // Hide pre-prompts immediately if user starts typing
+                if (userInputElement.value.trim() !== '') {
+                    prePrompts.classList.add('hidden-on-focus');
+                } else {
+                    prePrompts.classList.remove('hidden-on-focus');
+                }
             });
 
             document.getElementById('send-btn').addEventListener('click', () => {
@@ -2164,7 +2223,7 @@
                 if (window.innerWidth <= 768) {
                     toggleSidebar();
                 }
-                showFlashMessage("New chat started!", 'info');
+                // showFlashMessage("New chat started!", 'info'); // COMMENTED OUT
             } catch (error) {
                 console.error('Error creating new chat:', error);
                 // appendMessage('Failed to create new chat. Please try again.', 'error-message'); // This message is already handled by flash
@@ -2329,7 +2388,7 @@
                 
                 // Scroll to bottom of chat
                 chatBox.scrollTop = chatBox.scrollHeight;
-                showFlashMessage(`Loaded chat: ${data.title}`, 'info');
+                // showFlashMessage(`Loaded chat: ${data.title}`, 'info'); // COMMENTED OUT
 
             } catch (error) {
                 console.error('Error loading chat session:', error);
@@ -2524,6 +2583,9 @@
         async function sendMessage() {
             const userInputElement = document.getElementById("user-input");
             const userInput = userInputElement.value.trim();
+            const sendBtn = document.getElementById("send-btn");
+            const prePrompts = document.getElementById('pre-prompts');
+
             if (userInput === "" || isWaitingForResponse) return;
 
             const chatBox = document.getElementById("chat-box");
@@ -2537,18 +2599,19 @@
             appendMessage(userInput, 'user-message');
             userInputElement.value = ""; // Clear textarea
             userInputElement.style.height = 'auto'; // Reset textarea height
-            userInputElement.focus(); // Keep focus on textarea
+            userInputElement.focus(); // Keep focus on textarea, might open keyboard
+            
+            // Hide pre-prompts and disable send button immediately
+            prePrompts.classList.add('hidden-on-focus');
+            sendBtn.classList.add('loading');
+            sendBtn.disabled = true;
+            isWaitingForResponse = true;
 
             const typingIndicator = showTypingIndicator();
-            isWaitingForResponse = true;
-            document.getElementById("send-btn").disabled = true;
-
+            
             try {
-                // Determine the session_id to send. If currentChatId is null,
-                // the backend will create a new session and return its ID.
                 const sessionIdToSend = currentChatId;
 
-                // Call the actual API endpoint
                 const response = await fetch("/chat", {
                     method: "POST",
                     headers: {  
@@ -2560,8 +2623,6 @@
 
                 const data = await response.json();
                 chatBox.removeChild(typingIndicator);
-                isWaitingForResponse = false;
-                document.getElementById("send-btn").disabled = false;
 
                 if (!response.ok) {
                     if (data.type === 'auth_required') {
@@ -2574,14 +2635,11 @@
                     appendMessage(data.message, 'error-message');
                     showFlashMessage(`Chat error: ${data.message}`, 'error');
                 } else {
-                    appendMessage(data.response, 'bot-message'); // Append directly, formatBotResponse is called inside appendMessage
-                    
-                    // Update currentChatId from backend response (important if a new session was created)
+                    appendMessage(data.response, 'bot-message'); 
                     currentChatId = data.chat_session_id;
-                    await fetchChatSessions(); // Refresh sidebar to show new chat or updated title
+                    await fetchChatSessions();
                     
                     // Add flying animation to paper plane icon
-                    const sendBtn = document.getElementById('send-btn');
                     sendBtn.classList.add('clicked');
                     setTimeout(() => {
                         sendBtn.classList.remove('clicked');
@@ -2590,11 +2648,17 @@
                 
             } catch (error) {
                 chatBox.removeChild(typingIndicator);
-                isWaitingForResponse = false;
-                document.getElementById("send-btn").disabled = false;
                 appendMessage(`Error: ${error.message}`, 'error-message');
                 console.error('Chat error:', error);
                 showFlashMessage(`Failed to send message: ${error.message}`, 'error');
+            } finally {
+                isWaitingForResponse = false;
+                sendBtn.classList.remove('loading');
+                sendBtn.disabled = false;
+                // Re-evaluate pre-prompts visibility after response if input is empty
+                if (userInputElement.value.trim() === '') {
+                    prePrompts.classList.remove('hidden-on-focus');
+                }
             }
         }
 
@@ -2602,45 +2666,35 @@
         function appendMessage(text, className) {
             const chatBox = document.getElementById("chat-box");
             const message = document.createElement("div");
-            // Common message classes
             message.classList.add("message", className);
             
-            // Create a wrapper for the message's main content (text + timestamp)
             const messageBody = document.createElement('div');
             messageBody.classList.add('message-body');
             
-            // Create a div specifically for the formatted text content
             const messageTextContent = document.createElement('div');
             messageTextContent.classList.add('message-text-content');
 
-            // Add bot avatar if it's a bot message
             if (className === 'bot-message') {
                 const botAvatar = document.createElement('div');
                 botAvatar.classList.add('bot-avatar');
                 botAvatar.textContent = 'AI';  
                 message.appendChild(botAvatar);
                 
-                // For bot messages, messageBody should contain the actual content and timestamp
-                // and it needs flex-grow to take up remaining space
                 messageBody.style.flexGrow = '1';  
             } else {
-                // For user messages, messageBody directly is the main content area
-                messageBody.style.alignSelf = 'flex-end'; // Users messages align to end
+                messageBody.style.alignSelf = 'flex-end';
             }
 
-            // Apply markdown formatting to messageTextContent
             formatBotResponse(text, messageTextContent);
             
             messageBody.appendChild(messageTextContent);
 
-            // Add timestamp
             const timestamp = document.createElement('div');
             timestamp.classList.add('message-timestamp');
             const now = new Date();
             timestamp.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             messageBody.appendChild(timestamp);
 
-            // Append messageBody to the main message div
             message.appendChild(messageBody);
 
             chatBox.appendChild(message);
@@ -2729,9 +2783,7 @@
             const chatBox = document.getElementById("chat-box");
             const typingIndicator = document.createElement("div");
             typingIndicator.classList.add("message", "typing-indicator");
-            // Remove innerText from JS, let CSS handle the "Echo AI is typing" text with ::before
             
-            // Add dots for animation
             const typingDots = document.createElement('div');
             typingDots.classList.add('typing-dots');
             typingDots.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
@@ -2858,9 +2910,14 @@
             }
             
             const currentHR = hrHistory[0].rate;
+            const sendBtn = document.getElementById("send-btn");
+            const prePrompts = document.getElementById('pre-prompts');
+
             const typingIndicator = showTypingIndicator();
             isWaitingForResponse = true;
-            document.getElementById("send-btn").disabled = true;
+            sendBtn.classList.add('loading');
+            sendBtn.disabled = true;
+            prePrompts.classList.add('hidden-on-focus'); // Ensure pre-prompts are hidden during analysis request too
             
             try {
                 // Prepare the prompt for GPT-3.5
@@ -2884,8 +2941,6 @@
                 const data = await response.json();
                 const chatBox = document.getElementById('chat-box');
                 chatBox.removeChild(typingIndicator);
-                isWaitingForResponse = false;
-                document.getElementById("send-btn").disabled = false;
 
                 if (!response.ok) {
                     if (data.type === 'auth_required') {
@@ -2899,19 +2954,25 @@
                     showFlashMessage(`Analysis error: ${data.message}`, 'error');
                 } else {
                     // Handle successful responses
-                    appendMessage(data.response, 'bot-message'); // Append directly, formatBotResponse is called inside appendMessage
-                    currentChatId = data.chat_session_id; // Update currentChatId if new session created
-                    await fetchChatSessions(); // Refresh sidebar to show new chat or updated title
+                    appendMessage(data.response, 'bot-message'); 
+                    currentChatId = data.chat_session_id; 
+                    await fetchChatSessions();
                 }
                 
             } catch (error) {
                 const chatBox = document.getElementById('chat-box');
                 chatBox.removeChild(typingIndicator);
-                isWaitingForResponse = false;
-                document.getElementById("send-btn").disabled = false;
                 appendMessage(`Analysis error: ${error.message}`, 'error-message');
                 console.error('Analysis error:', error);
                 showFlashMessage(`Failed to get analysis: ${error.message}`, 'error');
+            } finally {
+                isWaitingForResponse = false;
+                sendBtn.classList.remove('loading');
+                sendBtn.disabled = false;
+                // Re-evaluate pre-prompts visibility after response if input is empty
+                if (document.getElementById('user-input').value.trim() === '') {
+                    prePrompts.classList.remove('hidden-on-focus');
+                }
             }
         }
 
