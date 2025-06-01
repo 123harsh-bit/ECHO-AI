@@ -438,7 +438,7 @@
             overflow: hidden; /* Hide overflow */
             text-overflow: ellipsis; /* Add ellipsis for long titles */
             min-width: 0; /* Crucial: Allows text to shrink */
-            /* margin-right: 5px; Removed, let options-btn position control gap */
+            margin-right: 40px; /* Make space for the options button */
         }
 
         .chat-history-item:hover {
@@ -2085,11 +2085,13 @@
         document.getElementById('heart-rate-button').addEventListener('click', toggleHeartRatePanel);
         document.getElementById('close-hr-panel').addEventListener('click', toggleHeartRatePanel);
         
-        // Profile menu button (both profile label container and the specific three dots button)
+        // Profile menu button (both profile label and options button)
+        // Click on the container itself to toggle the profile menu
         document.getElementById('profile-menu-btn').addEventListener('click', toggleProfileMenu);
+        // Special handler for the three-dots button when sidebar is collapsed
         document.getElementById('profile-options-btn').addEventListener('click', (e) => {
-            e.stopPropagation(); // Stop propagation so document click listener doesn't close it immediately
-            toggleProfileMenu(e); 
+            e.stopPropagation(); // Prevent the parent profile-menu-btn's click from firing
+            toggleProfileMenu(e); // Still call toggleProfileMenu, but stop propagation here
         });
         
         // Profile menu items
@@ -2137,6 +2139,7 @@
             const profileBtnContainer = document.getElementById('profile-menu-btn'); 
             const profileOptionsBtn = document.getElementById('profile-options-btn');
             
+            // Check if profile menu is open AND the click is outside the menu AND outside both associated buttons
             if (profileMenu.classList.contains('show') && 
                 !profileMenu.contains(e.target) && 
                 !profileBtnContainer.contains(e.target) &&
@@ -2146,6 +2149,7 @@
 
             // Close all chat history options menus if open and click is outside
             document.querySelectorAll('.rename-delete-menu.show').forEach(menu => {
+                // Check if the clicked element is part of the menu or its trigger button
                 const optionsBtn = menu.previousElementSibling; 
                 if (!menu.contains(e.target) && !optionsBtn.contains(e.target)) {
                     menu.classList.remove('show');
@@ -2191,14 +2195,15 @@
 
     // Toggle profile menu
     function toggleProfileMenu(e) {
-        e.stopPropagation(); 
+        e.stopPropagation(); /* Prevents the document click listener from instantly closing the menu */
         const profileMenu = document.getElementById('profile-menu-dropdown');
-        profileMenu.classList.toggle('show');
         
         // Close any other open chat options menus
         document.querySelectorAll('.rename-delete-menu.show').forEach(menu => {
             menu.classList.remove('show');
         });
+
+        profileMenu.classList.toggle('show');
     }
 
     // Show settings dialog
@@ -2393,10 +2398,10 @@
         
         if (sidebar.classList.contains('collapsed')) {
             profileOptionsBtn.style.display = 'flex';
-            profileMenuDropdown.classList.remove('show');
+            profileMenuDropdown.classList.remove('show'); 
         } else {
             profileOptionsBtn.style.display = 'none';
-            profileMenuDropdown.classList.remove('show');
+            profileMenuDropdown.classList.remove('show'); 
         }
 
         const isCollapsed = sidebar.classList.contains('collapsed');
@@ -2552,13 +2557,14 @@
             <button class="rename-btn"><i class="fas fa-pencil-alt"></i> Rename</button>
             <button class="delete-btn"><i class="fas fa-trash-alt"></i> Delete</button>
         `;
-        sessionElement.appendChild(menu);
+        sessionElement.appendChild(menu); /* Menu is a child of the sessionElement */
 
         optionsBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); 
+            e.stopPropagation(); /* Stop propagation to prevent loading chat when clicking options button */
             
+            /* Close any other open menus */
             document.querySelectorAll('.rename-delete-menu.show').forEach(openMenu => {
-                if (openMenu !== menu) { 
+                if (openMenu !== menu) { /* Don't close self */
                     openMenu.classList.remove('show');
                 }
             });
@@ -2567,24 +2573,27 @@
         
         menu.querySelector('.rename-btn').addEventListener('click', async (e) => {
             e.stopPropagation();
-            menu.classList.remove('show'); 
+            menu.classList.remove('show'); /* Hide menu */
             const newTitle = prompt('Enter new title for this chat:', session.title);
             if (newTitle && newTitle.trim() !== '' && newTitle.trim() !== session.title) {
                 await renameChatSession(session.id, newTitle.trim());
-            } else if (newTitle !== null) { 
+            } else if (newTitle !== null) { /* If user clicked OK but entered empty/same title */
                 showFlashMessage('Chat title cannot be empty or the same.', 'info');
             }
         });
 
         menu.querySelector('.delete-btn').addEventListener('click', (e) => {
             e.stopPropagation();
-            menu.classList.remove('show'); 
+            menu.classList.remove('show'); /* Hide menu */
             showDeleteConfirmation(session.id, session.title);
         });
         
+        /* Add click handler to load chat for the main session element, but only if not clicking the options button */
         sessionElement.addEventListener('click', async (e) => {
+            /* Check if the click target or any of its parents is the options button or menu */
             const isClickOnOptionsMenu = e.target.closest('.options-btn') || e.target.closest('.rename-delete-menu');
             if (!isClickOnOptionsMenu) {
+                /* Before loading, ensure no menus are open */
                 document.querySelectorAll('.rename-delete-menu.show').forEach(openMenu => {
                     openMenu.classList.remove('show');
                 });
@@ -2725,10 +2734,6 @@
             }
         } catch (initialLoadError) {
             console.error("Error during initial page load:", initialLoadError);
-            // This catch will capture errors from checkLoginStatus, loadUserData, etc.
-            // If checkLoginStatus already redirected, this part might not run.
-            // But if it's a soft error, it prevents the page from being entirely blank.
-            // showFlashMessage("An error occurred during initial load. Please refresh.", "error");
         }
     });
 
@@ -3189,7 +3194,7 @@
 
         async connect() {
             if (this.isConnecting) {
-                showFlashMessage("Connection in progress...", 'info');
+                showNotification("Connection in progress...", 'info'); /* Changed to showNotification */
                 return;
             }
             this.isConnecting = true;
@@ -3204,7 +3209,7 @@
                     throw new Error('Bluetooth is turned off or unavailable on your device.');
                 }
 
-                showFlashMessage("Searching for devices...", 'info');
+                showNotification("Searching for devices...", 'info'); /* Changed to showNotification */
                 
                 this.device = await navigator.bluetooth.requestDevice({
                     filters: [{ services: ['heart_rate'] }],
@@ -3214,11 +3219,11 @@
                 this.device.addEventListener('gattserverdisconnected', () => {
                     this.handleDisconnect();
                     appendMessage("Heart rate monitor disconnected.", 'bot-message');
-                    showFlashMessage("Heart rate monitor disconnected.", 'info');
+                    showNotification("Heart rate monitor disconnected.", 'info'); /* Changed to showNotification */
                 });
                 
                 appendMessage(`Found device: ${this.device.name || 'Unknown Device'}`, 'bot-message');
-                showFlashMessage(`Connecting to ${this.device.name || 'device'}...`, 'info');
+                showNotification(`Connecting to ${this.device.name || 'device'}...`, 'info'); /* Changed to showNotification */
                 
                 const server = await this.device.gatt.connect();
                 const service = await server.getPrimaryService('heart_rate');
@@ -3238,7 +3243,7 @@
                 document.getElementById('hr-status').style.color = "#00ff00";
                 
                 document.getElementById('heart-rate-button').classList.add('pulse');
-                showFlashMessage("Heart rate monitor connected!", 'success');
+                showNotification("Heart rate monitor connected!", 'success'); /* Changed to showNotification */
                 
             } catch (error) {
                 console.error('Bluetooth connection error:', error);
@@ -3253,7 +3258,7 @@
                 }
                 
                 appendMessage(`Bluetooth Error: ${errorMessage}. Please try entering heart rate manually.`, 'error-message');
-                showFlashMessage(`Bluetooth connection failed: ${errorMessage}`, 'error');
+                showNotification(`Bluetooth connection failed: ${errorMessage}`, 'error'); /* Changed to showNotification */
                 this.handleDisconnect();
             } finally {
                 this.isConnecting = false;
