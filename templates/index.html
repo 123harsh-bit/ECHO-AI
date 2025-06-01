@@ -35,6 +35,8 @@
 
             --sidebar-width: 280px;
             --sidebar-collapsed: 60px;
+            
+            /* Safe area insets from env() - these will be 0 on browsers that don't support them */
             --safe-area-inset-top: env(safe-area-inset-top, 0px);
             --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
             --safe-area-inset-left: env(safe-area-inset-left, 0px);
@@ -75,34 +77,36 @@
             --active-chat-border: var(--primary-color); /* Cyan border for active chat */
         }
 
-        * {
+        html, body {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             font-family: -apple-system, BlinkMacMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             -webkit-tap-highlight-color: transparent;
             -webkit-font-smoothing: antialiased;
+            height: 100%; /* Important for proper flex height calculations */
+            width: 100%;
+            overflow: hidden; /* Prevent body scrolling, let main-content handle it */
         }
 
         body {
             background-color: var(--bg-dark);
             color: var(--text-light);
             display: flex;
-            height: 100vh;
-            overflow: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            
             /* Apply safe area insets directly to the body */
             padding-top: var(--safe-area-inset-top);
             padding-bottom: var(--safe-area-inset-bottom);
             padding-left: var(--safe-area-inset-left);
             padding-right: var(--safe-area-inset-right);
-            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         /* Notification styles */
         .notification {
             position: fixed;
-            top: calc(20px + var(--safe-area-inset-top));
-            right: calc(20px + var(--safe-area-inset-right));
+            top: calc(20px + var(--safe-area-inset-top)); /* Adjusted for safe area */
+            right: calc(20px + var(--safe-area-inset-right)); /* Adjusted for safe area */
             background: var(--error-color);
             color: white;
             padding: 15px 20px;
@@ -153,7 +157,7 @@
         /* Flash messages */
         .flash-message {
             position: fixed;
-            top: calc(20px + var(--safe-area-inset-top));
+            top: calc(20px + var(--safe-area-inset-top)); /* Adjusted for safe area */
             left: 50%;
             transform: translateX(-50%);
             padding: 12px 20px;
@@ -185,7 +189,6 @@
             border-right: 1px solid var(--bg-dark); /* Blend border with main background */
             display: flex;
             flex-direction: column;
-            /* Height now accounts for safe areas if applied to body directly */
             height: 100%; /* Fill remaining viewport height */
             overflow: hidden;
             transition: all 0.3s ease;
@@ -714,8 +717,9 @@
             flex-grow: 1;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
-            position: relative;
+            overflow: hidden; /* Hide overflow until chat-box takes over */
+            position: relative; /* For sticky footer or keyboard adjustments */
+            height: 100%; /* Will be dynamically set by JS on mobile to handle keyboard */
         }
 
         .header {
@@ -766,12 +770,12 @@
 
         .main-container {
             display: flex;
+            flex-direction: column; /* Changed to column for mobile layout */
             width: 100%;
-            /* Calculate height based on 100vh minus header and any safe area padding */
-            height: calc(100vh - 60px - var(--safe-area-inset-top) - var(--safe-area-inset-bottom));
-            gap: 20px;
-            padding: 15px;
-            overflow: hidden;
+            flex-grow: 1; /* Allow it to fill main-content height */
+            /* Removed fixed height here, let flex grow handle it with its parent */
+            padding: 15px; /* General padding, adjusted for chat-box content to be visible */
+            overflow: hidden; /* Important for inner scrolling */
         }
 
         .chat-container {
@@ -789,6 +793,11 @@
             color: var(--text-muted);
             max-width: 800px;
             margin: 0 auto;
+            flex-grow: 1; /* Allow it to grow and push input down */
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Center content vertically */
+            align-items: center;
         }
 
         .welcome-message h1 {
@@ -818,7 +827,7 @@
         .chat-box {
             flex-grow: 1;
             overflow-y: auto;
-            padding: 20px;
+            padding: 20px; 
             /* Added padding-bottom to ensure last messages are visible above the input area */
             padding-bottom: 100px; /* Adjust as needed to clear input/pre-prompts */
             display: flex;
@@ -1534,9 +1543,9 @@
             }
 
             /* When the sidebar is collapsed on mobile, it means it's hidden.
-               The user-profile-section and its dropdown should thus be hidden too.
-               If we are referring to the *visual style* of collapsed on desktop,
-               but the sidebar is open on mobile, then the above .sidebar.open rules apply.
+                The user-profile-section and its dropdown should thus be hidden too.
+                If we are referring to the *visual style* of collapsed on desktop,
+                but the sidebar is open on mobile, then the above .sidebar.open rules apply.
             */
             .sidebar.collapsed {
                 width: 280px; /* Keep consistent width for mobile sidebar */
@@ -1558,22 +1567,24 @@
                 display: block;
             }
 
+            /* REMOVED .main-container flex-direction column. It is already by default */
+            /* Height of main-content now handled by JS for keyboard compensation */
+            .main-content {
+                height: auto; /* Allow JS to control this directly */
+                overflow-y: hidden; /* Prevent double scrollbar, chat-box scrolls */
+            }
+            
             .main-container {
-                flex-direction: column;
-                height: auto; /* Allow content to dictate height, but responsive to keyboard */
                 width: 100%;
                 padding: 10px;
-                /* Remove bottom padding here, it's now applied to input-container */
-                padding-bottom: 0; 
-                /* Added padding-bottom to input-container directly */
+                padding-bottom: 0; /* No bottom padding here, input-container handles it */
+                flex-grow: 1; /* Allow it to take available space */
             }
             
             .chat-container {
                 width: 100%;
-                /* Height here needs to dynamically adjust to keyboard.
-                    Using flex-grow on chat-box and proper padding on input-container helps.
-                    This is a complex mobile browser issue often requiring JS for perfect fit. */
-                height: 100%; /* Allow chat-box to scroll within this */
+                /* Height here is crucial for mobile. Let chat-box scroll within. */
+                height: 100%; 
                 position: relative; /* Ensure it respects its parent's height */
             }
             
@@ -1582,7 +1593,8 @@
                 flex-wrap: nowrap; /* Prevent wrapping on mobile */
                 justify-content: flex-start; /* Align to start on mobile */
                 overflow-x: auto;
-                padding-bottom: 10px;
+                padding: 0 15px 15px 15px; /* Added horizontal padding, increased bottom */
+                margin: 0; /* Remove horizontal margin */
                 scrollbar-width: none;
                 -webkit-overflow-scrolling: touch;
                 scroll-snap-type: x mandatory;
@@ -1650,7 +1662,7 @@
             .heart-rate-panel {
                 position: fixed;
                 top: auto;
-                bottom: calc(80px + var(--safe-area-inset-bottom));
+                bottom: calc(80px + var(--safe-area-inset-bottom)); /* Pushed up above input area */
                 right: 15px;
                 left: 15px;
                 width: auto;
@@ -1664,22 +1676,12 @@
                 max-width: none;
             }
 
-            /* Fix mobile scrolling - ensuring body and main-content can scroll */
-            body, html {
-                overflow: hidden; /* Keep body overflow hidden to prevent double scrollbar */
-                height: 100%;
-            }
-
-            .main-content {
-                overflow-y: auto; /* Enable scrolling for main content */
-                -webkit-overflow-scrolling: touch;
-                height: 100%; /* Fill available height for scrolling */
-            }
-
+            /* Fix mobile scrolling - ensuring chat-box can scroll properly */
             .chat-box {
                 overflow-y: scroll; /* Allow chat messages to scroll */
                 -webkit-overflow-scrolling: touch;
-                padding-bottom: 20px; /* Ensure space below messages */
+                padding-bottom: 20px; /* Ensure space below messages, but above input-container */
+                flex-grow: 1; /* Make it take all available space */
             }
         }
 
@@ -2001,8 +2003,13 @@
                 }
             });
             
-            // Handle window resize
+            // Handle window resize (for desktop/mobile switch)
             window.addEventListener('resize', handleResize);
+
+            // Crucial for mobile keyboard issue: Listen to visual viewport changes
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', handleVisualViewport);
+            }
         }
 
         // Set theme (dark/light)
@@ -2051,19 +2058,52 @@
             document.getElementById('settings-overlay').classList.remove('active');
         }
 
-        // Handle window resize
+        // Handle window resize (for desktop/mobile switch)
         function handleResize() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+
             if (window.innerWidth > 768) {
-                // Close mobile sidebar if open
-                const sidebar = document.getElementById('sidebar');
-                const overlay = document.getElementById('overlay');
+                // If desktop, ensure sidebar is not in mobile 'open' state
                 if (sidebar.classList.contains('open')) {
                     sidebar.classList.remove('open');
                     overlay.classList.remove('active');
                     document.body.style.overflow = '';
                 }
+                // Re-apply collapsed state for desktop if it was saved
+                const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+                if (isCollapsed) {
+                    sidebar.classList.add('collapsed');
+                }
+            } else {
+                // If mobile, ensure desktop collapsed state is not applied
+                sidebar.classList.remove('collapsed');
+            }
+            // Ensure visual viewport listener updates main-content height
+            handleVisualViewport(); 
+        }
+
+        // Dynamic height adjustment for main-content to compensate for mobile keyboard
+        function handleVisualViewport() {
+            if (window.visualViewport && window.innerWidth <= 768) {
+                const mainContent = document.getElementById('main-content');
+                const headerHeight = document.querySelector('.header').offsetHeight;
+                const safeAreaTop = parseInt(getComputedStyle(document.body).getPropertyValue('--safe-area-inset-top'));
+                const safeAreaBottom = parseInt(getComputedStyle(document.body).getPropertyValue('--safe-area-inset-bottom'));
+                
+                // Calculate height relative to visual viewport, accounting for header and safe areas
+                const newHeight = window.visualViewport.height - (headerHeight + safeAreaTop + safeAreaBottom);
+                mainContent.style.height = `${newHeight}px`;
+
+                // Scroll chat box to bottom to ensure input is visible when keyboard is up
+                const chatBox = document.getElementById('chat-box');
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } else if (window.innerWidth > 768) {
+                // Reset height for desktop
+                document.getElementById('main-content').style.height = '100%';
             }
         }
+
 
         // Initialize search functionality
         function initSearch() {
@@ -2263,7 +2303,7 @@
                 document.getElementById('chat-box').innerHTML = '';
                 
                 // Show welcome message
-                document.getElementById('welcome-message').style.display = 'block';
+                document.getElementById('welcome-message').style.display = 'flex'; // Use flex for centering
                 
                 // Refresh chat history from server
                 await fetchChatSessions();
@@ -2540,6 +2580,9 @@
             
             // Store current time as last active time (for shouldStartNewChat logic)
             localStorage.setItem('lastActiveTime', Date.now());
+
+            // Initial call to adjust main-content height based on visual viewport
+            handleVisualViewport();
         });
 
         // Check if user is logged in
@@ -2696,7 +2739,7 @@
                     showFlashMessage(`Chat error: ${data.message}`, 'error');
                 } else {
                     appendMessage(data.response, 'bot-message'); 
-                    currentChatId = data.chat_session_id;
+                    currentChatId = data.chat_session_id; 
                     await fetchChatSessions();
                     
                     // Add flying animation to paper plane icon
