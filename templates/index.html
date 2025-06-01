@@ -202,7 +202,8 @@
 
         .sidebar.collapsed .sidebar-header-text,
         .sidebar.collapsed .chat-history-search,
-        .sidebar.collapsed .chat-history {
+        .sidebar.collapsed .chat-history,
+        .sidebar.collapsed .profile-label {
             display: none;
         }
         
@@ -268,33 +269,10 @@
             margin-right: 0;
         }
 
-        /* Profile menu dropdown needs to break out of the collapsed sidebar's bounds */
-        .sidebar.collapsed .profile-menu-dropdown {
-            position: fixed; /* Use fixed to position relative to viewport */
-            /* Calculate dynamic position based on collapsed sidebar */
-            /* For now, just set a general position that breaks out */
-            left: var(--sidebar-collapsed); /* Aligned to the right edge of the collapsed sidebar */
-            transform: translateX(-100%); /* Pull it back over the collapsed sidebar content area */
-            /* This assumes the menu will open to the left of the icon. 
-               If it opens to the right, `left: var(--sidebar-collapsed);` is enough. */
-            /* Let's try right-aligned for simpler fixed positioning */
-            right: calc(100vw - var(--sidebar-collapsed)); /* Aligns right edge of menu to right edge of collapsed sidebar */
-            left: auto;
-            transform: translateX(100%); /* Pushes it to the right outside of collapsed sidebar */
-            z-index: 1050; /* Ensure it's above everything */
-            /* To make it appear *next* to the avatar in the collapsed state,
-               you might need to adjust 'right' and 'left' based on the collapsed sidebar's fixed width. */
-            /* A simpler approach is to align it to the window's edge and manage its X offset. */
-            top: auto; /* Clear any previous top values */
-            bottom: calc(var(--safe-area-inset-bottom) + 15px + 40px + 10px); /* Adjust to appear above the avatar in collapsed state */
-            /* bottom calculation: safe-area-inset-bottom + user-profile-section padding-bottom + avatar height + a small gap */
-            
-            /* Ensure text is visible in collapsed state */
-            width: auto;
-            min-width: 180px;
-            max-width: 250px;
-        }
-
+        /* REMOVED: This rule prevented the dropdown from showing when collapsed */
+        /* .sidebar.collapsed .profile-menu-dropdown {
+            display: none;
+        } */
 
         .sidebar-header {
             padding: 15px;
@@ -413,11 +391,8 @@
             align-items: center;
             gap: 8px;
             color: var(--text-light); /* Default text color */
-            position: relative; /* For the options menu to position relative to it */
+            position: relative;
             transition: all 0.2s ease;
-            white-space: nowrap; /* Keep content on single line */
-            overflow: hidden; /* Hide overflow */
-            text-overflow: ellipsis; /* Add ellipsis for long titles */
         }
 
         .chat-history-item span {
@@ -432,12 +407,6 @@
             background: var(--bg-darker);
             transform: translateX(2px);
         }
-        /* Show options button on hover */
-        .chat-history-item:hover .options-btn {
-            opacity: 1;
-            transform: translateX(0);
-        }
-
 
         .chat-history-item.active {
             background: var(--active-chat-bg); /* Use the new active chat background color */
@@ -456,76 +425,32 @@
             color: var(--primary-color); /* Icon matches primary color when active */
         }
 
-        /* New styles for the three-dots options button and menu */
-        .options-btn {
-            background: none;
+        .chat-history-item .delete-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
             border: none;
             color: var(--text-muted);
             cursor: pointer;
-            font-size: 16px;
-            padding: 5px;
+            opacity: 0;
+            transition: opacity 0.2s;
             min-height: 44px;
             min-width: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
-            opacity: 0; /* Hidden by default */
-            transition: opacity 0.2s, transform 0.2s;
-            transform: translateX(5px); /* Slightly off-screen */
             flex-shrink: 0;
-            margin-left: auto; /* Push to the right */
-            position: relative; /* To position its own dropdown */
         }
 
-        .options-btn:hover {
-            color: var(--text-light);
+        .chat-history-item:hover .delete-btn {
+            opacity: 1;
         }
 
-        .rename-delete-menu {
-            display: none; /* Controlled by JS 'show' class */
-            position: absolute;
-            right: 0; /* Align to the right of the options button */
-            top: 100%; /* Position below the options button */
-            background: var(--bg-darkest);
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            z-index: 200; /* Above other sidebar elements */
-            min-width: 120px;
+        .chat-history-item .delete-btn:hover {
+            color: var(--error-color);
         }
-
-        .rename-delete-menu.show {
-            display: block;
-        }
-
-        .rename-delete-menu button {
-            width: 100%;
-            background: transparent;
-            color: var(--text-light);
-            border: none;
-            padding: 10px 15px;
-            cursor: pointer;
-            text-align: left;
-            transition: background-color 0.2s;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .rename-delete-menu button:hover {
-            background: var(--bg-darker);
-        }
-
-        .rename-delete-menu button:last-child {
-            color: var(--error-color); /* Make delete red */
-        }
-
-        .rename-delete-menu button:last-child:hover {
-            background: rgba(255, 77, 77, 0.2);
-        }
-
 
         .chat-history-date {
             color: var(--text-muted);
@@ -603,13 +528,15 @@
 
         .profile-menu-dropdown {
             display: none;
-            position: absolute; /* Position absolute relative to .user-profile-section */
+            /* Position absolutely relative to .user-profile-section */
+            position: absolute;
             bottom: calc(100% + 5px); /* Position above the .profile-label-container + small gap */
             left: 0; /* Align to the left edge of the parent (.user-profile-section) */
+            /* Or right: 0; if you want it aligned to the right edge */
             
             width: 100%; /* Default width when sidebar is open */
-            min-width: 180px; /* Minimum width for dropdown */
-            max-width: 250px; /* Maximum width for dropdown */
+            min-width: 200px; /* Minimum width when sidebar is collapsed */
+            max-width: 250px; /* Maximum width for the dropdown */
 
             background: var(--bg-darkest);
             border-radius: 8px;
@@ -617,6 +544,7 @@
             border: 1px solid var(--border-color);
             overflow: hidden;
             z-index: 1050; /* Ensure it's above most content */
+            transform: translateY(0); /* Reset transform for smooth transition */
             opacity: 0;
             pointer-events: none; /* Disable interaction when hidden */
             transition: opacity 0.2s ease, transform 0.2s ease;
@@ -626,7 +554,35 @@
             display: block; /* Make it block to enable transitions */
             opacity: 1;
             pointer-events: auto; /* Enable interaction when shown */
-            transform: translateY(0); /* Ensure no unwanted transform from display: none */
+        }
+
+        .profile-menu-item {
+            width: 100%;
+            background: transparent;
+            color: var(--text-light);
+            border: none;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-align: left;
+            min-height: 44px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .profile-menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .profile-menu-item:hover {
+            background: var(--bg-darker);
+        }
+
+        .profile-menu-item i {
+            width: 20px;
+            text-align: center;
         }
 
         /* Settings dropdown */
@@ -1475,104 +1431,6 @@
             line-height: 1.4;
         }
 
-        /* Delete Confirmation Modal */
-        .delete-modal-overlay {
-            display: none; /* Hidden by default */
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7); /* Dark semi-transparent background */
-            z-index: 2500; /* Higher than other overlays */
-            backdrop-filter: blur(5px);
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .delete-modal-overlay.show {
-            display: flex;
-            opacity: 1;
-        }
-
-        .delete-modal-content {
-            background: var(--bg-darkest);
-            border-radius: 12px;
-            padding: 25px;
-            width: 90%;
-            max-width: 400px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-            text-align: center;
-            transform: translateY(20px);
-            transition: transform 0.3s ease, opacity 0.3s ease;
-            color: var(--text-light);
-            border: 1px solid var(--border-color);
-            box-sizing: border-box; /* Ensure padding doesn't make it overflow */
-        }
-
-        .delete-modal-overlay.show .delete-modal-content {
-            transform: translateY(0);
-        }
-
-        .delete-modal-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--text-light);
-            margin-bottom: 15px;
-        }
-
-        .delete-modal-message {
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-bottom: 25px;
-            line-height: 1.5;
-        }
-        /* Highlight the item name in the message */
-        .delete-modal-message strong {
-            color: var(--primary-color);
-        }
-
-
-        .delete-modal-actions {
-            display: flex;
-            gap: 15px;
-            justify-content: flex-end;
-        }
-
-        .delete-modal-btn {
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            min-height: 44px; /* Ensure good touch target */
-        }
-
-        .delete-modal-btn.cancel {
-            background: var(--bg-darker);
-            color: var(--text-light);
-            border: 1px solid var(--border-color);
-        }
-
-        .delete-modal-btn.cancel:hover {
-            background: var(--border-color);
-        }
-
-        .delete-modal-btn.delete {
-            background: var(--error-color);
-            color: white;
-            border: none;
-        }
-
-        .delete-modal-btn.delete:hover {
-            background: darken(var(--error-color), 10%); /* Requires Sass/Less or calculate manually */
-            background: #cc3939; /* A slightly darker red */
-        }
-
-
         /* Mobile responsiveness */
         .sidebar-toggle {
             display: none;
@@ -1724,28 +1582,9 @@
                 z-index: 50; /* Ensure it's above chat messages */
             }
 
-            /* Profile menu mobile styles - when sidebar is closed it's effectively a mobile scenario */
+            /* Profile menu mobile styles */
             .profile-menu-dropdown {
-                /* When sidebar is collapsed on desktop, this needs to behave like a pop-out menu */
-                /* For desktop collapsed sidebar, it should appear right next to it */
-                /* And for true mobile (sidebar.open), it should be static as currently defined */
-                position: absolute; /* Default to absolute for contained behavior */
-                left: 0; /* Default to left alignment */
-                right: auto;
-                transform: none; /* No transform by default */
-                z-index: 1050; /* Ensure it's above most content */
-
-                /* Override for collapsed state */
-                .sidebar.collapsed & { /* This syntax won't work in plain CSS. Requires nesting. */
-                                        /* This indicates a fixed position is better if it breaks out. */
-                    position: fixed;
-                    left: var(--sidebar-collapsed); /* Aligned to the right edge of the collapsed sidebar */
-                    transform: translateX(0); /* No translation, let 'left' handle it */
-                    top: auto;
-                    bottom: calc(var(--safe-area-inset-bottom) + 15px + 40px + 10px); /* Position it above the icon */
-                    /* Re-adjust left to align the menu to the sidebar's right edge for a pop-out effect */
-                    margin-left: 5px; /* Small gap from the sidebar edge */
-                }
+                /* No changes needed here, handled by global .profile-menu-dropdown positioning */
             }
             
             .profile-menu-item {
@@ -1828,20 +1667,6 @@
 
     <div class="settings-overlay" id="settings-overlay"></div>
 
-    <div class="delete-modal-overlay" id="delete-chat-modal-overlay">
-        <div class="delete-modal-content">
-            <h3 class="delete-modal-title">Delete chat?</h3>
-            <p class="delete-modal-message">
-                This will delete <strong id="delete-chat-title"></strong>.
-                Visit settings to delete any memories saved during this chat.
-            </p>
-            <div class="delete-modal-actions">
-                <button class="delete-modal-btn cancel" id="delete-modal-cancel-btn">Cancel</button>
-                <button class="delete-modal-btn delete" id="delete-modal-confirm-btn">Delete</button>
-            </div>
-        </div>
-    </div>
-
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-header-text">Chat History</div>
@@ -1862,7 +1687,6 @@
         <div class="profile-label-container" id="profile-menu-btn">
             <div class="profile-avatar" id="user-avatar"></div>
             <div class="profile-label" id="profile-label">Loading...</div>
-            <button class="options-btn" id="profile-options-btn" style="display: none;"><i class="fas fa-ellipsis-h"></i></button>
         </div>
         
         <div class="user-profile-menu">
@@ -2050,6 +1874,7 @@
             
             // Chat input (now textarea)
             const userInputElement = document.getElementById('user-input');
+            const prePrompts = document.getElementById('pre-prompts'); /* Added prePrompts variable */
 
             userInputElement.addEventListener('keypress', (e) => {
                 // Allow Shift+Enter for new line, Enter to send
@@ -2072,9 +1897,8 @@
             document.getElementById('heart-rate-button').addEventListener('click', toggleHeartRatePanel);
             document.getElementById('close-hr-panel').addEventListener('click', toggleHeartRatePanel);
             
-            // Profile menu button (both profile label and options button)
+            // Profile menu button
             document.getElementById('profile-menu-btn').addEventListener('click', toggleProfileMenu);
-            document.getElementById('profile-options-btn').addEventListener('click', toggleProfileMenu);
             
             // Profile menu items
             document.getElementById('settings-btn').addEventListener('click', showSettings);
@@ -2114,37 +1938,18 @@
             // Close notification button
             document.getElementById('close-notification').addEventListener('click', hideNotification);
             
-            // Close profile menu AND chat options menus when clicking outside
+            // Close profile menu when clicking outside
             document.addEventListener('click', (e) => {
-                // Profile menu
                 const profileMenu = document.getElementById('profile-menu-dropdown');
-                const profileBtn = document.getElementById('profile-menu-btn'); // Parent of avatar and label
-                const profileOptionsBtn = document.getElementById('profile-options-btn'); // The three dots button for collapsed sidebar
+                const profileBtn = document.getElementById('profile-menu-btn');
                 
-                if (profileMenu.classList.contains('show') && 
-                    !profileMenu.contains(e.target) && 
-                    !profileBtn.contains(e.target) &&
-                    !profileOptionsBtn.contains(e.target)) {
+                // Check if the click is outside the profile menu AND outside the profile button
+                // This ensures clicks on the button toggle it, and clicks outside close it.
+                if (profileMenu.classList.contains('show') && !profileMenu.contains(e.target) && !profileBtn.contains(e.target)) {
                     profileMenu.classList.remove('show');
                 }
-
-                // Chat history item options menus
-                document.querySelectorAll('.rename-delete-menu.show').forEach(menu => {
-                    const optionsBtn = menu.previousElementSibling; // The three dots button for the chat item
-                    if (!menu.contains(e.target) && !optionsBtn.contains(e.target)) {
-                        menu.classList.remove('show');
-                    }
-                });
             });
-
-            // Delete modal interaction
-            document.getElementById('delete-modal-cancel-btn').addEventListener('click', hideDeleteConfirmation);
-            document.getElementById('delete-chat-modal-overlay').addEventListener('click', (e) => {
-                if (e.target.id === 'delete-chat-modal-overlay') {
-                    hideDeleteConfirmation();
-                }
-            });
-
+            
             // Handle window resize
             window.addEventListener('resize', handleResize);
         }
@@ -2180,16 +1985,6 @@
             e.stopPropagation(); // Prevent document click listener from immediately closing it
             const profileMenu = document.getElementById('profile-menu-dropdown');
             profileMenu.classList.toggle('show');
-            // Hide the full profile menu and show the options button when collapsed
-            const sidebar = document.getElementById('sidebar');
-            const profileOptionsBtn = document.getElementById('profile-options-btn');
-
-            if (sidebar.classList.contains('collapsed')) {
-                // If sidebar is collapsed, we want the dropdown to appear as a fixed element
-                profileOptionsBtn.style.display = 'flex'; // Ensure the three dots are visible
-            } else {
-                profileOptionsBtn.style.display = 'none'; // Hide the three dots when sidebar is open
-            }
         }
 
         // Show settings dialog
@@ -2207,15 +2002,6 @@
 
         // Handle window resize
         function handleResize() {
-            // Update profile options button visibility based on sidebar collapsed state
-            const sidebar = document.getElementById('sidebar');
-            const profileOptionsBtn = document.getElementById('profile-options-btn');
-            if (sidebar.classList.contains('collapsed') && window.innerWidth > 768) {
-                profileOptionsBtn.style.display = 'flex';
-            } else {
-                profileOptionsBtn.style.display = 'none';
-            }
-
             if (window.innerWidth > 768) {
                 // Close mobile sidebar if open
                 const sidebar = document.getElementById('sidebar');
@@ -2379,17 +2165,8 @@
         // Toggle sidebar collapse state
         function toggleCollapseSidebar() {
             const sidebar = document.getElementById('sidebar');
-            const profileOptionsBtn = document.getElementById('profile-options-btn');
             sidebar.classList.toggle('collapsed');
             
-            // Show/hide profile options button based on collapsed state
-            if (sidebar.classList.contains('collapsed')) {
-                profileOptionsBtn.style.display = 'flex';
-            } else {
-                profileOptionsBtn.style.display = 'none';
-                document.getElementById('profile-menu-dropdown').classList.remove('show'); // Hide dropdown when expanding
-            }
-
             // Save state to localStorage
             const isCollapsed = sidebar.classList.contains('collapsed');
             localStorage.setItem('sidebarCollapsed', isCollapsed);
@@ -2544,115 +2321,77 @@
             
             sessionElement.dataset.id = session.id;
             
-            // Create options button (three dots)
-            const optionsBtn = document.createElement('button');
-            optionsBtn.className = 'options-btn';
-            optionsBtn.innerHTML = '<i class="fas fa-ellipsis-h"></i>';
-            optionsBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent loading chat when clicking options
-                // Close any other open menus
-                document.querySelectorAll('.rename-delete-menu.show').forEach(openMenu => {
-                    if (openMenu !== menu) { // Don't close self
-                        openMenu.classList.remove('show');
-                    }
-                });
-                menu.classList.toggle('show');
-            });
-            sessionElement.appendChild(optionsBtn);
-
-            // Create rename/delete menu
-            const menu = document.createElement('div');
-            menu.className = 'rename-delete-menu';
-            menu.innerHTML = `
-                <button class="rename-btn"><i class="fas fa-pencil-alt"></i> Rename</button>
-                <button class="delete-btn"><i class="fas fa-trash-alt"></i> Delete</button>
-            `;
-            
-            menu.querySelector('.rename-btn').addEventListener('click', async (e) => {
+            // Add delete button
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+            deleteBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                menu.classList.remove('show'); // Hide menu
-                const newTitle = prompt('Enter new title for this chat:', session.title);
-                if (newTitle && newTitle.trim() !== '' && newTitle.trim() !== session.title) {
-                    await renameChatSession(session.id, newTitle.trim());
-                } else if (newTitle !== null) { // If user clicked OK but entered empty/same title
-                    showFlashMessage('Chat title cannot be empty or the same.', 'info');
+                if (confirm('Are you sure you want to delete this chat? This cannot be undone.')) {
+                    await deleteChatSession(session.id);
                 }
             });
-
-            menu.querySelector('.delete-btn').addEventListener('click', (e) => {
-                e.stopPropagation();
-                menu.classList.remove('show'); // Hide menu
-                showDeleteConfirmation(session.id, session.title);
-            });
-            
-            sessionElement.appendChild(menu);
+            sessionElement.appendChild(deleteBtn);
             
             // Add click handler to load chat
             sessionElement.addEventListener('click', async () => {
-                // Before loading, ensure no menus are open
-                document.querySelectorAll('.rename-delete-menu.show').forEach(openMenu => {
-                    openMenu.classList.remove('show');
-                });
                 await loadChatSession(session.id);
             });
             
             container.appendChild(sessionElement);
         }
 
-        // Show custom delete confirmation modal
-        function showDeleteConfirmation(sessionId, chatTitle) {
-            const modalOverlay = document.getElementById('delete-chat-modal-overlay');
-            document.getElementById('delete-chat-title').textContent = chatTitle;
-            modalOverlay.classList.add('show');
-
-            // Set up confirm action
-            const confirmBtn = document.getElementById('delete-modal-confirm-btn');
-            confirmBtn.onclick = async () => {
-                await deleteChatSession(sessionId);
-                hideDeleteConfirmation();
-            };
-        }
-
-        // Hide custom delete confirmation modal
-        function hideDeleteConfirmation() {
-            const modalOverlay = document.getElementById('delete-chat-modal-overlay');
-            modalOverlay.classList.remove('show');
-            const confirmBtn = document.getElementById('delete-modal-confirm-btn');
-            confirmBtn.onclick = null; // Clear handler
-        }
-
-
-        // Rename chat session via API
-        async function renameChatSession(sessionId, newTitle) {
+        // Load a specific chat session from backend
+        async function loadChatSession(sessionId) {
             try {
                 const response = await fetch(`/api/chat-sessions/${sessionId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ title: newTitle })
+                    method: 'GET',
+                    credentials: 'include'
                 });
                 if (!response.ok) {
                     if (response.status === 401) {
                         window.location.href = '/login';
                         return;
                     }
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-                if (data.success) {
-                    showFlashMessage('Chat renamed successfully!', 'success');
-                    await fetchChatSessions(); // Refresh sidebar
-                    // If current chat was renamed, update its title in the header if displayed
-                    if (currentChatId === sessionId) {
-                        // Logic to update main chat title if it's shown in header (not currently in this template)
+                
+                currentChatId = data.id;
+                
+                // Clear the chat box
+                const chatBox = document.getElementById('chat-box');
+                chatBox.innerHTML = '';
+                
+                // Hide welcome message
+                document.getElementById('welcome-message').style.display = 'none';
+                
+                // Add messages to chat box
+                data.messages.forEach(msg => {
+                    appendMessage(msg.content, msg.is_user ? 'user-message' : 'bot-message');
+                });
+                
+                // Update active state in sidebar
+                document.querySelectorAll('.chat-history-item').forEach(item => {
+                    item.classList.remove('active');
+                    if (item.dataset.id == sessionId) { // Use == for comparing number (data.id) with string (dataset.id)
+                        item.classList.add('active');
                     }
-                } else {
-                    showFlashMessage(`Failed to rename chat: ${data.error}`, 'error');
+                });
+                
+                // Close sidebar on mobile
+                if (window.innerWidth <= 768) {
+                    toggleSidebar();
                 }
+                
+                // Scroll to bottom of chat
+                chatBox.scrollTop = chatBox.scrollHeight;
+                // showFlashMessage(`Loaded chat: ${data.title}`, 'info'); // COMMENTED OUT
+
             } catch (error) {
-                console.error('Error renaming chat session:', error);
-                showFlashMessage('Failed to rename chat. Please try again.', 'error');
+                console.error('Error loading chat session:', error);
+                // appendMessage('Failed to load chat. Please try again.', 'error-message'); // Flash message will replace this
+                showFlashMessage('Failed to load chat. Please try again.', 'error');
             }
         }
 
@@ -2710,9 +2449,6 @@
             const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
             if (isCollapsed && window.innerWidth > 768) {
                 document.getElementById('sidebar').classList.add('collapsed');
-                document.getElementById('profile-options-btn').style.display = 'flex'; // Show three dots
-            } else {
-                document.getElementById('profile-options-btn').style.display = 'none'; // Hide three dots
             }
             
             // Always fetch and display chat sessions from backend on load
@@ -2827,9 +2563,8 @@
                 } else {
                     // Fallback if data or username is missing
                     document.getElementById('profile-label').textContent = 'Guest User';
-                    const avatar = document.getElementById('user-avatar');
-                    avatar.textContent = 'GU';
-                    avatar.style.backgroundImage = 'none';
+                    document.getElementById('user-avatar').textContent = 'GU';
+                    document.getElementById('user-avatar').style.backgroundImage = 'none';
                 }
             } catch (error) {
                 console.error('Error loading user data:', error);
@@ -2847,6 +2582,7 @@
             const userInputElement = document.getElementById("user-input");
             const userInput = userInputElement.value.trim();
             const sendBtn = document.getElementById("send-btn");
+            /* const prePrompts = document.getElementById('pre-prompts'); // Removed prePrompts variable as its logic is removed */
 
             if (userInput === "" || isWaitingForResponse) return;
 
@@ -3168,11 +2904,13 @@
             
             const currentHR = hrHistory[0].rate;
             const sendBtn = document.getElementById("send-btn");
+            /* const prePrompts = document.getElementById('pre-prompts'); // Removed prePrompts variable as its logic is removed */
 
             const typingIndicator = showTypingIndicator();
             isWaitingForResponse = true;
             sendBtn.classList.add('loading');
             sendBtn.disabled = true;
+            /* prePrompts.classList.add('hidden-on-focus'); // Removed as per new logic */
             
             try {
                 // Prepare the prompt for GPT-3.5
