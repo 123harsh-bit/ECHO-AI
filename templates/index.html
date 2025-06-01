@@ -100,6 +100,9 @@
             height: 100%; /* Important for proper flex height calculations */
             width: 100%;
             overflow: hidden; /* Prevent body scrolling, let main-content handle it */
+            /* Fallback for iOS 100vh issue if needed */
+            min-height: -webkit-fill-available;
+            min-height: 100vh;
         }
 
         body {
@@ -747,7 +750,7 @@
         }
 
         /* Center the header title on desktop, and position correctly */
-        .header-title-center {
+        .header-title-center { /* Targeted specifically for the title text */
             position: absolute; /* Absolute for precise centering on desktop */
             left: 50%;
             transform: translateX(-50%);
@@ -874,7 +877,7 @@
         .message {
             padding: 15px; /* Base padding for message content area */
             border-radius: 18px;
-            max-width: 75vw; /* FIX: Set max-width based on viewport width for better consistency */
+            max-width: 90vw; /* FIX: Use viewport width for more consistent sizing */
             min-width: 80px; /* Ensure a minimum width for short messages like "Hi" */
             width: fit-content;
             word-wrap: break-word; /* Ensure long words break */
@@ -903,7 +906,7 @@
             flex-direction: row; /* Avatar and message content side-by-side */
             align-items: flex-start;
             gap: 10px;
-            max-width: 75vw; /* FIX: Set max-width based on viewport width for consistency */
+            max-width: 90vw; /* FIX: Use viewport width for more consistent sizing */
             min-width: 80px; /* Also ensure a minimum width for short bot messages */
             width: fit-content;
             padding: 10px; /* Adjust padding due to avatar */
@@ -937,7 +940,7 @@
             color: white;
             border-radius: 18px 18px 18px 0;
             padding: 15px;
-            max-width: 75vw; /* Adjusted max-width */
+            max-width: 90vw; /* Adjusted max-width */
         }
 
         .typing-indicator {
@@ -1516,7 +1519,7 @@
                 top: 0;
                 left: -280px; /* Initially off-screen */
                 bottom: 0;
-                z-index: 1000;
+                z-index: 1000; /* High enough to be over main content */
                 width: 280px;
                 transition: transform 0.3s ease;
                 box-shadow: 2px 0 10px rgba(0,0,0,0.3);
@@ -1529,14 +1532,15 @@
                 transform: translateX(280px); /* Slide in */
             }
 
-            .sidebar.collapsed { /* On mobile, "collapsed" means hidden */
-                width: 280px;
-                left: -280px;
+            /* On mobile, "collapsed" means hidden, so this won't apply to the *open* state */
+            .sidebar.collapsed { 
+                width: 280px; /* Keep consistent width for mobile sidebar */
+                left: -280px; /* Hidden position */
             }
-
-            .sidebar.collapsed.open { /* Only open if it's explicitly toggled 'open' */
+            .sidebar.collapsed.open { /* This rule means: if collapsed class is present, but then also open is applied, open it to full width */
                 transform: translateX(280px);
             }
+
 
             .sidebar-toggle {
                 display: flex; /* Show hamburger on mobile */
@@ -1575,10 +1579,21 @@
                 margin-right: 0; /* Ensure no external margin pushing it */
             }
 
+            /* FIX: Ensure overlay covers everything and has a solid background */
+            .overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.7); /* Solid, dark background */
+                z-index: 999; /* Lower than sidebar, higher than main content */
+                backdrop-filter: blur(5px); /* Keep blur effect */
+                display: none; /* Hidden by default */
+            }
             .overlay.active {
-                display: block;
-                background: rgba(0, 0, 0, 0.7); /* Ensure dark, opaque overlay */
-                backdrop-filter: blur(5px); /* Keep blur for effect */
+                display: block; /* Show when active */
+                pointer-events: auto; /* Allow clicks on overlay */
             }
 
             .main-content {
@@ -1985,9 +2000,9 @@
             document.getElementById('overlay').addEventListener('click', () => {
                 if (window.innerWidth <= 768) {
                     const sidebar = document.getElementById('sidebar');
-                    const overlay = document.getElementById('overlay');
+                    // Check if sidebar is open, then close it
                     if (sidebar.classList.contains('open')) {
-                        toggleSidebar(); // Close sidebar if it's open and overlay is clicked
+                        toggleSidebar(); 
                     }
                 }
             });
