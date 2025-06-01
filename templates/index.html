@@ -512,8 +512,10 @@
         .rename-delete-menu {
             display: none; /* Controlled by JS 'show' class */
             position: absolute;
-            right: 0; /* Align to the right of the options button (its parent) */
-            top: 100%; /* Position below the options button */
+            /* Positioning relative to its parent .chat-history-item */
+            right: 15px; /* Align with right padding of the list item */
+            top: 100%; /* Position below the current chat item */
+            
             background: var(--bg-darkest);
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
@@ -1279,636 +1281,596 @@
             line-height: 1.5;
         }
         
-        .bot-message ul li {
-            list-style-type: disc;
-        }
-        
-        .bot-message ol li {
-            list-style-type: decimal;
-        }
+.bot-message ul li {
+    list-style-type: disc;
+}
 
-        /* Heart Rate Panel Styles - Now in top-right corner */
-        .heart-rate-panel {
+.bot-message ol li {
+    list-style-type: decimal;
+}
+
+/* Heart Rate Panel Styles - Now in top-right corner */
+.heart-rate-panel {
+    position: fixed;
+    top: calc(70px + var(--safe-area-inset-top)); /* Adjust for safe area */
+    right: calc(20px + var(--safe-area-inset-right)); /* Adjust for safe area */
+    background: var(--bg-darker);
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    width: 280px;
+    z-index: 1000;
+    border: 1px solid var(--border-color);
+    display: none;
+    transform: translateY(-10px);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.heart-rate-panel.visible {
+    display: block;
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.heart-rate-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.heart-rate-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.heart-rate-header h3 i {
+    font-size: 18px;
+    color: var(--error-color);
+}
+
+.heart-rate-content {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.heart-rate-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 10px;
+    background: var(--bg-darkest);
+    border-radius: 10px;
+}
+
+.current-hr {
+    font-size: 32px;
+    font-weight: bold;
+    color: var(--error-color);
+    font-family: 'Courier New', monospace;
+}
+
+.hr-status {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.heart-rate-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.heart-rate-btn {
+    padding: 10px 15px;
+    border-radius: 20px;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.3s ease;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex: 1;
+}
+
+.heart-rate-btn i {
+    font-size: 14px;
+}
+
+.heart-rate-btn.connect {
+    background: var(--primary-dark); /* Connect uses primary-dark */
+}
+
+.heart-rate-btn.disconnect {
+    background: var(--text-muted);
+}
+
+.heart-rate-btn.analyze {
+    background: var(--success-color);
+}
+
+.heart-rate-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.heart-rate-btn:active {
+    transform: translateY(0);
+}
+
+.heart-rate-btn:disabled {
+    background: var(--border-color);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.manual-hr-input {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#manual-hr {
+    flex-grow: 1;
+    padding: 10px 15px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-darkest);
+    color: var(--text-light);
+    font-size: 14px;
+    outline: none;
+    min-height: 44px;
+}
+
+#manual-hr:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2);
+}
+
+#submit-hr {
+    padding: 10px 15px;
+    background: var(--primary-dark); /* Submit uses primary-dark */
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    min-height: 44px;
+    min-width: 80px;
+    transition: all 0.3s ease;
+}
+
+#submit-hr:hover {
+    background: var(--primary-color); /* Hover to primary color */
+    transform: translateY(-1px);
+}
+
+.hr-history {
+    margin-top: 10px;
+    max-height: 120px;
+    overflow-y: auto;
+    background: var(--bg-darkest);
+    border-radius: 10px;
+    padding: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color) var(--bg-darker);
+}
+
+.hr-history::-webkit-scrollbar {
+    width: 6px;
+}
+
+.hr-history::-webkit-scrollbar-track {
+    background: var(--bg-darker);
+}
+
+.hr-history::-webkit-scrollbar-thumb {
+    background-color: var(--primary-color);
+    border-radius: 3px;
+}
+
+.hr-history h4 {
+    color: var(--primary-color);
+    margin-bottom: 10px;
+    text-align: center;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.hr-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hr-history-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: var(--bg-darker);
+    border-radius: 6px;
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+.hr-history-item:hover {
+    background: var(--border-color);
+    transform: translateX(2px);
+}
+
+.hr-history-value {
+    font-weight: bold;
+    color: var(--error-color);
+    font-family: 'Courier New', monospace;
+}
+
+.bluetooth-note {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 10px;
+    line-height: 1.4;
+}
+
+/* Delete Confirmation Modal */
+.delete-modal-overlay {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7); /* Dark semi-transparent background */
+    z-index: 2500; /* Higher than other overlays */
+    backdrop-filter: blur(5px);
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.delete-modal-overlay.show {
+    display: flex;
+    opacity: 1;
+}
+
+.delete-modal-content {
+    background: var(--bg-darkest);
+    border-radius: 12px;
+    padding: 25px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    text-align: center;
+    transform: translateY(20px);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    color: var(--text-light);
+    border: 1px solid var(--border-color);
+    box-sizing: border-box; /* Ensure padding doesn't make it overflow */
+}
+
+.delete-modal-overlay.show .delete-modal-content {
+    transform: translateY(0);
+}
+
+.delete-modal-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text-light);
+    margin-bottom: 15px;
+}
+
+.delete-modal-message {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+/* Highlight the item name in the message */
+.delete-modal-message strong {
+    color: var(--primary-color);
+}
+
+
+.delete-modal-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+}
+
+.delete-modal-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    min-height: 44px; /* Ensure good touch target */
+}
+
+.delete-modal-btn.cancel {
+    background: var(--bg-darker);
+    color: var(--text-light);
+    border: 1px solid var(--border-color);
+}
+
+.delete-modal-btn.cancel:hover {
+    background: var(--border-color);
+}
+
+.delete-modal-btn.delete {
+    background: var(--error-color);
+    color: white;
+    border: none;
+}
+
+.delete-modal-btn.delete:hover {
+    background: #cc3939; /* A slightly darker red */
+}
+
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        bottom: 0;
+        z-index: 1000;
+        width: 280px;
+        transition: transform 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+        /* Ensure sidebar also respects safe areas on iOS */
+        padding-top: var(--safe-area-inset-top);
+        padding-bottom: var(--safe-area-inset-bottom);
+        height: 100%; /* Fill available height */
+    }
+
+    .sidebar.open {
+        transform: translateX(280px);
+    }
+
+    .sidebar.collapsed {
+        width: 280px; /* Keep consistent width for mobile sidebar */
+        left: -280px; /* Hidden position */
+    }
+
+    .sidebar.collapsed.open {
+        transform: translateX(280px); /* Re-open to full width */
+    }
+
+
+    .sidebar-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .overlay.active {
+        display: block;
+    }
+
+    .main-container {
+        flex-direction: column;
+        height: auto; /* Allow content to dictate height, but responsive to keyboard */
+        width: 100%;
+        padding: 10px;
+        /* Remove bottom padding here, it's now applied to input-container */
+        padding-bottom: 0; 
+        /* Added padding-bottom to input-container directly */
+    }
+    
+    .chat-container {
+        width: 100%;
+        /* Height here needs to dynamically adjust to keyboard.
+            Using flex-grow on chat-box and proper padding on input-container helps.
+            This is a complex mobile browser issue often requiring JS for perfect fit. */
+        height: 100%; /* Allow chat-box to scroll within this */
+        position: relative; /* Ensure it respects its parent's height */
+    }
+    
+    .pre-prompts {
+        flex-direction: row; /* Ensure row direction */
+        flex-wrap: nowrap; /* Prevent wrapping on mobile */
+        justify-content: flex-start; /* Align to start on mobile */
+        overflow-x: auto;
+        padding-bottom: 10px;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x mandatory;
+    }
+
+    .pre-prompts::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .pre-prompts button {
+        width: auto;
+        white-space: nowrap;
+        flex-shrink: 0;
+        scroll-snap-align: start;
+    }
+
+    .bot-message table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .welcome-message {
+        padding: 30px 15px;
+        font-size: 16px;
+    }
+
+    .welcome-message h1 {
+        font-size: 24px;
+    }
+
+    .message {
+        max-width: 90%;
+    }
+
+    .input-container {
+        padding: 15px;
+        /* Crucial: Add safe area inset to the *bottom* of the input container
+            so the entire input area is visible above the home indicator/keyboard */
+        padding-bottom: calc(15px + var(--safe-area-inset-bottom));
+        position: sticky; /* Keep it at the bottom of its scrollable parent */
+        bottom: 0;
+        z-index: 50; /* Ensure it's above chat messages */
+    }
+
+    /* Profile menu mobile styles - when sidebar is closed it's effectively a mobile scenario */
+    .profile-menu-dropdown {
+        /* When sidebar is collapsed on desktop, this needs to behave like a pop-out menu */
+        /* For desktop collapsed sidebar, it should appear right next to it */
+        /* And for true mobile (sidebar.open), it should be static as currently defined */
+        position: absolute; /* Default to absolute for contained behavior */
+        left: 0; /* Default to left alignment */
+        right: auto;
+        transform: none; /* No transform by default */
+        z-index: 1050; /* Ensure it's above most content */
+
+        /* Override for collapsed state */
+        .sidebar.collapsed & { /* This syntax won't work in plain CSS. Requires nesting. */
+                                /* This indicates a fixed position is better if it breaks out. */
             position: fixed;
-            top: calc(70px + var(--safe-area-inset-top)); /* Adjust for safe area */
-            right: calc(20px + var(--safe-area-inset-right)); /* Adjust for safe area */
-            background: var(--bg-darker);
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-            width: 280px;
-            z-index: 1000;
-            border: 1px solid var(--border-color);
-            display: none;
-            transform: translateY(-10px);
-            opacity: 0;
-            transition: all 0.3s ease;
+            left: calc(var(--sidebar-collapsed) + 5px); /* Aligned to the right edge of the collapsed sidebar */
+            transform: translateX(0); /* No translation, let 'left' handle it */
+            top: auto;
+            bottom: calc(var(--safe-area-inset-bottom) + 15px + 40px + 10px); /* Position it above the icon and padding */
+            /* Ensure text is visible in collapsed state */
+            width: auto;
+            min-width: 180px;
+            max-width: 250px;
         }
-
-        .heart-rate-panel.visible {
-            display: block;
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        .heart-rate-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .heart-rate-header h3 {
-            margin: 0;
-            font-size: 16px;
-            color: var(--primary-color);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .heart-rate-header h3 i {
-            font-size: 18px;
-            color: var(--error-color);
-        }
-
-        .heart-rate-content {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .heart-rate-display {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-            padding: 10px;
-            background: var(--bg-darkest);
-            border-radius: 10px;
-        }
-
-        .current-hr {
-            font-size: 32px;
-            font-weight: bold;
-            color: var(--error-color);
-            font-family: 'Courier New', monospace;
-        }
-
-        .hr-status {
-            font-size: 12px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .heart-rate-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-
-        .heart-rate-btn {
-            padding: 10px 15px;
-            border-radius: 20px;
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.3s ease;
-            min-height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            flex: 1;
-        }
-
-        .heart-rate-btn i {
-            font-size: 14px;
-        }
-
-        .heart-rate-btn.connect {
-            background: var(--primary-dark); /* Connect uses primary-dark */
-        }
-
-        .heart-rate-btn.disconnect {
-            background: var(--text-muted);
-        }
-
-        .heart-rate-btn.analyze {
-            background: var(--success-color);
-        }
-
-        .heart-rate-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-
-        .heart-rate-btn:active {
-            transform: translateY(0);
-        }
-
-        .heart-rate-btn:disabled {
-            background: var(--border-color);
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-
-        .manual-hr-input {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        #manual-hr {
-            flex-grow: 1;
-            padding: 10px 15px;
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-            background: var(--bg-darkest);
-            color: var(--text-light);
-            font-size: 14px;
-            outline: none;
-            min-height: 44px;
-        }
-
-        #manual-hr:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2);
-        }
-
-        #submit-hr {
-            padding: 10px 15px;
-            background: var(--primary-dark); /* Submit uses primary-dark */
-            color: white;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-            min-height: 44px;
-            min-width: 80px;
-            transition: all 0.3s ease;
-        }
-
-        #submit-hr:hover {
-            background: var(--primary-color); /* Hover to primary color */
-            transform: translateY(-1px);
-        }
-
-        .hr-history {
-            margin-top: 10px;
-            max-height: 120px;
-            overflow-y: auto;
-            background: var(--bg-darkest);
-            border-radius: 10px;
-            padding: 10px;
-            scrollbar-width: thin;
-            scrollbar-color: var(--primary-color) var(--bg-darker);
-        }
-
-        .hr-history::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .hr-history::-webkit-scrollbar-track {
-            background: var(--bg-darker);
-        }
-
-        .hr-history::-webkit-scrollbar-thumb {
-            background-color: var(--primary-color);
-            border-radius: 3px;
-        }
-
-        .hr-history h4 {
-            color: var(--primary-color);
-            margin-bottom: 10px;
-            text-align: center;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .hr-history-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .hr-history-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 10px;
-            background: var(--bg-darker);
-            border-radius: 6px;
-            font-size: 13px;
-            transition: all 0.2s ease;
-        }
-
-        .hr-history-item:hover {
-            background: var(--border-color);
-            transform: translateX(2px);
-        }
-
-        .hr-history-value {
-            font-weight: bold;
-            color: var(--error-color);
-            font-family: 'Courier New', monospace;
-        }
-
-        .bluetooth-note {
-            font-size: 11px;
-            color: var(--text-muted);
-            text-align: center;
-            margin-top: 10px;
-            line-height: 1.4;
-        }
-
-        /* Delete Confirmation Modal */
-        .delete-modal-overlay {
-            display: none; /* Hidden by default */
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7); /* Dark semi-transparent background */
-            z-index: 2500; /* Higher than other overlays */
-            backdrop-filter: blur(5px);
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .delete-modal-overlay.show {
-            display: flex;
-            opacity: 1;
-        }
-
-        .delete-modal-content {
-            background: var(--bg-darkest);
-            border-radius: 12px;
-            padding: 25px;
-            width: 90%;
-            max-width: 400px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-            text-align: center;
-            transform: translateY(20px);
-            transition: transform 0.3s ease, opacity 0.3s ease;
-            color: var(--text-light);
-            border: 1px solid var(--border-color);
-            box-sizing: border-box; /* Ensure padding doesn't make it overflow */
-        }
-
-        .delete-modal-overlay.show .delete-modal-content {
-            transform: translateY(0);
-        }
-
-        .delete-modal-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--text-light);
-            margin-bottom: 15px;
-        }
-
-        .delete-modal-message {
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-bottom: 25px;
-            line-height: 1.5;
-        }
-        /* Highlight the item name in the message */
-        .delete-modal-message strong {
-            color: var(--primary-color);
-        }
-
-
-        .delete-modal-actions {
-            display: flex;
-            gap: 15px;
-            justify-content: flex-end;
-        }
-
-        .delete-modal-btn {
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            min-height: 44px; /* Ensure good touch target */
-        }
-
-        .delete-modal-btn.cancel {
-            background: var(--bg-darker);
-            color: var(--text-light);
-            border: 1px solid var(--border-color);
-        }
-
-        .delete-modal-btn.cancel:hover {
-            background: var(--border-color);
-        }
-
-        .delete-modal-btn.delete {
-            background: var(--error-color);
-            color: white;
-            border: none;
-        }
-
-        .delete-modal-btn.delete:hover {
-            background: #cc3939; /* A slightly darker red */
-        }
-
-
-        /* Mobile responsiveness */
-        .sidebar-toggle {
-            display: none;
-            background: none;
-            border: none;
-            color: var(--primary-color);
-            font-size: 20px;
-            cursor: pointer;
-            margin-right: 10px;
-            min-height: 44px;
-            min-width: 44px;
-        }
-
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 999;
-            backdrop-filter: blur(5px);
-        }
-
-        .settings-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1500;
-            backdrop-filter: blur(3px);
-        }
-
-        .settings-overlay.active {
-            display: block;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                top: 0;
-                left: -280px;
-                bottom: 0;
-                z-index: 1000;
-                width: 280px;
-                transition: transform 0.3s ease;
-                box-shadow: 2px 0 10px rgba(0,0,0,0.3);
-                /* Ensure sidebar also respects safe areas on iOS */
-                padding-top: var(--safe-area-inset-top);
-                padding-bottom: var(--safe-area-inset-bottom);
-                height: 100%; /* Fill available height */
-            }
-
-            .sidebar.open {
-                transform: translateX(280px);
-            }
-
-            .sidebar.collapsed {
-                width: 280px; /* Keep consistent width for mobile sidebar */
-                left: -280px; /* Hidden position */
-            }
-
-            .sidebar.collapsed.open {
-                transform: translateX(280px); /* Re-open to full width */
-            }
-
-
-            .sidebar-toggle {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-            .overlay.active {
-                display: block;
-            }
-
-            .main-container {
-                flex-direction: column;
-                height: auto; /* Allow content to dictate height, but responsive to keyboard */
-                width: 100%;
-                padding: 10px;
-                /* Remove bottom padding here, it's now applied to input-container */
-                padding-bottom: 0; 
-                /* Added padding-bottom to input-container directly */
-            }
-            
-            .chat-container {
-                width: 100%;
-                /* Height here needs to dynamically adjust to keyboard.
-                    Using flex-grow on chat-box and proper padding on input-container helps.
-                    This is a complex mobile browser issue often requiring JS for perfect fit. */
-                height: 100%; /* Allow chat-box to scroll within this */
-                position: relative; /* Ensure it respects its parent's height */
-            }
-            
-            .pre-prompts {
-                flex-direction: row; /* Ensure row direction */
-                flex-wrap: nowrap; /* Prevent wrapping on mobile */
-                justify-content: flex-start; /* Align to start on mobile */
-                overflow-x: auto;
-                padding-bottom: 10px;
-                scrollbar-width: none;
-                -webkit-overflow-scrolling: touch;
-                scroll-snap-type: x mandatory;
-            }
-
-            .pre-prompts::-webkit-scrollbar {
-                display: none;
-            }
-            
-            .pre-prompts button {
-                width: auto;
-                white-space: nowrap;
-                flex-shrink: 0;
-                scroll-snap-align: start;
-            }
-
-            .bot-message table {
-                display: block;
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-
-            .welcome-message {
-                padding: 30px 15px;
-                font-size: 16px;
-            }
-
-            .welcome-message h1 {
-                font-size: 24px;
-            }
-
-            .message {
-                max-width: 90%;
-            }
-
-            .input-container {
-                padding: 15px;
-                /* Crucial: Add safe area inset to the *bottom* of the input container
-                    so the entire input area is visible above the home indicator/keyboard */
-                padding-bottom: calc(15px + var(--safe-area-inset-bottom));
-                position: sticky; /* Keep it at the bottom of its scrollable parent */
-                bottom: 0;
-                z-index: 50; /* Ensure it's above chat messages */
-            }
-
-            /* Profile menu mobile styles - when sidebar is closed it's effectively a mobile scenario */
-            .profile-menu-dropdown {
-                /* When sidebar is collapsed on desktop, this needs to behave like a pop-out menu */
-                /* For desktop collapsed sidebar, it should appear right next to it */
-                /* And for true mobile (sidebar.open), it should be static as currently defined */
-                position: absolute; /* Default to absolute for contained behavior */
-                left: 0; /* Default to left alignment */
-                right: auto;
-                transform: none; /* No transform by default */
-                z-index: 1050; /* Ensure it's above most content */
-
-                /* Override for collapsed state */
-                .sidebar.collapsed & { /* This syntax won't work in plain CSS. Requires nesting. */
-                                        /* This indicates a fixed position is better if it breaks out. */
-                    position: fixed;
-                    left: calc(var(--sidebar-collapsed) + 5px); /* Aligned to the right edge of the collapsed sidebar */
-                    transform: translateX(0); /* No translation, let 'left' handle it */
-                    top: auto;
-                    bottom: calc(var(--safe-area-inset-bottom) + 15px + 40px + 10px); /* Position it above the icon and padding */
-                    /* Ensure text is visible in collapsed state */
-                    width: auto;
-                    min-width: 180px;
-                    max-width: 250px;
-                }
-            }
-            
-            .profile-menu-item {
-                padding: 12px 15px;
-                border-radius: 0;
-                border-bottom: 1px solid var(--border-color);
-            }
-            
-            .profile-menu-item:last-child {
-                border-bottom: none;
-            }
-
-            /* Heart rate panel mobile styles */
-            .heart-rate-panel {
-                position: fixed;
-                top: auto;
-                bottom: calc(80px + var(--safe-area-inset-bottom));
-                right: 15px;
-                left: 15px;
-                width: auto;
-                max-width: 350px;
-                margin: 0 auto;
-            }
-
-            /* Settings dropdown mobile styles */
-            .settings-dropdown {
-                width: 95%;
-                max-width: none;
-            }
-
-            /* Fix mobile scrolling - ensuring body and main-content can scroll */
-            body, html {
-                overflow: hidden; /* Keep body overflow hidden to prevent double scrollbar */
-                height: 100%;
-            }
-
-            .main-content {
-                overflow-y: auto; /* Enable scrolling for main content */
-                -webkit-overflow-scrolling: touch;
-                height: 100%; /* Fill available height for scrolling */
-            }
-
-            .chat-box {
-                overflow-y: scroll; /* Allow chat messages to scroll */
-                -webkit-overflow-scrolling: touch;
-                padding-bottom: 20px; /* Ensure space below messages */
-            }
-        }
-
-        /* Animation for heart rate button when active */
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-
-        .heart-rate-button.pulse {
-            animation: pulse 1s infinite;
-        }
-    </style>
+    }
+    
+    .profile-menu-item {
+        padding: 12px 15px;
+        border-radius: 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .profile-menu-item:last-child {
+        border-bottom: none;
+    }
+
+    /* Heart rate panel mobile styles */
+    .heart-rate-panel {
+        position: fixed;
+        top: auto;
+        bottom: calc(80px + var(--safe-area-inset-bottom));
+        right: 15px;
+        left: 15px;
+        width: auto;
+        max-width: 350px;
+        margin: 0 auto;
+    }
+
+    /* Settings dropdown mobile styles */
+    .settings-dropdown {
+        width: 95%;
+        max-width: none;
+    }
+
+    /* Fix mobile scrolling - ensuring body and main-content can scroll */
+    body, html {
+        overflow: hidden; /* Keep body overflow hidden to prevent double scrollbar */
+        height: 100%;
+    }
+
+    .main-content {
+        overflow-y: auto; /* Enable scrolling for main content */
+        -webkit-overflow-scrolling: touch;
+        height: 100%; /* Fill available height for scrolling */
+    }
+
+    .chat-box {
+        overflow-y: scroll; /* Allow chat messages to scroll */
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 20px; /* Ensure space below messages */
+    }
+}
+
+/* Animation for heart rate button when active */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.heart-rate-button.pulse {
+    animation: pulse 1s infinite;
+}
+</style>
 </head>
 <body>
-    <div id="flash-messages-container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash-message {{ category }}">{{ message | tojson | safe }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-    </div>
+<div id="flash-messages-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message | tojson | safe }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
 
-    <div class="notification" id="hr-notification">
-        <span class="icon"><i class="fas fa-exclamation-circle"></i></span>
-        <span class="message" id="notification-message"></span>
-        <button class="close-btn" id="close-notification" aria-label="Close notification"><i class="fas fa-times"></i></button>
-    </div>
+<div class="notification" id="hr-notification">
+    <span class="icon"><i class="fas fa-exclamation-circle"></i></span>
+    <span class="message" id="notification-message"></span>
+    <button class="close-btn" id="close-notification" aria-label="Close notification"><i class="fas fa-times"></i></button>
+</div>
 
-    <div class="overlay" id="overlay"></div>
+<div class="overlay" id="overlay"></div>
 
-    <div class="settings-overlay" id="settings-overlay"></div>
+<div class="settings-overlay" id="settings-overlay"></div>
 
-    <div class="delete-modal-overlay" id="delete-chat-modal-overlay">
-        <div class="delete-modal-content">
-            <h3 class="delete-modal-title">Delete chat?</h3>
-            <p class="delete-modal-message">
-                This will delete <strong id="delete-chat-title"></strong>.
-                Visit settings to delete any memories saved during this chat.
-            </p>
-            <div class="delete-modal-actions">
-                <button class="delete-modal-btn cancel" id="delete-modal-cancel-btn">Cancel</button>
-                <button class="delete-modal-btn delete" id="delete-modal-confirm-btn">Delete</button>
-            </div>
+<div class="delete-modal-overlay" id="delete-chat-modal-overlay">
+    <div class="delete-modal-content">
+        <h3 class="delete-modal-title">Delete chat?</h3>
+        <p class="delete-modal-message">
+            This will delete <strong id="delete-chat-title"></strong>.
+            Visit settings to delete any memories saved during this chat.
+        </p>
+        <div class="delete-modal-actions">
+            <button class="delete-modal-btn cancel" id="delete-modal-cancel-btn">Cancel</button>
+            <button class="delete-modal-btn delete" id="delete-modal-confirm-btn">Delete</button>
         </div>
     </div>
+</div>
 
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-header-text">Chat History</div>
-            <button class="collapse-btn" id="collapse-btn" aria-label="Collapse sidebar"><i class="fas fa-bars"></i></button>
-        </div>
-        <button class="new-chat-btn" id="new-chat-btn" aria-label="New chat">
-            <i class="fas fa-plus"></i>
-            <span>New chat</span>
-        </button>
-        <div class="chat-history-search">
-            <input type="text" id="chat-history-search" placeholder="Search chats..." aria-label="Search chats">
-            <button id="search-btn" aria-label="Search"><i class="fas fa-search"></i></button>
-        </div>
-        <div class="chat-history" id="chat-history">
-            </div>
-        
-        <div class="user-profile-section">
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-header-text">Chat History</div>
+        <button class="collapse-btn" id="collapse-btn" aria-label="Collapse sidebar"><i class="fas fa-bars"></i></button>
+    </div>
+    <button class="new-chat-btn" id="new-chat-btn" aria-label="New chat">
+        <i class="fas fa-plus"></i>
+        <span>New chat</span>
+    </button>
+    <div class="chat-history-search">
+        <input type="text" id="chat-history-search" placeholder="Search chats..." aria-label="Search chats">
+        <button id="search-btn" aria-label="Search"><i class="fas fa-search"></i></button>
+    </div>
+    <div class="chat-history" id="chat-history">
+    </div>
+    
+    <div class="user-profile-section">
         <div class="profile-label-container" id="profile-menu-btn">
             <div class="profile-avatar" id="user-avatar"></div>
             <div class="profile-label" id="profile-label">Loading...</div>
@@ -1935,820 +1897,788 @@
                 </button>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="settings-dropdown" id="settings-dropdown">
+    <div class="settings-header">
+        <div class="settings-title">Settings</div>
+        <button class="settings-close-btn" id="settings-close-btn"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="settings-option">
+        <div class="settings-option-label">Theme</div>
+        <div class="theme-selector">
+            <div class="theme-option" data-theme="dark">Dark</div>
+            <div class="theme-option" data-theme="light">Light</div>
         </div>
     </div>
+</div>
 
-    <div class="settings-dropdown" id="settings-dropdown">
-        <div class="settings-header">
-            <div class="settings-title">Settings</div>
-            <button class="settings-close-btn" id="settings-close-btn"><i class="fas fa-times"></i></button>
+<div class="heart-rate-panel" id="heart-rate-panel">
+    <div class="heart-rate-header">
+        <h3><i class="fas fa-heartbeat"></i> Heart Rate Monitor</h3>
+        <button class="heart-rate-button" id="close-hr-panel" aria-label="Close panel"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="heart-rate-content" id="heart-rate-content">
+        <div class="heart-rate-display">
+            <div class="current-hr" id="current-hr">--</div>
+            <div class="hr-status" id="hr-status">Not connected</div>
         </div>
-        <div class="settings-option">
-            <div class="settings-option-label">Theme</div>
-            <div class="theme-selector">
-                <div class="theme-option" data-theme="dark">Dark</div>
-                <div class="theme-option" data-theme="light">Light</div>
+        
+        <div class="heart-rate-actions">
+            <button id="connect-btn" class="heart-rate-btn connect">
+                <i class="fas fa-bluetooth-b"></i>
+                <span>Connect</span>
+            </button>
+            <button id="disconnect-btn" class="heart-rate-btn disconnect" style="display:none;">
+                <i class="fas fa-plug"></i>
+                <span>Disconnect</span>
+            </button>
+            <button id="analyze-btn" class="heart-rate-btn analyze" disabled>
+                <i class="fas fa-chart-line"></i>
+                <span>Analyze</span>
+            </button>
+        </div>
+        
+        <div class="manual-hr-input">
+            <input type="number" id="manual-hr" placeholder="Enter HR (30-250 BPM)" min="30" max="250" aria-label="Enter heart rate manually">
+            <button id="submit-hr">Submit</button>
+        </div>
+        
+        <div class="hr-history">
+            <h4>Recent Readings</h4>
+            <div class="hr-history-list" id="hr-history-list">
             </div>
         </div>
+        
+        <div class="bluetooth-note">(Chrome on Windows/Mac/Android only for Bluetooth)</div>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+        <div>Echo AI</div>
+        <button class="heart-rate-button" id="heart-rate-button" aria-label="Heart rate monitor"><i class="fas fa-heartbeat"></i></button>
     </div>
 
-    <div class="heart-rate-panel" id="heart-rate-panel">
-        <div class="heart-rate-header">
-            <h3><i class="fas fa-heartbeat"></i> Heart Rate Monitor</h3>
-            <button class="heart-rate-button" id="close-hr-panel" aria-label="Close panel"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="heart-rate-content" id="heart-rate-content">
-            <div class="heart-rate-display">
-                <div class="current-hr" id="current-hr">--</div>
-                <div class="hr-status" id="hr-status">Not connected</div>
-            </div>
-            
-            <div class="heart-rate-actions">
-                <button id="connect-btn" class="heart-rate-btn connect">
-                    <i class="fas fa-bluetooth-b"></i>
-                    <span>Connect</span>
-                </button>
-                <button id="disconnect-btn" class="heart-rate-btn disconnect" style="display:none;">
-                    <i class="fas fa-plug"></i>
-                    <span>Disconnect</span>
-                </button>
-                <button id="analyze-btn" class="heart-rate-btn analyze" disabled>
-                    <i class="fas fa-chart-line"></i>
-                    <span>Analyze</span>
-                </button>
-            </div>
-            
-            <div class="manual-hr-input">
-                <input type="number" id="manual-hr" placeholder="Enter HR (30-250 BPM)" min="30" max="250" aria-label="Enter heart rate manually">
-                <button id="submit-hr">Submit</button>
-            </div>
-            
-            <div class="hr-history">
-                <h4>Recent Readings</h4>
-                <div class="hr-history-list" id="hr-history-list">
-                    </div>
-            </div>
-            
-            <div class="bluetooth-note">(Chrome on Windows/Mac/Android only for Bluetooth)</div>
-        </div>
-    </div>
-
-    <div class="main-content">
-        <div class="header">
-            <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
-            <div>Echo AI</div>
-            <button class="heart-rate-button" id="heart-rate-button" aria-label="Heart rate monitor"><i class="fas fa-heartbeat"></i></button>
-        </div>
-
-        <div class="main-container">
-            <div class="chat-container">
-                <div class="welcome-message" id="welcome-message">
-                    <h1>Echo AI: Your Heart Health Companion</h1>
-                    <p>"Your AI-powered heart health assistant - monitor, analyze, and stay informed."</p>
-                    <div class="medical-disclaimer">
-                        <strong>Important Medical Disclaimer:</strong><br>
-                        Echo AI is an AI assistant and not a medical professional. The information it provides is for educational and informational purposes only, and should not be considered medical advice, diagnosis, or treatment. Always consult with a qualified healthcare professional for any health concerns or before making any decisions related to your health or medical care. In case of a medical emergency, call your local emergency services immediately.
-                    </div>
-                </div>
-
-                <div class="chat-box" id="chat-box"></div>
-
-                <div class="pre-prompts" id="pre-prompts">
-                    <button class="pre-prompt-btn" data-prompt="Best exercises for heart health">
-                        <i class="fas fa-running"></i> Best Exercises
-                    </button>
-                    <button class="pre-prompt-btn" data-prompt="How to maintain healthy blood pressure?">
-                        <i class="fas fa-heartbeat"></i> Blood Pressure
-                    </button>
-                    <button class="pre-prompt-btn" data-prompt="Indian based Heart-friendly diet plan in tabular format">
-                        <i class="fas fa-utensils"></i> Diet Plan
-                    </button>
-                    <button class="pre-prompt-btn" data-prompt="Symptoms of heart disease">
-                        <i class="fas fa-heart"></i> Warning Signs
-                    </button>
-                </div>
-
-                <div class="input-container">
-                    <div class="input-row">
-                        <textarea id="user-input" placeholder="Ask me about heart health..." autofocus aria-label="Type your message"></textarea>
-                        <button class="send-btn" id="send-btn" aria-label="Send message"><i class="fas fa-paper-plane"></i></button>
-                    </div>
+    <div class="main-container">
+        <div class="chat-container">
+            <div class="welcome-message" id="welcome-message">
+                <h1>Echo AI: Your Heart Health Companion</h1>
+                <p>"Your AI-powered heart health assistant - monitor, analyze, and stay informed."</p>
+                <div class="medical-disclaimer">
+                    <strong>Important Medical Disclaimer:</strong><br>
+                    Echo AI is an AI assistant and not a medical professional. The information it provides is for educational and informational purposes only, and should not be considered medical advice, diagnosis, or treatment. Always consult with a qualified healthcare professional for any health concerns or before making any decisions related to your health or medical care. In case of a medical emergency, call your local emergency services immediately.
                 </div>
             </div>
+
+            <div class="chat-box" id="chat-box"></div>
+
+            <div class="pre-prompts" id="pre-prompts">
+                <button class="pre-prompt-btn" data-prompt="Best exercises for heart health">
+                    <i class="fas fa-running"></i> Best Exercises
+                </button>
+                <button class="pre-prompt-btn" data-prompt="How to maintain healthy blood pressure?">
+                    <i class="fas fa-heartbeat"></i> Blood Pressure
+                </button>
+                <button class="pre-prompt-btn" data-prompt="Indian based Heart-friendly diet plan in tabular format">
+                    <i class="fas fa-utensils"></i> Diet Plan
+                </button>
+                <button class="pre-prompt-btn" data-prompt="Symptoms of heart disease">
+                    <i class="fas fa-heart"></i> Warning Signs
+                </button>
+            </div>
+
+            <div class="input-container">
+                <div class="input-row">
+                    <textarea id="user-input" placeholder="Ask me about heart health..." autofocus aria-label="Type your message"></textarea>
+                    <button class="send-btn" id="send-btn" aria-label="Send message"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
         </div>
     </div>
+</div>
 
-    <script>
-        // Global variables
-        let isLoggedIn = false;
-        let hrHistory = [];
-        let currentChatId = null;
-        let chatSessions = []; // Fetched from backend
-        let lastNotificationTime = 0;
-        const NOTIFICATION_COOLDOWN = 30000; // 30 seconds
-        let isWaitingForResponse = false; // Flag to prevent multiple messages while waiting
+<script>
+    // Global variables
+    let isLoggedIn = false;
+    let hrHistory = [];
+    let currentChatId = null;
+    let chatSessions = []; // Fetched from backend
+    let lastNotificationTime = 0;
+    const NOTIFICATION_COOLDOWN = 30000; // 30 seconds
+    let isWaitingForResponse = false; // Flag to prevent multiple messages while waiting
 
-        // Utility function to show flash messages from Flask
-        function showFlashMessage(message, category) {
-            const container = document.getElementById('flash-messages-container');
-            const flashDiv = document.createElement('div');
-            flashDiv.className = `flash-message ${category}`;
-            flashDiv.textContent = message;
-            container.appendChild(flashDiv);
-            setTimeout(() => {
-                flashDiv.remove();
-            }, 5000); // Remove after 5 seconds
-        }
+    // Utility function to show flash messages from Flask
+    function showFlashMessage(message, category) {
+        const container = document.getElementById('flash-messages-container');
+        const flashDiv = document.createElement('div');
+        flashDiv.className = `flash-message ${category}`;
+        flashDiv.textContent = message;
+        container.appendChild(flashDiv);
+        setTimeout(() => {
+            flashDiv.remove();
+        }, 5000); // Remove after 5 seconds
+    }
 
-        // Parse flashed messages from Jinja2
-        // This block is for initial page load; subsequent flashes will use the JS function
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                document.addEventListener('DOMContentLoaded', () => {
-                    {% for category, message in messages %}
-                        showFlashMessage({{ message | tojson | safe }}, "{{ category }}");
-                    {% endfor %}
-                });
-            {% endif %}
-        {% endwith %}
-
-
-        // Initialize all event listeners
-        function initEventListeners() {
-            // Bluetooth buttons
-            document.getElementById('connect-btn').addEventListener('click', () => bluetoothManager.connect());
-            document.getElementById('disconnect-btn').addEventListener('click', () => bluetoothManager.handleDisconnect());
-            
-            // Manual HR input
-            document.getElementById('submit-hr').addEventListener('click', updateHRManually);
-            document.getElementById('manual-hr').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') updateHRManually();
+    // Parse flashed messages from Jinja2
+    // This block is for initial page load; subsequent flashes will use the JS function
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            document.addEventListener('DOMContentLoaded', () => {
+                {% for category, message in messages %}
+                    showFlashMessage({{ message | tojson | safe }}, "{{ category }}");
+                {% endfor %}
             });
-            
-            // Analyze button
-            document.getElementById('analyze-btn').addEventListener('click', analyzeHeartRate);
-            
-            // Pre-prompt buttons
-            document.querySelectorAll('.pre-prompt-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    if (isWaitingForResponse) return;
-                    // Ensure we target the button itself, not its children (like the icon)
-                    const targetButton = e.currentTarget;  
-                    const message = targetButton.dataset.prompt;
-                    const userInputElement = document.getElementById('user-input');
-                    userInputElement.value = message;
-                    userInputElement.dispatchEvent(new Event('input')); // Trigger input event for auto-resize
-                    sendMessage();
-                });
-            });
-            
-            // Chat input (now textarea)
-            const userInputElement = document.getElementById('user-input');
+        {% endif %}
+    {% endwith %}
 
-            userInputElement.addEventListener('keypress', (e) => {
-                // Allow Shift+Enter for new line, Enter to send
-                if (e.key === 'Enter' && !e.shiftKey && !isWaitingForResponse) {
-                    e.preventDefault(); // Prevent default new line
-                    sendMessage();
-                }
-            });
-            userInputElement.addEventListener('input', () => {
-                // Auto-resize textarea based on content
-                userInputElement.style.height = 'auto';
-                userInputElement.style.height = userInputElement.scrollHeight + 'px';
-            });
 
-            document.getElementById('send-btn').addEventListener('click', () => {
-                if (!isWaitingForResponse) sendMessage();
+    // Initialize all event listeners
+    function initEventListeners() {
+        // Bluetooth buttons
+        document.getElementById('connect-btn').addEventListener('click', () => bluetoothManager.connect());
+        document.getElementById('disconnect-btn').addEventListener('click', () => bluetoothManager.handleDisconnect());
+        
+        // Manual HR input
+        document.getElementById('submit-hr').addEventListener('click', updateHRManually);
+        document.getElementById('manual-hr').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') updateHRManually();
+        });
+        
+        // Analyze button
+        document.getElementById('analyze-btn').addEventListener('click', analyzeHeartRate);
+        
+        // Pre-prompt buttons
+        document.querySelectorAll('.pre-prompt-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                if (isWaitingForResponse) return;
+                const targetButton = e.currentTarget;  
+                const message = targetButton.dataset.prompt;
+                const userInputElement = document.getElementById('user-input');
+                userInputElement.value = message;
+                userInputElement.dispatchEvent(new Event('input')); // Trigger input event for auto-resize
+                sendMessage();
             });
-            
-            // Heart rate button
-            document.getElementById('heart-rate-button').addEventListener('click', toggleHeartRatePanel);
-            document.getElementById('close-hr-panel').addEventListener('click', toggleHeartRatePanel);
-            
-            // Profile menu button (both profile label and options button)
-            document.getElementById('profile-menu-btn').addEventListener('click', toggleProfileMenu);
-            document.getElementById('profile-options-btn').addEventListener('click', (e) => {
-                e.stopPropagation(); // Stop propagation to prevent document click from closing immediately
-                toggleProfileMenu(e); // Pass event to ensure it's handled
-            });
-            
-            // Profile menu items
-            document.getElementById('settings-btn').addEventListener('click', showSettings);
-            document.getElementById('contact-btn').addEventListener('click', () => {
-                alert('For support, please contact us at support@echoai.com');
-                document.getElementById('profile-menu-dropdown').classList.remove('show');
-            });
-            document.getElementById('logout-btn').addEventListener('click', logout);
-            
-            // Settings close button
-            document.getElementById('settings-close-btn').addEventListener('click', hideSettings);
-            document.getElementById('settings-overlay').addEventListener('click', hideSettings);
-            
-            // Theme selector
-            document.querySelectorAll('.theme-option').forEach(option => {
-                option.addEventListener('click', () => {
-                    setTheme(option.dataset.theme);
-                });
-            });
-            
-            // New chat button
-            document.getElementById('new-chat-btn').addEventListener('click', createNewChat);
-            
-            // Sidebar toggle for mobile
-            document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
-            
-            // Sidebar collapse button
-            document.getElementById('collapse-btn').addEventListener('click', toggleCollapseSidebar);
-            
-            // Overlay click to close sidebar on mobile
-            document.getElementById('overlay').addEventListener('click', () => {
-                if (window.innerWidth <= 768) {
-                    toggleSidebar();
-                }
-            });
+        });
+        
+        // Chat input (now textarea)
+        const userInputElement = document.getElementById('user-input');
 
-            // Close notification button
-            document.getElementById('close-notification').addEventListener('click', hideNotification);
-            
-            // Close profile menu AND chat options menus when clicking outside
-            document.addEventListener('click', (e) => {
-                // Profile menu
-                const profileMenu = document.getElementById('profile-menu-dropdown');
-                const profileBtnContainer = document.getElementById('profile-menu-btn'); // The full container
-                const profileOptionsBtn = document.getElementById('profile-options-btn'); // The three dots button for collapsed sidebar
-                
-                // If profile menu is open AND the click is outside the menu AND outside both associated buttons
-                if (profileMenu.classList.contains('show') && 
-                    !profileMenu.contains(e.target) && 
-                    !profileBtnContainer.contains(e.target) &&
-                    (profileOptionsBtn && !profileOptionsBtn.contains(e.target))) { /* Check if profileOptionsBtn exists */
-                    profileMenu.classList.remove('show');
-                }
-
-                // Chat history item options menus
-                document.querySelectorAll('.rename-delete-menu.show').forEach(menu => {
-                    const optionsBtn = menu.previousElementSibling; // The three dots button for the chat item
-                    if (!menu.contains(e.target) && !optionsBtn.contains(e.target)) {
-                        menu.classList.remove('show');
-                    }
-                });
-            });
-
-            // Delete modal interaction
-            document.getElementById('delete-modal-cancel-btn').addEventListener('click', hideDeleteConfirmation);
-            document.getElementById('delete-chat-modal-overlay').addEventListener('click', (e) => {
-                if (e.target.id === 'delete-chat-modal-overlay') { /* Only close if clicked on the overlay itself, not the modal content */
-                    hideDeleteConfirmation();
-                }
-            });
-
-            // Handle window resize
-            window.addEventListener('resize', handleResize);
-        }
-
-        // Set theme (dark/light)
-        function setTheme(theme) {
-            document.documentElement.setAttribute('data-theme', theme);
-            // Also update the body class for theme-specific styles
-            document.body.classList.remove('light-theme'); // Remove previous theme class
-            if (theme === 'light') {
-                document.body.classList.add('light-theme');
+        userInputElement.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey && !isWaitingForResponse) {
+                e.preventDefault(); // Prevent default new line
+                sendMessage();
             }
-            localStorage.setItem('theme', theme);
-            
-            // Update active state in theme selector
-            document.querySelectorAll('.theme-option').forEach(option => {
-                if (option.dataset.theme === theme) {
-                    option.classList.add('active');
-                } else {
-                    option.classList.remove('active');
-                }
-            });
-        }
+        });
+        userInputElement.addEventListener('input', () => {
+            userInputElement.style.height = 'auto';
+            userInputElement.style.height = userInputElement.scrollHeight + 'px';
+        });
 
-        // Initialize theme from localStorage
-        function initTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            setTheme(savedTheme);
-        }
-
-        // Toggle profile menu
-        function toggleProfileMenu(e) {
-            e.stopPropagation(); // Prevent document click listener from immediately closing it
-            const profileMenu = document.getElementById('profile-menu-dropdown');
-            profileMenu.classList.toggle('show');
-            // Hide the full profile menu and show the options button when collapsed
-            const sidebar = document.getElementById('sidebar');
-            const profileOptionsBtn = document.getElementById('profile-options-btn');
-
-            if (sidebar.classList.contains('collapsed')) {
-                // If sidebar is collapsed, ensure the dropdown appears as a fixed element by CSS
-                // and the specific profile-options-btn is visible and triggers it.
-                profileOptionsBtn.style.display = 'flex'; /* Ensure it's explicitly shown if profile-menu-btn is clicked */
-            } else {
-                // When sidebar is expanded, the normal profile-label-container handles clicks
-                profileOptionsBtn.style.display = 'none';
-            }
-            // Close other open menus if any
-            document.querySelectorAll('.rename-delete-menu.show').forEach(menu => {
-                menu.classList.remove('show');
-            });
-        }
-
-        // Show settings dialog
-        function showSettings() {
-            document.getElementById('settings-dropdown').classList.add('show');
-            document.getElementById('settings-overlay').classList.add('active');
+        document.getElementById('send-btn').addEventListener('click', () => {
+            if (!isWaitingForResponse) sendMessage();
+        });
+        
+        // Heart rate button
+        document.getElementById('heart-rate-button').addEventListener('click', toggleHeartRatePanel);
+        document.getElementById('close-hr-panel').addEventListener('click', toggleHeartRatePanel);
+        
+        // Profile menu button (both profile label container and the specific three dots button)
+        document.getElementById('profile-menu-btn').addEventListener('click', toggleProfileMenu);
+        document.getElementById('profile-options-btn').addEventListener('click', (e) => {
+            e.stopPropagation(); // Stop propagation so document click listener doesn't close it immediately
+            toggleProfileMenu(e); 
+        });
+        
+        // Profile menu items
+        document.getElementById('settings-btn').addEventListener('click', showSettings);
+        document.getElementById('contact-btn').addEventListener('click', () => {
+            alert('For support, please contact us at support@echoai.com');
             document.getElementById('profile-menu-dropdown').classList.remove('show');
-        }
+        });
+        document.getElementById('logout-btn').addEventListener('click', logout);
+        
+        // Settings close button
+        document.getElementById('settings-close-btn').addEventListener('click', hideSettings);
+        document.getElementById('settings-overlay').addEventListener('click', hideSettings);
+        
+        // Theme selector
+        document.querySelectorAll('.theme-option').forEach(option => {
+            option.addEventListener('click', () => {
+                setTheme(option.dataset.theme);
+            });
+        });
+        
+        // New chat button
+        document.getElementById('new-chat-btn').addEventListener('click', createNewChat);
+        
+        // Sidebar toggle for mobile
+        document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
+        
+        // Sidebar collapse button
+        document.getElementById('collapse-btn').addEventListener('click', toggleCollapseSidebar);
+        
+        // Overlay click to close sidebar on mobile
+        document.getElementById('overlay').addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                toggleSidebar();
+            }
+        });
 
-        // Hide settings dialog
-        function hideSettings() {
-            document.getElementById('settings-dropdown').classList.remove('show');
-            document.getElementById('settings-overlay').classList.remove('active');
-        }
+        // Close notification button
+        document.getElementById('close-notification').addEventListener('click', hideNotification);
+        
+        // Universal click handler to close floating menus when clicking outside
+        document.addEventListener('click', (e) => {
+            // Close Profile menu if open and click is outside
+            const profileMenu = document.getElementById('profile-menu-dropdown');
+            const profileBtnContainer = document.getElementById('profile-menu-btn'); 
+            const profileOptionsBtn = document.getElementById('profile-options-btn');
+            
+            if (profileMenu.classList.contains('show') && 
+                !profileMenu.contains(e.target) && 
+                !profileBtnContainer.contains(e.target) &&
+                (profileOptionsBtn && !profileOptionsBtn.contains(e.target))) { 
+                profileMenu.classList.remove('show');
+            }
+
+            // Close all chat history options menus if open and click is outside
+            document.querySelectorAll('.rename-delete-menu.show').forEach(menu => {
+                const optionsBtn = menu.previousElementSibling; 
+                if (!menu.contains(e.target) && !optionsBtn.contains(e.target)) {
+                    menu.classList.remove('show');
+                }
+            });
+        });
+
+        // Delete modal interaction
+        document.getElementById('delete-modal-cancel-btn').addEventListener('click', hideDeleteConfirmation);
+        document.getElementById('delete-chat-modal-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'delete-chat-modal-overlay') { 
+                hideDeleteConfirmation();
+            }
+        });
 
         // Handle window resize
-        function handleResize() {
-            // Update profile options button visibility based on sidebar collapsed state
-            const sidebar = document.getElementById('sidebar');
-            const profileOptionsBtn = document.getElementById('profile-options-btn');
-            if (sidebar.classList.contains('collapsed') && window.innerWidth > 768) {
-                profileOptionsBtn.style.display = 'flex';
+        window.addEventListener('resize', handleResize);
+    }
+
+    // Set theme (dark/light)
+    function setTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        document.body.classList.remove('light-theme'); 
+        if (theme === 'light') {
+            document.body.classList.add('light-theme');
+        }
+        localStorage.setItem('theme', theme);
+        
+        document.querySelectorAll('.theme-option').forEach(option => {
+            if (option.dataset.theme === theme) {
+                option.classList.add('active');
             } else {
-                profileOptionsBtn.style.display = 'none';
+                option.classList.remove('active');
             }
+        });
+    }
 
-            if (window.innerWidth > 768) {
-                // Close mobile sidebar if open
-                const sidebar = document.getElementById('sidebar');
-                const overlay = document.getElementById('overlay');
-                if (sidebar.classList.contains('open')) {
-                    sidebar.classList.remove('open');
-                    overlay.classList.remove('active');
-                    document.body.style.overflow = '';
-                }
-            }
+    // Initialize theme from localStorage
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        setTheme(savedTheme);
+    }
+
+    // Toggle profile menu
+    function toggleProfileMenu(e) {
+        e.stopPropagation(); 
+        const profileMenu = document.getElementById('profile-menu-dropdown');
+        profileMenu.classList.toggle('show');
+        
+        // Close any other open chat options menus
+        document.querySelectorAll('.rename-delete-menu.show').forEach(menu => {
+            menu.classList.remove('show');
+        });
+    }
+
+    // Show settings dialog
+    function showSettings() {
+        document.getElementById('settings-dropdown').classList.add('show');
+        document.getElementById('settings-overlay').classList.add('active');
+        document.getElementById('profile-menu-dropdown').classList.remove('show');
+    }
+
+    // Hide settings dialog
+    function hideSettings() {
+        document.getElementById('settings-dropdown').classList.remove('show');
+        document.getElementById('settings-overlay').classList.remove('active');
+    }
+
+    // Handle window resize
+    function handleResize() {
+        const sidebar = document.getElementById('sidebar');
+        const profileOptionsBtn = document.getElementById('profile-options-btn');
+        const profileMenuDropdown = document.getElementById('profile-menu-dropdown');
+
+        if (sidebar.classList.contains('collapsed') && window.innerWidth > 768) {
+            profileOptionsBtn.style.display = 'flex';
+        } else {
+            profileOptionsBtn.style.display = 'none';
+            profileMenuDropdown.classList.remove('show'); /* Ensure menu closes if sidebar expands */
         }
 
-        // Initialize search functionality
-        function initSearch() {
-            const searchInput = document.getElementById('chat-history-search');
-            const searchBtn = document.getElementById('search-btn');
-            
-            searchInput.addEventListener('input', () => filterChatHistory(searchInput.value));
-            searchBtn.addEventListener('click', () => filterChatHistory(searchInput.value));
-        }
-
-        // Filter chat history based on search query
-        function filterChatHistory(query) {
-            const historyContainer = document.getElementById('chat-history');
-            const historyItems = historyContainer.querySelectorAll('.chat-history-item');
-            const dateHeaders = historyContainer.querySelectorAll('.chat-history-date');
-            
-            // Remove existing no-results message before filtering
-            const existingNoResults = historyContainer.querySelector('.no-results');
-            if (existingNoResults) {
-                existingNoResults.remove();
-            }
-
-            if (!query.trim()) {
-                // Show all if query is empty
-                historyItems.forEach(item => item.style.display = 'flex');
-                dateHeaders.forEach(header => header.style.display = '');
-                return;
-            }
-            
-            const lowerQuery = query.toLowerCase();
-            let hasMatches = false;
-            
-            // First hide all
-            historyItems.forEach(item => item.style.display = 'none');
-            dateHeaders.forEach(header => header.style.display = 'none');
-            
-            // Show matching items and their corresponding date headers
-            historyItems.forEach(item => {
-                const textContent = item.querySelector('span')?.textContent || '';
-                if (textContent.toLowerCase().includes(lowerQuery)) {
-                    item.style.display = 'flex';
-                    hasMatches = true;
-                    
-                    let prevElement = item.previousElementSibling;
-                    while (prevElement) {
-                        if (prevElement.classList.contains('chat-history-date')) {
-                            prevElement.style.display = ''; // Show the date header
-                            break;
-                        }
-                        prevElement = prevElement.previousElementSibling;
-                    }
-                }
-            });
-            
-            if (!hasMatches) {
-                const noResults = document.createElement('div');
-                noResults.className = 'no-results';
-                noResults.textContent = 'No matching chats found';
-                historyContainer.appendChild(noResults);
-            }
-        }
-
-        // Enhanced date grouping for chat history
-        function groupChatSessionsByDate(sessions) {
-            const now = new Date();
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const yesterday = new Date(today);
-            yesterday.setDate(yesterday.getDate() - 1);
-            const sevenDaysAgo = new Date(today);
-            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-            const thirtyDaysAgo = new Date(today);
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            
-            // Sort sessions by updated_at, newest first for display order within groups
-            sessions.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-
-            return sessions.reduce((groups, session) => {
-                const sessionDate = new Date(session.created_at);
-                
-                if (sessionDate >= today) {
-                    groups.today.push(session);
-                } else if (sessionDate >= yesterday) {
-                    groups.yesterday.push(session);
-                } else if (sessionDate >= sevenDaysAgo) {
-                    groups.last7Days.push(session);
-                } else if (sessionDate >= thirtyDaysAgo) {
-                    groups.last30Days.push(session);
-                } else {
-                    groups.older.push(session);
-                }
-                
-                return groups;
-            }, {
-                today: [],
-                yesterday: [],
-                last7Days: [],
-                last30Days: [],
-                older: []
-            });
-        }
-
-        // Check if should start new chat (based on last activity)
-        function shouldStartNewChat() {
-            const lastActive = localStorage.getItem('lastActiveTime');
-            if (!lastActive) return true;
-            
-            const lastActiveTime = new Date(parseInt(lastActive));
-            const now = new Date();
-            const hoursSinceLastActive = (now - lastActiveTime) / (1000 * 60 * 60);
-            
-            // Start new chat if last activity was more than 1 hour ago
-            return hoursSinceLastActive > 1;
-        }
-
-        // Toggle heart rate panel visibility
-        function toggleHeartRatePanel() {
-            const panel = document.getElementById('heart-rate-panel');
-            const button = document.getElementById('heart-rate-button');
-            
-            panel.classList.toggle('visible');
-            button.classList.toggle('active');
-            
-            // Close profile menu if open
-            document.getElementById('profile-menu-dropdown').classList.remove('show');
-        }
-
-        // Show notification
-        function showNotification(message, type = 'warning') {
-            const now = Date.now();
-            if (now - lastNotificationTime < NOTIFICATION_COOLDOWN) return;
-            
-            const notification = document.getElementById('hr-notification');
-            const messageElement = document.getElementById('notification-message');
-            
-            notification.className = `notification ${type}`;
-            messageElement.textContent = message;
-            notification.classList.add('show');
-            
-            lastNotificationTime = now;
-            
-            // Auto-hide after 10 seconds
-            setTimeout(hideNotification, 10000);
-        }
-
-        // Hide notification
-        function hideNotification() {
-            document.getElementById('hr-notification').classList.remove('show');
-        }
-
-        // Toggle sidebar collapse state
-        function toggleCollapseSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const profileOptionsBtn = document.getElementById('profile-options-btn');
-            const profileMenuDropdown = document.getElementById('profile-menu-dropdown');
-
-            sidebar.classList.toggle('collapsed');
-            
-            // Update profile options button visibility and close menu on collapse/expand
-            if (sidebar.classList.contains('collapsed')) {
-                profileOptionsBtn.style.display = 'flex'; /* Show three dots */
-                profileMenuDropdown.classList.remove('show'); /* Ensure profile menu is closed */
-            } else {
-                profileOptionsBtn.style.display = 'none'; /* Hide three dots */
-                profileMenuDropdown.classList.remove('show'); /* Ensure profile menu is closed */
-            }
-
-            // Save state to localStorage
-            const isCollapsed = sidebar.classList.contains('collapsed');
-            localStorage.setItem('sidebarCollapsed', isCollapsed);
-        }
-
-        // Toggle sidebar visibility on mobile
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
+        if (window.innerWidth > 768) {
             const overlay = document.getElementById('overlay');
-            
-            sidebar.classList.toggle('open');
-            overlay.classList.toggle('active');
-            
-            // Prevent scrolling when sidebar is open
             if (sidebar.classList.contains('open')) {
-                document.body.style.overflow = 'hidden';
-            } else {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
                 document.body.style.overflow = '';
             }
         }
+    }
 
-        // Create a new chat session via API
-        async function createNewChat() {
-            try {
-                const response = await fetch('/api/chat-sessions', {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        window.location.href = '/login'; // Redirect to login if unauthorized
-                        return;
-                    }
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                
-                currentChatId = data.id;
-                
-                document.getElementById('chat-box').innerHTML = '';
-                document.getElementById('welcome-message').style.display = 'block';
-                
-                await fetchChatSessions();
+    // Initialize search functionality
+    function initSearch() {
+        const searchInput = document.getElementById('chat-history-search');
+        const searchBtn = document.getElementById('search-btn');
+        
+        searchInput.addEventListener('input', () => filterChatHistory(searchInput.value));
+        searchBtn.addEventListener('click', () => filterChatHistory(searchInput.value));
+    }
 
-                if (window.innerWidth <= 768) {
-                    toggleSidebar();
-                }
-            } catch (error) {
-                console.error('Error creating new chat:', error);
-                showFlashMessage('Failed to create new chat. Please try again.', 'error');
-            }
+    // Filter chat history based on search query
+    function filterChatHistory(query) {
+        const historyContainer = document.getElementById('chat-history');
+        const historyItems = historyContainer.querySelectorAll('.chat-history-item');
+        const dateHeaders = historyContainer.querySelectorAll('.chat-history-date');
+        
+        const existingNoResults = historyContainer.querySelector('.no-results');
+        if (existingNoResults) {
+            existingNoResults.remove();
         }
 
-        // Fetch chat sessions from backend
-        async function fetchChatSessions() {
-            try {
-                const response = await fetch('/api/chat-sessions', {
-                    method: 'GET',
-                    credentials: 'include'
-                });
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        window.location.href = '/login'; // Redirect to login if unauthorized
-                        return;
+        if (!query.trim()) {
+            historyItems.forEach(item => item.style.display = 'flex');
+            dateHeaders.forEach(header => header.style.display = '');
+            return;
+        }
+        
+        const lowerQuery = query.toLowerCase();
+        let hasMatches = false;
+        
+        historyItems.forEach(item => {
+            item.style.display = 'none'; /* Hide all initially */
+            const textContent = item.querySelector('span')?.textContent || '';
+            if (textContent.toLowerCase().includes(lowerQuery)) {
+                item.style.display = 'flex';
+                hasMatches = true;
+                
+                let prevElement = item.previousElementSibling;
+                while (prevElement) {
+                    if (prevElement.classList.contains('chat-history-date')) {
+                        prevElement.style.display = '';
+                        break;
                     }
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    prevElement = prevElement.previousElementSibling;
                 }
-                const data = await response.json();
-                chatSessions = data;
-                updateChatHistoryUI();
-            } catch (error) {
-                console.error('Error fetching chat sessions:', error);
-                document.getElementById('chat-history').innerHTML = '<div class="no-results">Failed to load chat history.</div>';
-                showFlashMessage('Failed to load chat history. Please try refreshing.', 'error');
             }
+        });
+        
+        dateHeaders.forEach(header => { /* Re-check date headers to hide if no items below */
+            const nextElements = Array.from(header.parentNode.children).slice(Array.from(header.parentNode.children).indexOf(header) + 1);
+            const visibleItemsAfterHeader = nextElements.some(el => el.classList.contains('chat-history-item') && el.style.display !== 'none');
+            if (!visibleItemsAfterHeader) {
+                header.style.display = 'none';
+            }
+        });
+
+        if (!hasMatches) {
+            const noResults = document.createElement('div');
+            noResults.className = 'no-results';
+            noResults.textContent = 'No matching chats found';
+            historyContainer.appendChild(noResults);
+        }
+    }
+
+    // Enhanced date grouping for chat history
+    function groupChatSessionsByDate(sessions) {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        sessions.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+
+        return sessions.reduce((groups, session) => {
+            const sessionDate = new Date(session.created_at);
+            
+            if (sessionDate >= today) {
+                groups.today.push(session);
+            } else if (sessionDate >= yesterday) {
+                groups.yesterday.push(session);
+            } else if (sessionDate >= sevenDaysAgo) {
+                groups.last7Days.push(session);
+            } else if (sessionDate >= thirtyDaysAgo) {
+                groups.last30Days.push(session);
+            } else {
+                groups.older.push(session);
+            }
+            
+            return groups;
+        }, {
+            today: [],
+            yesterday: [],
+            last7Days: [],
+            last30Days: [],
+            older: []
+        });
+    }
+
+    // Check if should start new chat (based on last activity)
+    function shouldStartNewChat() {
+        const lastActive = localStorage.getItem('lastActiveTime');
+        if (!lastActive) return true;
+        
+        const lastActiveTime = new Date(parseInt(lastActive));
+        const now = new Date();
+        const hoursSinceLastActive = (now - lastActiveTime) / (1000 * 60 * 60);
+        
+        return hoursSinceLastActive > 1;
+    }
+
+    // Toggle heart rate panel visibility
+    function toggleHeartRatePanel() {
+        const panel = document.getElementById('heart-rate-panel');
+        const button = document.getElementById('heart-rate-button');
+        
+        panel.classList.toggle('visible');
+        button.classList.toggle('active');
+        
+        document.getElementById('profile-menu-dropdown').classList.remove('show');
+    }
+
+    // Show notification
+    function showNotification(message, type = 'warning') {
+        const now = Date.now();
+        if (now - lastNotificationTime < NOTIFICATION_COOLDOWN) return;
+        
+        const notification = document.getElementById('hr-notification');
+        const messageElement = document.getElementById('notification-message');
+        
+        notification.className = `notification ${type}`;
+        messageElement.textContent = message;
+        notification.classList.add('show');
+        
+        lastNotificationTime = now;
+        
+        setTimeout(hideNotification, 10000);
+    }
+
+    // Hide notification
+    function hideNotification() {
+        document.getElementById('hr-notification').classList.remove('show');
+    }
+
+    // Toggle sidebar collapse state
+    function toggleCollapseSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const profileOptionsBtn = document.getElementById('profile-options-btn');
+        const profileMenuDropdown = document.getElementById('profile-menu-dropdown');
+
+        sidebar.classList.toggle('collapsed');
+        
+        if (sidebar.classList.contains('collapsed')) {
+            profileOptionsBtn.style.display = 'flex';
+            profileMenuDropdown.classList.remove('show');
+        } else {
+            profileOptionsBtn.style.display = 'none';
+            profileMenuDropdown.classList.remove('show');
         }
 
-        // Update the chat history sidebar UI based on fetched data
-        function updateChatHistoryUI() {
-            const historyContainer = document.getElementById('chat-history');
-            historyContainer.innerHTML = '';
-            
-            if (chatSessions.length === 0) {
-                historyContainer.innerHTML = '<div class="no-results">No chat history yet. Start a new chat!</div>';
-                return;
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        localStorage.setItem('sidebarCollapsed', isCollapsed);
+    }
+
+    // Toggle sidebar visibility on mobile
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('active');
+        
+        if (sidebar.classList.contains('open')) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    }
+
+    // Create a new chat session via API
+    async function createNewChat() {
+        try {
+            const response = await fetch('/api/chat-sessions', {
+                method: 'POST',
+                credentials: 'include'
+            });
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                const errorData = await response.json();
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
             }
-
-            const sortedSessions = [...chatSessions].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-            const groupedSessions = groupChatSessionsByDate(sortedSessions);
+            const data = await response.json();
             
-            const groupOrder = ['today', 'yesterday', 'last7Days', 'last30Days', 'older'];
-            const groupTitles = {
-                today: 'Today',
-                yesterday: 'Yesterday',
-                last7Days: 'Previous 7 Days',
-                last30Days: 'Previous 30 Days',
-                older: 'Older'
-            };
+            currentChatId = data.id;
+            
+            document.getElementById('chat-box').innerHTML = '';
+            document.getElementById('welcome-message').style.display = 'block';
+            
+            await fetchChatSessions();
 
-            groupOrder.forEach(groupKey => {
-                if (groupedSessions[groupKey].length > 0) {
-                    const dateHeader = document.createElement('div');
-                    dateHeader.className = 'chat-history-date';
-                    dateHeader.textContent = groupTitles[groupKey];
-                    historyContainer.appendChild(dateHeader);
-                    
-                    groupedSessions[groupKey].forEach(session => {
-                        addChatSessionToHistory(session, historyContainer);
-                    });
+            if (window.innerWidth <= 768) {
+                toggleSidebar();
+            }
+        } catch (error) {
+            console.error('Error creating new chat:', error);
+            showFlashMessage('Failed to create new chat. Please try again.', 'error');
+        }
+    }
+
+    // Fetch chat sessions from backend
+    async function fetchChatSessions() {
+        try {
+            const response = await fetch('/api/chat-sessions', {
+                method: 'GET',
+                credentials: 'include'
+            });
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            chatSessions = data;
+            updateChatHistoryUI();
+        } catch (error) {
+            console.error('Error fetching chat sessions:', error);
+            document.getElementById('chat-history').innerHTML = '<div class="no-results">Failed to load chat history.</div>';
+            showFlashMessage('Failed to load chat history. Please try refreshing.', 'error');
+        }
+    }
+
+    // Update the chat history sidebar UI based on fetched data
+    function updateChatHistoryUI() {
+        const historyContainer = document.getElementById('chat-history');
+        historyContainer.innerHTML = '';
+        
+        if (chatSessions.length === 0) {
+            historyContainer.innerHTML = '<div class="no-results">No chat history yet. Start a new chat!</div>';
+            return;
+        }
+
+        const sortedSessions = [...chatSessions].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+        const groupedSessions = groupChatSessionsByDate(sortedSessions);
+        
+        const groupOrder = ['today', 'yesterday', 'last7Days', 'last30Days', 'older'];
+        const groupTitles = {
+            today: 'Today',
+            yesterday: 'Yesterday',
+            last7Days: 'Previous 7 Days',
+            last30Days: 'Previous 30 Days',
+            older: 'Older'
+        };
+
+        groupOrder.forEach(groupKey => {
+            if (groupedSessions[groupKey].length > 0) {
+                const dateHeader = document.createElement('div');
+                dateHeader.className = 'chat-history-date';
+                dateHeader.textContent = groupTitles[groupKey];
+                historyContainer.appendChild(dateHeader);
+                
+                groupedSessions[groupKey].forEach(session => {
+                    addChatSessionToHistory(session, historyContainer);
+                });
+            }
+        });
+    }
+
+    // Add a chat session to the history sidebar
+    function addChatSessionToHistory(session, container) {
+        const sessionElement = document.createElement('div');
+        sessionElement.className = `chat-history-item ${session.id === currentChatId ? 'active' : ''}`;
+        
+        let iconClass = 'fa-comment-alt';
+        const firstMessageContent = session.first_message_content ? session.first_message_content.toLowerCase() : '';
+        
+        if (firstMessageContent.includes('exercise') || firstMessageContent.includes('workout') || session.title.toLowerCase().includes('exercise')) {
+            iconClass = 'fa-running';
+        } else if (firstMessageContent.includes('diet') || firstMessageContent.includes('food') || firstMessageContent.includes('nutrition') || session.title.toLowerCase().includes('diet')) {
+            iconClass = 'fa-utensils';
+        } else if (firstMessageContent.includes('heart rate') || firstMessageContent.includes('bpm') || session.title.toLowerCase().includes('heart rate')) {
+            iconClass = 'fa-heartbeat';
+        } else if (firstMessageContent.includes('blood pressure') || session.title.toLowerCase().includes('blood pressure')) {
+            iconClass = 'fa-tint';
+        } else if (firstMessageContent.includes('symptom') || firstMessageContent.includes('pain') || firstMessageContent.includes('disease') || session.title.toLowerCase().includes('symptoms') || session.title.toLowerCase().includes('disease')) {
+            iconClass = 'fa-heart-broken';
+        } else if (firstMessageContent.includes('health') || firstMessageContent.includes('medical') || session.title.toLowerCase().includes('health')) {
+            iconClass = 'fa-notes-medical';
+        }
+        
+        const iconElement = document.createElement('i');
+        iconElement.className = `fas ${iconClass}`;
+        sessionElement.appendChild(iconElement);
+
+        const textSpan = document.createElement('span');
+        textSpan.textContent = session.title || "New Chat";
+        sessionElement.appendChild(textSpan);
+
+        const optionsBtn = document.createElement('button');
+        optionsBtn.className = 'options-btn';
+        optionsBtn.innerHTML = '<i class="fas fa-ellipsis-h"></i>';
+        sessionElement.appendChild(optionsBtn);
+        
+        const menu = document.createElement('div');
+        menu.className = 'rename-delete-menu';
+        menu.innerHTML = `
+            <button class="rename-btn"><i class="fas fa-pencil-alt"></i> Rename</button>
+            <button class="delete-btn"><i class="fas fa-trash-alt"></i> Delete</button>
+        `;
+        sessionElement.appendChild(menu);
+
+        optionsBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); 
+            
+            document.querySelectorAll('.rename-delete-menu.show').forEach(openMenu => {
+                if (openMenu !== menu) { 
+                    openMenu.classList.remove('show');
                 }
             });
-        }
-
-        // Add a chat session to the history sidebar
-        function addChatSessionToHistory(session, container) {
-            const sessionElement = document.createElement('div');
-            sessionElement.className = `chat-history-item ${session.id === currentChatId ? 'active' : ''}`;
-            
-            let iconClass = 'fa-comment-alt';
-            const firstMessageContent = session.first_message_content ? session.first_message_content.toLowerCase() : '';
-            
-            if (firstMessageContent.includes('exercise') || firstMessageContent.includes('workout') || session.title.toLowerCase().includes('exercise')) {
-                iconClass = 'fa-running';
-            } else if (firstMessageContent.includes('diet') || firstMessageContent.includes('food') || firstMessageContent.includes('nutrition') || session.title.toLowerCase().includes('diet')) {
-                iconClass = 'fa-utensils';
-            } else if (firstMessageContent.includes('heart rate') || firstMessageContent.includes('bpm') || session.title.toLowerCase().includes('heart rate')) {
-                iconClass = 'fa-heartbeat';
-            } else if (firstMessageContent.includes('blood pressure') || session.title.toLowerCase().includes('blood pressure')) {
-                iconClass = 'fa-tint';
-            } else if (firstMessageContent.includes('symptom') || firstMessageContent.includes('pain') || firstMessageContent.includes('disease') || session.title.toLowerCase().includes('symptoms') || session.title.toLowerCase().includes('disease')) {
-                iconClass = 'fa-heart-broken';
-            } else if (firstMessageContent.includes('health') || firstMessageContent.includes('medical') || session.title.toLowerCase().includes('health')) {
-                iconClass = 'fa-notes-medical';
+            menu.classList.toggle('show');
+        });
+        
+        menu.querySelector('.rename-btn').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            menu.classList.remove('show'); 
+            const newTitle = prompt('Enter new title for this chat:', session.title);
+            if (newTitle && newTitle.trim() !== '' && newTitle.trim() !== session.title) {
+                await renameChatSession(session.id, newTitle.trim());
+            } else if (newTitle !== null) { 
+                showFlashMessage('Chat title cannot be empty or the same.', 'info');
             }
-            
-            const iconElement = document.createElement('i');
-            iconElement.className = `fas ${iconClass}`;
-            sessionElement.appendChild(iconElement);
+        });
 
-            const textSpan = document.createElement('span');
-            textSpan.textContent = session.title || "New Chat";
-            sessionElement.appendChild(textSpan);
-
-            const optionsBtn = document.createElement('button');
-            optionsBtn.className = 'options-btn';
-            optionsBtn.innerHTML = '<i class="fas fa-ellipsis-h"></i>';
-            sessionElement.appendChild(optionsBtn);
-            
-            const menu = document.createElement('div');
-            menu.className = 'rename-delete-menu';
-            menu.innerHTML = `
-                <button class="rename-btn"><i class="fas fa-pencil-alt"></i> Rename</button>
-                <button class="delete-btn"><i class="fas fa-trash-alt"></i> Delete</button>
-            `;
-            sessionElement.appendChild(menu);
-
-            optionsBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Stop propagation to prevent loading chat when clicking options button
-                
-                // Close any other open menus
+        menu.querySelector('.delete-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            menu.classList.remove('show'); 
+            showDeleteConfirmation(session.id, session.title);
+        });
+        
+        sessionElement.addEventListener('click', async (e) => {
+            const isClickOnOptionsMenu = e.target.closest('.options-btn') || e.target.closest('.rename-delete-menu');
+            if (!isClickOnOptionsMenu) {
                 document.querySelectorAll('.rename-delete-menu.show').forEach(openMenu => {
-                    if (openMenu !== menu) { // Don't close self
-                        openMenu.classList.remove('show');
-                    }
+                    openMenu.classList.remove('show');
                 });
-                menu.classList.toggle('show');
-            });
-            
-            menu.querySelector('.rename-btn').addEventListener('click', async (e) => {
-                e.stopPropagation();
-                menu.classList.remove('show'); // Hide menu
-                const newTitle = prompt('Enter new title for this chat:', session.title);
-                if (newTitle && newTitle.trim() !== '' && newTitle.trim() !== session.title) {
-                    await renameChatSession(session.id, newTitle.trim());
-                } else if (newTitle !== null) { // If user clicked OK but entered empty/same title
-                    showFlashMessage('Chat title cannot be empty or the same.', 'info');
-                }
-            });
-
-            menu.querySelector('.delete-btn').addEventListener('click', (e) => {
-                e.stopPropagation();
-                menu.classList.remove('show'); // Hide menu
-                showDeleteConfirmation(session.id, session.title);
-            });
-            
-            // Add click handler to load chat for the main session element, but only if not clicking the options button
-            sessionElement.addEventListener('click', async (e) => {
-                // Check if the click target or any of its parents is the options button or menu
-                const isClickOnOptionsMenu = e.target.closest('.options-btn') || e.target.closest('.rename-delete-menu');
-                if (!isClickOnOptionsMenu) {
-                    // Before loading, ensure no menus are open
-                    document.querySelectorAll('.rename-delete-menu.show').forEach(openMenu => {
-                        openMenu.classList.remove('show');
-                    });
-                    await loadChatSession(session.id);
-                }
-            });
-            
-            container.appendChild(sessionElement);
-        }
-
-        // Show custom delete confirmation modal
-        function showDeleteConfirmation(sessionId, chatTitle) {
-            const modalOverlay = document.getElementById('delete-chat-modal-overlay');
-            document.getElementById('delete-chat-title').textContent = chatTitle;
-            modalOverlay.classList.add('show');
-
-            const confirmBtn = document.getElementById('delete-modal-confirm-btn');
-            confirmBtn.onclick = async () => {
-                await deleteChatSession(sessionId);
-                hideDeleteConfirmation();
-            };
-        }
-
-        // Hide custom delete confirmation modal
-        function hideDeleteConfirmation() {
-            const modalOverlay = document.getElementById('delete-chat-modal-overlay');
-            modalOverlay.classList.remove('show');
-            const confirmBtn = document.getElementById('delete-modal-confirm-btn');
-            confirmBtn.onclick = null; // Clear handler
-        }
-
-        // Rename chat session via API
-        async function renameChatSession(sessionId, newTitle) {
-            try {
-                const response = await fetch(`/api/chat-sessions/${sessionId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ title: newTitle })
-                });
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        window.location.href = '/login';
-                        return;
-                    }
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                if (data.success) {
-                    showFlashMessage('Chat renamed successfully!', 'success');
-                    await fetchChatSessions(); // Refresh sidebar
-                } else {
-                    showFlashMessage(`Failed to rename chat: ${data.error}`, 'error');
-                }
-            } catch (error) {
-                console.error('Error renaming chat session:', error);
-                showFlashMessage('Failed to rename chat. Please try again.', 'error');
+                await loadChatSession(session.id);
             }
-        }
+        });
+        
+        container.appendChild(sessionElement);
+    }
 
-        // Delete a chat session via API
-        async function deleteChatSession(sessionId) {
-            try {
-                const response = await fetch(`/api/chat-sessions/${sessionId}`, {
-                    method: 'DELETE',
-                    credentials: 'include'
-                });
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        window.location.href = '/login';
-                        return;
-                    }
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    function showDeleteConfirmation(sessionId, chatTitle) {
+        const modalOverlay = document.getElementById('delete-chat-modal-overlay');
+        document.getElementById('delete-chat-title').textContent = chatTitle;
+        modalOverlay.classList.add('show');
+
+        const confirmBtn = document.getElementById('delete-modal-confirm-btn');
+        confirmBtn.onclick = async () => {
+            await deleteChatSession(sessionId);
+            hideDeleteConfirmation();
+        };
+    }
+
+    function hideDeleteConfirmation() {
+        const modalOverlay = document.getElementById('delete-chat-modal-overlay');
+        modalOverlay.classList.remove('show');
+        const confirmBtn = document.getElementById('delete-modal-confirm-btn');
+        confirmBtn.onclick = null; 
+    }
+
+    async function renameChatSession(sessionId, newTitle) {
+        try {
+            const response = await fetch(`/api/chat-sessions/${sessionId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ title: newTitle })
+            });
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
                 }
-                const data = await response.json();
-                
-                if (data.success) {
-                    showFlashMessage('Chat deleted successfully!', 'success');
-                    if (data.message.includes('session reset')) {
-                        currentChatId = null;
-                        await createNewChat();
-                    }
-                    await fetchChatSessions();
-                } else {
-                    showFlashMessage(`Failed to delete chat: ${data.error}`, 'error');
-                }
-            } catch (error) {
-                console.error('Error deleting chat session:', error);
-                showFlashMessage('Failed to delete chat. Please try again.', 'error');
+                const errorData = await response.json();
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
             }
+            const data = await response.json();
+            if (data.success) {
+                showFlashMessage('Chat renamed successfully!', 'success');
+                await fetchChatSessions();
+            } else {
+                showFlashMessage(`Failed to rename chat: ${data.error}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error renaming chat session:', error);
+            showFlashMessage('Failed to rename chat. Please try again.', 'error');
         }
+    }
 
-        // Initial setup on DOMContentLoaded
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Check login status first, will redirect if not authenticated
+    async function deleteChatSession(sessionId) {
+        try {
+            const response = await fetch(`/api/chat-sessions/${sessionId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                const errorData = await response.json();
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            
+            if (data.success) {
+                showFlashMessage('Chat deleted successfully!', 'success');
+                if (data.message.includes('session reset')) {
+                    currentChatId = null;
+                    await createNewChat();
+                }
+                await fetchChatSessions();
+            } else {
+                showFlashMessage(`Failed to delete chat: ${data.error}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting chat session:', error);
+            showFlashMessage('Failed to delete chat. Please try again.', 'error');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
             await checkLoginStatus();
 
-            // Only proceed if authenticated
             if (isLoggedIn) {
                 await loadUserData();
                 initTheme();
@@ -2793,675 +2723,677 @@
                 
                 localStorage.setItem('lastActiveTime', Date.now());
             }
-        });
+        } catch (initialLoadError) {
+            console.error("Error during initial page load:", initialLoadError);
+            // This catch will capture errors from checkLoginStatus, loadUserData, etc.
+            // If checkLoginStatus already redirected, this part might not run.
+            // But if it's a soft error, it prevents the page from being entirely blank.
+            // showFlashMessage("An error occurred during initial load. Please refresh.", "error");
+        }
+    });
 
-        // Check if user is logged in
-        async function checkLoginStatus() {
-            try {
-                const response = await fetch('/check-auth', {
-                    method: 'GET',
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    isLoggedIn = data.authenticated;
-                    if (!isLoggedIn) {
-                        window.location.href = '/login'; // Redirect to login if not authenticated
-                    }
-                } else {
+    async function checkLoginStatus() {
+        try {
+            const response = await fetch('/check-auth', {
+                method: 'GET',
+                credentials: 'include'
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                isLoggedIn = data.authenticated;
+                if (!isLoggedIn) {
                     window.location.href = '/login';
                 }
-            } catch (error) {
-                console.error('Error checking auth status:', error);
+            } else {
                 window.location.href = '/login';
             }
+        } catch (error) {
+            console.error('Error checking auth status:', error);
+            window.location.href = '/login';
         }
+    }
 
-        // Load user data from server
-        async function loadUserData() {
-            try {
-                const response = await fetch('/api/user/profile', {
-                    method: 'GET',
-                    credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch user data');
-                }
-
-                const data = await response.json();
-                
-                if (data && data.username) {
-                    const profileLabel = document.getElementById('profile-label');
-                    profileLabel.textContent = data.username;
-                    
-                    const avatar = document.getElementById('user-avatar');
-                    
-                    if (data.profile_picture) {
-                        avatar.style.backgroundImage = `url(${data.profile_picture})`;
-                        avatar.textContent = '';
-                    } else {
-                        const initials = data.username.split(' ')
-                            .map(n => n[0])
-                            .join('')
-                            .toUpperCase();
-                        avatar.textContent = initials.substring(0, 2);
-                        avatar.style.backgroundImage = 'none';
-                    }
-
-                    const emailDisplayItem = document.getElementById('profile-email-item');
-                    if (emailDisplayItem) {
-                        emailDisplayItem.querySelector('span').textContent = data.email || 'user@example.com';
-                    }
-                } else {
-                    document.getElementById('profile-label').textContent = 'Guest User';
-                    const avatar = document.getElementById('user-avatar');
-                    avatar.textContent = 'GU';
-                    avatar.style.backgroundImage = 'none';
-                    const emailDisplayItem = document.getElementById('profile-email-item');
-                    if (emailDisplayItem) {
-                        emailDisplayItem.querySelector('span').textContent = 'guest@example.com';
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading user data:', error);
-                document.getElementById('profile-label').textContent = 'User Error';
-                const avatar = document.getElementById('user-avatar');
-                avatar.textContent = '!U';
-                avatar.style.backgroundImage = 'none';
-                const emailDisplayItem = document.getElementById('profile-email-item');
-                if (emailDisplayItem) {
-                    emailDisplayItem.querySelector('span').textContent = 'loading_error@example.com';
-                }
-            }
-        }
-
-
-        // Send Message Function
-        async function sendMessage() {
-            const userInputElement = document.getElementById("user-input");
-            const userInput = userInputElement.value.trim();
-            const sendBtn = document.getElementById("send-btn");
-
-            if (userInput === "" || isWaitingForResponse) return;
-
-            const chatBox = document.getElementById("chat-box");
-            const welcomeMessage = document.getElementById("welcome-message");
-
-            if (welcomeMessage && welcomeMessage.style.display !== "none") {
-                welcomeMessage.style.display = "none";
-            }
-
-            appendMessage(userInput, 'user-message');
-            userInputElement.value = "";
-            userInputElement.style.height = 'auto';
-            userInputElement.focus();
-            
-            sendBtn.classList.add('loading');
-            sendBtn.disabled = true;
-            isWaitingForResponse = true;
-
-            const typingIndicator = showTypingIndicator();
-            
-            try {
-                const sessionIdToSend = currentChatId;
-
-                const response = await fetch("/chat", {
-                    method: "POST",
-                    headers: {  
-                        "Content-Type": "application/json",
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({ message: userInput, session_id: sessionIdToSend })
-                });
-
-                const data = await response.json();
-                chatBox.removeChild(typingIndicator);
-
-                if (!response.ok) {
-                    if (data.type === 'auth_required') {
-                        showFlashMessage('Your session has expired. Please log in again.', 'error');
-                        setTimeout(() => window.location.href = '/login', 2000);
-                        return;
-                    }
-                    throw new Error(data.message || `Server error: ${response.status}`);
-                } else if (data.status === "error") {
-                    appendMessage(data.message, 'error-message');
-                    showFlashMessage(`Chat error: ${data.message}`, 'error');
-                } else {
-                    appendMessage(data.response, 'bot-message'); 
-                    currentChatId = data.chat_session_id;
-                    await fetchChatSessions();
-                    
-                    sendBtn.classList.add('clicked');
-                    setTimeout(() => {
-                        sendBtn.classList.remove('clicked');
-                    }, 500);
-                }
-                
-            } catch (error) {
-                chatBox.removeChild(typingIndicator);
-                appendMessage(`Error: ${error.message}`, 'error-message');
-                console.error('Chat error:', error);
-                showFlashMessage(`Failed to send message: ${error.message}`, 'error');
-            } finally {
-                isWaitingForResponse = false;
-                sendBtn.classList.remove('loading');
-                sendBtn.disabled = false;
-            }
-        }
-
-        function appendMessage(text, className) {
-            const chatBox = document.getElementById("chat-box");
-            const message = document.createElement("div");
-            message.classList.add("message", className);
-            
-            const messageBody = document.createElement('div');
-            messageBody.classList.add('message-body');
-            
-            const messageTextContent = document.createElement('div');
-            messageTextContent.classList.add('message-text-content');
-
-            if (className === 'bot-message') {
-                const botAvatar = document.createElement('div');
-                botAvatar.classList.add('bot-avatar');
-                botAvatar.textContent = 'AI';  
-                message.appendChild(botAvatar);
-                
-                messageBody.style.flexGrow = '1';  
-            } else {
-                messageBody.style.alignSelf = 'flex-end';
-            }
-
-            formatBotResponse(text, messageTextContent);
-            
-            messageBody.appendChild(messageTextContent);
-
-            const timestamp = document.createElement('div');
-            timestamp.classList.add('message-timestamp');
-            const now = new Date();
-            timestamp.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            messageBody.appendChild(timestamp);
-
-            message.appendChild(messageBody);
-
-            chatBox.appendChild(message);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        function formatTextResponse(text) {
-            text = text.replace(/^# (.*$)/gm, '<h1>$1</h1>');
-            text = text.replace(/^## (.*$)/gm, '<h2>$1</h2>');
-            text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
-            text = text.replace(/^#### (.*$)/gm, '<h4>$1</h4>');
-
-            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
-            
-            text = text.replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>');
-
-            const lines = text.split('\n');
-            let inUnorderedList = false;
-            let inOrderedList = false;
-            let formattedLines = [];
-
-            lines.forEach(line => {
-                const trimmedLine = line.trim();
-                if (trimmedLine.match(/^[\*\-]\s/)) {
-                    if (!inUnorderedList) {
-                        formattedLines.push('<ul>');
-                        inUnorderedList = true;
-                        inOrderedList = false;
-                    }
-                    formattedLines.push(`<li>${trimmedLine.substring(1).trim()}</li>`);
-                }
-                else if (trimmedLine.match(/^\d+\.\s/)) {
-                    if (!inOrderedList) {
-                        formattedLines.push('<ol>');
-                        inOrderedList = true;
-                        inUnorderedList = false;
-                    }
-                    formattedLines.push(`<li>${trimmedLine.substring(trimmedLine.indexOf('.') + 1).trim()}</li>`);
-                }
-                else {
-                    if (inUnorderedList) {
-                        formattedLines.push('</ul>');
-                        inUnorderedList = false;
-                    }
-                    if (inOrderedList) {
-                        formattedLines.push('</ol>');
-                        inOrderedList = false;
-                    }
-                    formattedLines.push(line);
+    async function loadUserData() {
+        try {
+            const response = await fetch('/api/user/profile', {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
                 }
             });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch user data');
+            }
 
-            if (inUnorderedList) formattedLines.push('</ul>');
-            if (inOrderedList) formattedLines.push('</ol>');
+            const data = await response.json();
+            
+            const profileLabel = document.getElementById('profile-label');
+            const avatar = document.getElementById('user-avatar');
+            const emailDisplayItem = document.getElementById('profile-email-item');
 
-            text = formattedLines.join('\n');
-
-            text = text.split('\n\n').map(paragraph => {
-                if (paragraph.match(/^(<h[1-4]>|<ul|<ol|<table|<blockquote)/i)) {
-                    return paragraph.trim();
+            if (data && data.username) {
+                profileLabel.textContent = data.username;
+                
+                if (data.profile_picture) {
+                    avatar.style.backgroundImage = `url(${data.profile_picture})`;
+                    avatar.textContent = '';
+                } else {
+                    const initials = data.username.split(' ')
+                        .map(n => n[0])
+                        .join('')
+                        .toUpperCase();
+                    avatar.textContent = initials.substring(0, 2);
+                    avatar.style.backgroundImage = 'none';
                 }
-                return `<p>${paragraph.trim()}</p>`;
-            }).join('');
 
-            text = text.replace(/<p>\s*<\/p>/g, '');
-            
-            return text;
+                if (emailDisplayItem) {
+                    emailDisplayItem.querySelector('span').textContent = data.email || 'user@example.com';
+                }
+            } else {
+                profileLabel.textContent = 'Guest User';
+                avatar.textContent = 'GU';
+                avatar.style.backgroundImage = 'none';
+                if (emailDisplayItem) {
+                    emailDisplayItem.querySelector('span').textContent = 'guest@example.com';
+                }
+            }
+        } catch (error) {
+            console.error('Error loading user data:', error);
+            document.getElementById('profile-label').textContent = 'User Error';
+            const avatar = document.getElementById('user-avatar');
+            avatar.textContent = '!U';
+            avatar.style.backgroundImage = 'none';
+            const emailDisplayItem = document.getElementById('profile-email-item');
+            if (emailDisplayItem) {
+                emailDisplayItem.querySelector('span').textContent = 'loading_error@example.com';
+            }
+            showFlashMessage('Failed to load user data.', 'error');
+        }
+    }
+
+    async function sendMessage() {
+        const userInputElement = document.getElementById("user-input");
+        const userInput = userInputElement.value.trim();
+        const sendBtn = document.getElementById("send-btn");
+
+        if (userInput === "" || isWaitingForResponse) return;
+
+        const chatBox = document.getElementById("chat-box");
+        const welcomeMessage = document.getElementById("welcome-message");
+
+        if (welcomeMessage && welcomeMessage.style.display !== "none") {
+            welcomeMessage.style.display = "none";
         }
 
-        function showTypingIndicator() {
-            const chatBox = document.getElementById("chat-box");
-            const typingIndicator = document.createElement("div");
-            typingIndicator.classList.add("message", "typing-indicator");
-            
-            const typingDots = document.createElement('div');
-            typingDots.classList.add('typing-dots');
-            typingDots.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
-            typingIndicator.appendChild(typingDots);
+        appendMessage(userInput, 'user-message');
+        userInputElement.value = "";
+        userInputElement.style.height = 'auto';
+        userInputElement.focus();
+        
+        sendBtn.classList.add('loading');
+        sendBtn.disabled = true;
+        isWaitingForResponse = true;
 
-            chatBox.appendChild(typingIndicator);
-            chatBox.scrollTop = chatBox.scrollHeight;
-            return typingIndicator;
+        const typingIndicator = showTypingIndicator();
+        
+        try {
+            const sessionIdToSend = currentChatId;
+
+            const response = await fetch("/chat", {
+                method: "POST",
+                headers: {  
+                    "Content-Type": "application/json",
+                },
+                credentials: 'include',
+                body: JSON.stringify({ message: userInput, session_id: sessionIdToSend })
+            });
+
+            const data = await response.json();
+            chatBox.removeChild(typingIndicator);
+
+            if (!response.ok) {
+                if (data.type === 'auth_required') {
+                    showFlashMessage('Your session has expired. Please log in again.', 'error');
+                    setTimeout(() => window.location.href = '/login', 2000);
+                    return;
+                }
+                throw new Error(data.message || `Server error: ${response.status}`);
+            } else if (data.status === "error") {
+                appendMessage(data.message, 'error-message');
+                showFlashMessage(`Chat error: ${data.message}`, 'error');
+            } else {
+                appendMessage(data.response, 'bot-message'); 
+                currentChatId = data.chat_session_id;
+                await fetchChatSessions();
+                
+                sendBtn.classList.add('clicked');
+                setTimeout(() => {
+                    sendBtn.classList.remove('clicked');
+                }, 500);
+            }
+            
+        } catch (error) {
+            chatBox.removeChild(typingIndicator);
+            appendMessage(`Error: ${error.message}`, 'error-message');
+            console.error('Chat error:', error);
+            showFlashMessage(`Failed to send message: ${error.message}`, 'error');
+        } finally {
+            isWaitingForResponse = false;
+            sendBtn.classList.remove('loading');
+            sendBtn.disabled = false;
+        }
+    }
+
+    function appendMessage(text, className) {
+        const chatBox = document.getElementById("chat-box");
+        const message = document.createElement("div");
+        message.classList.add("message", className);
+        
+        const messageBody = document.createElement('div');
+        messageBody.classList.add('message-body');
+        
+        const messageTextContent = document.createElement('div');
+        messageTextContent.classList.add('message-text-content');
+
+        if (className === 'bot-message') {
+            const botAvatar = document.createElement('div');
+            botAvatar.classList.add('bot-avatar');
+            botAvatar.textContent = 'AI';  
+            message.appendChild(botAvatar);
+            
+            messageBody.style.flexGrow = '1';  
+        } else {
+            messageBody.style.alignSelf = 'flex-end';
         }
 
-        function formatBotResponse(response, targetElement) {
-            const tableRegex = /^\|.*\|(?:\r?\n\|[-: ]+\|)+\r?\n(?:\|.*\|(?:\r?\n|$))*|^\|.*\|(?:\r?\n(?:\|.*\|\r?\n?)*)/gm;
-            let htmlContent = response;
+        formatBotResponse(text, messageTextContent);
+        
+        messageBody.appendChild(messageTextContent);
 
-            let tableMatch;
-            while ((tableMatch = tableRegex.exec(htmlContent)) !== null) {
-                const markdownTable = tableMatch[0];
-                const lines = markdownTable.split('\n').filter(line => line.trim() !== '');
+        const timestamp = document.createElement('div');
+        timestamp.classList.add('message-timestamp');
+        const now = new Date();
+        timestamp.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        messageBody.appendChild(timestamp);
 
-                if (lines.length < 2) continue;
+        message.appendChild(messageBody);
 
-                let tableHtml = '<table>';
-                let headerProcessed = false;
+        chatBox.appendChild(message);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
-                lines.forEach((line, index) => {
-                    const trimmedLine = line.trim();
-                    if (trimmedLine.startsWith('|') && trimmedLine.endsWith('|')) {
-                        const cells = trimmedLine.split('|').slice(1, -1).map(cell => cell.trim());
+    function formatTextResponse(text) {
+        text = text.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+        text = text.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+        text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+        text = text.replace(/^#### (.*$)/gm, '<h4>$1</h4>');
 
-                        if (trimmedLine.match(/^\|[-=\s:]+\|$/)) {
-                            headerProcessed = true;
-                            return;
-                        }
+        text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        
+        text = text.replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>');
 
-                        if (!headerProcessed) {
-                            tableHtml += '<thead><tr>';
-                            cells.forEach(cell => {
-                                tableHtml += `<th>${formatTextResponse(cell)}</th>`;
-                            });
-                            tableHtml += '</tr></thead><tbody>';
-                        } else {
-                            tableHtml += '<tr>';
-                            cells.forEach(cell => {
-                                tableHtml += `<td>${formatTextResponse(cell)}</td>`;
-                            });
-                            tableHtml += '</tr>';
-                        }
+        const lines = text.split('\n');
+        let inUnorderedList = false;
+        let inOrderedList = false;
+        let formattedLines = [];
+
+        lines.forEach(line => {
+            const trimmedLine = line.trim();
+            if (trimmedLine.match(/^[\*\-]\s/)) {
+                if (!inUnorderedList) {
+                    formattedLines.push('<ul>');
+                    inUnorderedList = true;
+                    inOrderedList = false;
+                }
+                formattedLines.push(`<li>${trimmedLine.substring(1).trim()}</li>`);
+            }
+            else if (trimmedLine.match(/^\d+\.\s/)) {
+                if (!inOrderedList) {
+                    formattedLines.push('<ol>');
+                    inOrderedList = true;
+                    inUnorderedList = false;
+                }
+                formattedLines.push(`<li>${trimmedLine.substring(trimmedLine.indexOf('.') + 1).trim()}</li>`);
+            }
+            else {
+                if (inUnorderedList) {
+                    formattedLines.push('</ul>');
+                    inUnorderedList = false;
+                }
+                if (inOrderedList) {
+                    formattedLines.push('</ol>');
+                    inOrderedList = false;
+                }
+                formattedLines.push(line);
+            }
+        });
+
+        if (inUnorderedList) formattedLines.push('</ul>');
+        if (inOrderedList) formattedLines.push('</ol>');
+
+        text = formattedLines.join('\n');
+
+        text = text.split('\n\n').map(paragraph => {
+            if (paragraph.match(/^(<h[1-4]>|<ul|<ol|<table|<blockquote)/i)) {
+                return paragraph.trim();
+            }
+            return `<p>${paragraph.trim()}</p>`;
+        }).join('');
+
+        text = text.replace(/<p>\s*<\/p>/g, '');
+        
+        return text;
+    }
+
+    function showTypingIndicator() {
+        const chatBox = document.getElementById("chat-box");
+        const typingIndicator = document.createElement("div");
+        typingIndicator.classList.add("message", "typing-indicator");
+        
+        const typingDots = document.createElement('div');
+        typingDots.classList.add('typing-dots');
+        typingDots.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+        typingIndicator.appendChild(typingDots);
+
+        chatBox.appendChild(typingIndicator);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        return typingIndicator;
+    }
+
+    function formatBotResponse(response, targetElement) {
+        const tableRegex = /^\|.*\|(?:\r?\n\|[-: ]+\|)+\r?\n(?:\|.*\|(?:\r?\n|$))*|^\|.*\|(?:\r?\n(?:\|.*\|\r?\n?)*)/gm;
+        let htmlContent = response;
+
+        let tableMatch;
+        while ((tableMatch = tableRegex.exec(htmlContent)) !== null) {
+            const markdownTable = tableMatch[0];
+            const lines = markdownTable.split('\n').filter(line => line.trim() !== '');
+
+            if (lines.length < 2) continue;
+
+            let tableHtml = '<table>';
+            let headerProcessed = false;
+
+            lines.forEach((line, index) => {
+                const trimmedLine = line.trim();
+                if (trimmedLine.startsWith('|') && trimmedLine.endsWith('|')) {
+                    const cells = trimmedLine.split('|').slice(1, -1).map(cell => cell.trim());
+
+                    if (trimmedLine.match(/^\|[-=\s:]+\|$/)) {
+                        headerProcessed = true;
+                        return;
                     }
-                });
-                if (headerProcessed) {
-                    tableHtml += '</tbody>';
+
+                    if (!headerProcessed) {
+                        tableHtml += '<thead><tr>';
+                        cells.forEach(cell => {
+                            tableHtml += `<th>${formatTextResponse(cell)}</th>`;
+                        });
+                        tableHtml += '</tr></thead><tbody>';
+                    } else {
+                        tableHtml += '<tr>';
+                        cells.forEach(cell => {
+                            tableHtml += `<td>${formatTextResponse(cell)}</td>`;
+                        });
+                        tableHtml += '</tr>';
+                    }
                 }
-                tableHtml += '</table>';
+            });
+            if (headerProcessed) {
+                tableHtml += '</tbody>';
+            }
+            tableHtml += '</table>';
 
-                htmlContent = htmlContent.replace(markdownTable, tableHtml);
-                tableRegex.lastIndex = 0;  
+            htmlContent = htmlContent.replace(markdownTable, tableHtml);
+            tableRegex.lastIndex = 0;  
+        }
+        
+        targetElement.innerHTML = formatTextResponse(htmlContent);
+    }
+
+
+    function updateHRManually() {
+        const hrInput = document.getElementById('manual-hr');
+        const hr = parseInt(hrInput.value);
+        
+        if (isNaN(hr)) {
+            showNotification("Please enter a valid number for heart rate.", 'error');
+            return;
+        }
+        
+        if (hr < 30 || hr > 250) {
+            showNotification("Heart rate should be between 30-250 BPM.", 'error');
+            return;
+        }
+        
+        bluetoothManager.displayHeartRate(hr);
+        bluetoothManager.addToHistory(hr);
+        bluetoothManager.sendToBackend(hr);
+        hrInput.value = '';
+        appendMessage(`Manual HR submitted: ${hr} BPM`, 'bot-message');
+        
+        document.getElementById('analyze-btn').disabled = false;
+        
+        checkHRAlerts(hr);
+    }
+
+    function checkHRAlerts(hr) {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        if (hr > 100) {
+            showNotification(`⚠️ High Heart Rate Alert: ${hr} BPM at ${timeString}. Consider resting and monitoring.`, 'warning');
+            appendMessage(`<strong>Warning:</strong> Your heart rate is high (${hr} BPM). Consider resting and consulting a healthcare professional if this persists or is unusual for you.`, 'bot-message');
+        } else if (hr < 60) {
+            showNotification(`⚠️ Low Heart Rate Alert: ${hr} BPM at ${timeString}. If you feel dizzy, consult a doctor.`, 'warning');
+            appendMessage(`<strong>Notice:</strong> Your heart rate is low (${hr} BPM). This may be normal for athletes or during rest, but if you feel dizzy or unwell, please consult a healthcare professional.`, 'bot-message');
+        }
+    }
+
+    async function analyzeHeartRate() {
+        if (hrHistory.length === 0) {
+            appendMessage("No heart rate data available for analysis. Please input or connect a device first.", 'error-message');
+            showFlashMessage("No heart rate data available for analysis.", 'warning');
+            return;
+        }
+        
+        const currentHR = hrHistory[0].rate;
+        const sendBtn = document.getElementById("send-btn");
+
+        const typingIndicator = showTypingIndicator();
+        isWaitingForResponse = true;
+        sendBtn.classList.add('loading');
+        sendBtn.disabled = true;
+        
+        try {
+            const prompt = `I need an analysis of my heart rate. My most recent reading is ${currentHR} BPM. Please provide: 
+            1. What this heart rate generally means in context (e.g., normal, high, low).
+            2. Potential common physiological or lifestyle factors that could influence this reading.
+            3. When I should be concerned and consider seeking professional medical advice.
+            4. General recommended actions or next steps for someone with this reading.
+            Please present this information clearly, using bullet points or a structured format, and always include a strong reminder to consult a healthcare professional.`;
+            
+            const response = await fetch("/chat", {
+                method: "POST",
+                headers: {  
+                    "Content-Type": "application/json",
+                },
+                credentials: 'include',
+                body: JSON.stringify({ message: prompt, session_id: currentChatId })
+            });
+
+            const data = await response.json();
+            chatBox.removeChild(typingIndicator);
+
+            if (!response.ok) {
+                if (data.type === 'auth_required') {
+                    showFlashMessage('Your session has expired. Please log in again.', 'error');
+                    setTimeout(() => window.location.href = '/login', 2000);
+                    return;
+                }
+                throw new Error(data.message || `Server error: ${response.status}`);
+            } else if (data.status === "error") {
+                appendMessage(data.message, 'error-message');
+                showFlashMessage(`Analysis error: ${data.message}`, 'error');
+            } else {
+                appendMessage(data.response, 'bot-message'); 
+                currentChatId = data.chat_session_id; 
+                await fetchChatSessions();
             }
             
-            targetElement.innerHTML = formatTextResponse(htmlContent);
+        } catch (error) {
+            chatBox.removeChild(typingIndicator);
+            appendMessage(`Analysis error: ${error.message}`, 'error-message');
+            console.error('Analysis error:', error);
+            showFlashMessage(`Failed to get analysis: ${error.message}`, 'error');
+        } finally {
+            isWaitingForResponse = false;
+            sendBtn.classList.remove('loading');
+            sendBtn.disabled = false;
         }
+    }
 
+    async function logout() {
+        try {
+            if (bluetoothManager.device && bluetoothManager.device.gatt.connected) {
+                bluetoothManager.handleDisconnect();
+            }
 
-        function updateHRManually() {
-            const hrInput = document.getElementById('manual-hr');
-            const hr = parseInt(hrInput.value);
+            localStorage.removeItem('hrHistory');
+
+            const response = await fetch('/logout', {
+                method: 'POST',
+                credentials: 'include'
+            });
             
-            if (isNaN(hr)) {
-                showNotification("Please enter a valid number for heart rate.", 'error');
+            if (response.ok) {
+                window.location.href = '/login';
+            } else {
+                const errorData = await response.json();
+                showFlashMessage(errorData.message || 'Logout failed. Please try again.', 'error');
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+            showFlashMessage('Logout failed. Please try again.', 'error');
+        }
+    }
+
+    const bluetoothManager = {
+        device: null,
+        characteristic: null,
+        isConnecting: false,
+
+        async connect() {
+            if (this.isConnecting) {
+                showFlashMessage("Connection in progress...", 'info');
                 return;
             }
+            this.isConnecting = true;
+            appendMessage("Attempting to connect to heart rate monitor...", 'bot-message');
             
-            if (hr < 30 || hr > 250) {
-                showNotification("Heart rate should be between 30-250 BPM.", 'error');
-                return;
+            try {
+                if (!navigator.bluetooth) {
+                    throw new Error('Web Bluetooth is not supported in this browser. Try Chrome on Windows, Mac, or Android.');
+                }
+                const isAvailable = await navigator.bluetooth.getAvailability();
+                if (!isAvailable) {
+                    throw new Error('Bluetooth is turned off or unavailable on your device.');
+                }
+
+                showFlashMessage("Searching for devices...", 'info');
+                
+                this.device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: ['heart_rate'] }],
+                    optionalServices: ['heart_rate']
+                });
+                
+                this.device.addEventListener('gattserverdisconnected', () => {
+                    this.handleDisconnect();
+                    appendMessage("Heart rate monitor disconnected.", 'bot-message');
+                    showFlashMessage("Heart rate monitor disconnected.", 'info');
+                });
+                
+                appendMessage(`Found device: ${this.device.name || 'Unknown Device'}`, 'bot-message');
+                showFlashMessage(`Connecting to ${this.device.name || 'device'}...`, 'info');
+                
+                const server = await this.device.gatt.connect();
+                const service = await server.getPrimaryService('heart_rate');
+                this.characteristic = await service.getCharacteristic('heart_rate_measurement');
+                
+                await this.characteristic.startNotifications();
+                this.characteristic.addEventListener(
+                    'characteristicvaluechanged',
+                    this.handleHeartRateMeasurement.bind(this)
+                );
+                
+                appendMessage("Connected successfully! Receiving heart rate data...", 'bot-message');
+                this.isConnected = true;
+                this.updateUI(true);
+                document.getElementById('analyze-btn').disabled = false;
+                document.getElementById('hr-status').textContent = "Connected";
+                document.getElementById('hr-status').style.color = "#00ff00";
+                
+                document.getElementById('heart-rate-button').classList.add('pulse');
+                showFlashMessage("Heart rate monitor connected!", 'success');
+                
+            } catch (error) {
+                console.error('Bluetooth connection error:', error);
+                let errorMessage = error.message;
+                if (error.name === 'NotFoundError') {
+                    errorMessage = 'No Bluetooth device found or selected.';
+                } else if (error.name === 'NotAllowedError') {
+                    errorMessage = 'Bluetooth permission denied by user.';
+                } else if (error.message.includes('Bluetooth is turned off')) {
+                } else if (error.message.includes('User cancelled the request')) {
+                    errorMessage = 'Bluetooth device selection cancelled.';
+                }
+                
+                appendMessage(`Bluetooth Error: ${errorMessage}. Please try entering heart rate manually.`, 'error-message');
+                showFlashMessage(`Bluetooth connection failed: ${errorMessage}`, 'error');
+                this.handleDisconnect();
+            } finally {
+                this.isConnecting = false;
+            }
+        },
+
+        handleHeartRateMeasurement(event) {
+            try {
+                const value = event.target.value;
+                const flags = value.getUint8(0);
+                let rate = value.getUint8(1);
+                
+                if (flags & 0x1) {
+                    rate = value.getUint16(1, true);
+                }
+                
+                this.displayHeartRate(rate);
+                this.addToHistory(rate);
+                this.sendToBackend(rate);
+                
+                checkHRAlerts(rate);
+            } catch (error) {
+                console.error('Failed to parse HR:', error);
+                appendMessage(`Error parsing heart rate data: ${error.message}`, 'error-message');
+            }
+        },
+
+        displayHeartRate(rate) {
+            const hrElement = document.getElementById('current-hr');
+            hrElement.textContent = rate;
+            
+            let color;
+            if (rate > 100) {
+                color = 'var(--error-color)';
+            } else if (rate < 60) {
+                color = 'var(--warning-color)';
+            } else {
+                color = 'var(--success-color)';
             }
             
-            bluetoothManager.displayHeartRate(hr);
-            bluetoothManager.addToHistory(hr);
-            bluetoothManager.sendToBackend(hr);
-            hrInput.value = '';
-            appendMessage(`Manual HR submitted: ${hr} BPM`, 'bot-message');
-            
-            document.getElementById('analyze-btn').disabled = false;
-            
-            checkHRAlerts(hr);
-        }
+            hrElement.style.color = color;
+        },
 
-        function checkHRAlerts(hr) {
+        addToHistory(rate) {
             const now = new Date();
             const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
-            if (hr > 100) {
-                showNotification(`⚠️ High Heart Rate Alert: ${hr} BPM at ${timeString}. Consider resting and monitoring.`, 'warning');
-                appendMessage(`<strong>Warning:</strong> Your heart rate is high (${hr} BPM). Consider resting and consulting a healthcare professional if this persists or is unusual for you.`, 'bot-message');
-            } else if (hr < 60) {
-                showNotification(`⚠️ Low Heart Rate Alert: ${hr} BPM at ${timeString}. If you feel dizzy, consult a doctor.`, 'warning');
-                appendMessage(`<strong>Notice:</strong> Your heart rate is low (${hr} BPM). This may be normal for athletes or during rest, but if you feel dizzy or unwell, please consult a healthcare professional.`, 'bot-message');
+            hrHistory.unshift({
+                rate: rate,
+                time: timeString,
+                timestamp: now.getTime()
+            });
+            
+            if (hrHistory.length > 10) {
+                hrHistory.pop();
             }
-        }
+            
+            this.updateHistoryUI();
+            
+            localStorage.setItem('hrHistory', JSON.stringify(hrHistory));
+        },
 
-        async function analyzeHeartRate() {
+        updateHistoryUI() {
+            const historyList = document.getElementById('hr-history-list');
+            historyList.innerHTML = '';
+            
             if (hrHistory.length === 0) {
-                appendMessage("No heart rate data available for analysis. Please input or connect a device first.", 'error-message');
-                showFlashMessage("No heart rate data available for analysis.", 'warning');
+                historyList.innerHTML = '<div style="color: var(--text-muted); text-align: center; font-size: 0.8em; padding: 10px;">No recent readings</div>';
                 return;
             }
-            
-            const currentHR = hrHistory[0].rate;
-            const sendBtn = document.getElementById("send-btn");
 
-            const typingIndicator = showTypingIndicator();
-            isWaitingForResponse = true;
-            sendBtn.classList.add('loading');
-            sendBtn.disabled = true;
-            
-            try {
-                const prompt = `I need an analysis of my heart rate. My most recent reading is ${currentHR} BPM. Please provide: 
-                1. What this heart rate generally means in context (e.g., normal, high, low).
-                2. Potential common physiological or lifestyle factors that could influence this reading.
-                3. When I should be concerned and consider seeking professional medical advice.
-                4. General recommended actions or next steps for someone with this reading.
-                Please present this information clearly, using bullet points or a structured format, and always include a strong reminder to consult a healthcare professional.`;
+            hrHistory.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'hr-history-item';
                 
-                const response = await fetch("/chat", {
-                    method: "POST",
-                    headers: {  
-                        "Content-Type": "application/json",
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({ message: prompt, session_id: currentChatId })
-                });
-
-                const data = await response.json();
-                chatBox.removeChild(typingIndicator);
-
-                if (!response.ok) {
-                    if (data.type === 'auth_required') {
-                        showFlashMessage('Your session has expired. Please log in again.', 'error');
-                        setTimeout(() => window.location.href = '/login', 2000);
-                        return;
-                    }
-                    throw new Error(data.message || `Server error: ${response.status}`);
-                } else if (data.status === "error") {
-                    appendMessage(data.message, 'error-message');
-                    showFlashMessage(`Analysis error: ${data.message}`, 'error');
-                } else {
-                    appendMessage(data.response, 'bot-message'); 
-                    currentChatId = data.chat_session_id; 
-                    await fetchChatSessions();
-                }
+                const timeElement = document.createElement('span');
+                timeElement.textContent = item.time;
                 
-            } catch (error) {
-                chatBox.removeChild(typingIndicator);
-                appendMessage(`Analysis error: ${error.message}`, 'error-message');
-                console.error('Analysis error:', error);
-                showFlashMessage(`Failed to get analysis: ${error.message}`, 'error');
-            } finally {
-                isWaitingForResponse = false;
-                sendBtn.classList.remove('loading');
-                sendBtn.disabled = false;
-            }
-        }
+                const rateElement = document.createElement('span');
+                rateElement.className = 'hr-history-value';
+                rateElement.textContent = `${item.rate} bpm`;
+                rateElement.style.color = item.rate > 100 ? 'var(--error-color)' : 
+                                           item.rate < 60 ? 'var(--warning-color)' : 'var(--success-color)';
+                
+                itemElement.appendChild(timeElement);
+                itemElement.appendChild(rateElement);
+                historyList.appendChild(itemElement);
+            });
+        },
 
-        async function logout() {
+        async sendToBackend(rate) {
             try {
-                if (bluetoothManager.device && bluetoothManager.device.gatt.connected) {
-                    bluetoothManager.handleDisconnect();
-                }
-
-                localStorage.removeItem('hrHistory');
-
-                const response = await fetch('/logout', {
+                const response = await fetch('/api/heart-rate', {
                     method: 'POST',
-                    credentials: 'include'
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({  
+                        bpm: rate,  
+                        timestamp: new Date().toISOString()
+                    })
                 });
-                
-                if (response.ok) {
-                    window.location.href = '/login';
-                } else {
+                if (!response.ok) {
                     const errorData = await response.json();
-                    showFlashMessage(errorData.message || 'Logout failed. Please try again.', 'error');
+                    console.error('Failed to send HR to backend:', errorData.message);
+                    showFlashMessage('Failed to save HR data to server.', 'error');
                 }
             } catch (error) {
-                console.error('Logout error:', error);
-                showFlashMessage('Logout failed. Please try again.', 'error');
+                console.error('Network error sending HR to backend:', error);
+                showFlashMessage('Network issue: Could not save HR data.', 'error');
             }
+        },
+
+        handleDisconnect() {
+            if (this.device && this.device.gatt.connected) {
+                this.characteristic.stopNotifications()
+                    .then(() => {
+                        console.log('Notifications stopped.');
+                        this.device.gatt.disconnect();
+                    })
+                    .catch(error => console.error('Error stopping notifications or disconnecting:', error));
+            }
+            this.device = null;
+            this.characteristic = null;
+            this.isConnected = false;
+            this.updateUI(false);
+            
+            document.getElementById('current-hr').textContent = '--';
+            document.getElementById('current-hr').style.color = 'var(--error-color)';
+            document.getElementById('hr-status').textContent = "Not connected";
+            document.getElementById('hr-status').style.color = "var(--error-color)";
+            document.getElementById('analyze-btn').disabled = true;
+            
+            document.getElementById('heart-rate-button').classList.remove('pulse');
+        },
+
+        updateUI(connected) {
+            document.getElementById('connect-btn').style.display = connected ? 'none' : 'flex';
+            document.getElementById('disconnect-btn').style.display = connected ? 'flex' : 'none';
         }
-
-        const bluetoothManager = {
-            device: null,
-            characteristic: null,
-            isConnecting: false,
-
-            async connect() {
-                if (this.isConnecting) {
-                    showFlashMessage("Connection in progress...", 'info');
-                    return;
-                }
-                this.isConnecting = true;
-                appendMessage("Attempting to connect to heart rate monitor...", 'bot-message');
-                
-                try {
-                    if (!navigator.bluetooth) {
-                        throw new Error('Web Bluetooth is not supported in this browser. Try Chrome on Windows, Mac, or Android.');
-                    }
-                    const isAvailable = await navigator.bluetooth.getAvailability();
-                    if (!isAvailable) {
-                        throw new Error('Bluetooth is turned off or unavailable on your device.');
-                    }
-
-                    showFlashMessage("Searching for devices...", 'info');
-                    
-                    this.device = await navigator.bluetooth.requestDevice({
-                        filters: [{ services: ['heart_rate'] }],
-                        optionalServices: ['heart_rate']
-                    });
-                    
-                    this.device.addEventListener('gattserverdisconnected', () => {
-                        this.handleDisconnect();
-                        appendMessage("Heart rate monitor disconnected.", 'bot-message');
-                        showFlashMessage("Heart rate monitor disconnected.", 'info');
-                    });
-                    
-                    appendMessage(`Found device: ${this.device.name || 'Unknown Device'}`, 'bot-message');
-                    showFlashMessage(`Connecting to ${this.device.name || 'device'}...`, 'info');
-                    
-                    const server = await this.device.gatt.connect();
-                    const service = await server.getPrimaryService('heart_rate');
-                    this.characteristic = await service.getCharacteristic('heart_rate_measurement');
-                    
-                    await this.characteristic.startNotifications();
-                    this.characteristic.addEventListener(
-                        'characteristicvaluechanged',
-                        this.handleHeartRateMeasurement.bind(this)
-                    );
-                    
-                    appendMessage("Connected successfully! Receiving heart rate data...", 'bot-message');
-                    this.isConnected = true;
-                    this.updateUI(true);
-                    document.getElementById('analyze-btn').disabled = false;
-                    document.getElementById('hr-status').textContent = "Connected";
-                    document.getElementById('hr-status').style.color = "#00ff00";
-                    
-                    document.getElementById('heart-rate-button').classList.add('pulse');
-                    showFlashMessage("Heart rate monitor connected!", 'success');
-                    
-                } catch (error) {
-                    console.error('Bluetooth connection error:', error);
-                    let errorMessage = error.message;
-                    if (error.name === 'NotFoundError') {
-                        errorMessage = 'No Bluetooth device found or selected.';
-                    } else if (error.name === 'NotAllowedError') {
-                        errorMessage = 'Bluetooth permission denied by user.';
-                    } else if (error.message.includes('Bluetooth is turned off')) {
-                    } else if (error.message.includes('User cancelled the request')) {
-                        errorMessage = 'Bluetooth device selection cancelled.';
-                    }
-                    
-                    appendMessage(`Bluetooth Error: ${errorMessage}. Please try entering heart rate manually.`, 'error-message');
-                    showFlashMessage(`Bluetooth connection failed: ${errorMessage}`, 'error');
-                    this.handleDisconnect();
-                } finally {
-                    this.isConnecting = false;
-                }
-            },
-
-            handleHeartRateMeasurement(event) {
-                try {
-                    const value = event.target.value;
-                    const flags = value.getUint8(0);
-                    let rate = value.getUint8(1);
-                    
-                    if (flags & 0x1) {
-                        rate = value.getUint16(1, true);
-                    }
-                    
-                    this.displayHeartRate(rate);
-                    this.addToHistory(rate);
-                    this.sendToBackend(rate);
-                    
-                    checkHRAlerts(rate);
-                } catch (error) {
-                    console.error('Failed to parse HR:', error);
-                    appendMessage(`Error parsing heart rate data: ${error.message}`, 'error-message');
-                }
-            },
-
-            displayHeartRate(rate) {
-                const hrElement = document.getElementById('current-hr');
-                hrElement.textContent = rate;
-                
-                let color;
-                if (rate > 100) {
-                    color = 'var(--error-color)';
-                } else if (rate < 60) {
-                    color = 'var(--warning-color)';
-                } else {
-                    color = 'var(--success-color)';
-                }
-                
-                hrElement.style.color = color;
-            },
-
-            addToHistory(rate) {
-                const now = new Date();
-                const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                
-                hrHistory.unshift({
-                    rate: rate,
-                    time: timeString,
-                    timestamp: now.getTime()
-                });
-                
-                if (hrHistory.length > 10) {
-                    hrHistory.pop();
-                }
-                
-                this.updateHistoryUI();
-                
-                localStorage.setItem('hrHistory', JSON.stringify(hrHistory));
-            },
-
-            updateHistoryUI() {
-                const historyList = document.getElementById('hr-history-list');
-                historyList.innerHTML = '';
-                
-                if (hrHistory.length === 0) {
-                    historyList.innerHTML = '<div style="color: var(--text-muted); text-align: center; font-size: 0.8em; padding: 10px;">No recent readings</div>';
-                    return;
-                }
-
-                hrHistory.forEach(item => {
-                    const itemElement = document.createElement('div');
-                    itemElement.className = 'hr-history-item';
-                    
-                    const timeElement = document.createElement('span');
-                    timeElement.textContent = item.time;
-                    
-                    const rateElement = document.createElement('span');
-                    rateElement.className = 'hr-history-value';
-                    rateElement.textContent = `${item.rate} bpm`;
-                    rateElement.style.color = item.rate > 100 ? 'var(--error-color)' : 
-                                               item.rate < 60 ? 'var(--warning-color)' : 'var(--success-color)';
-                    
-                    itemElement.appendChild(timeElement);
-                    itemElement.appendChild(rateElement);
-                    historyList.appendChild(itemElement);
-                });
-            },
-
-            async sendToBackend(rate) {
-                try {
-                    const response = await fetch('/api/heart-rate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({  
-                            bpm: rate,  
-                            timestamp: new Date().toISOString()
-                        })
-                    });
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        console.error('Failed to send HR to backend:', errorData.message);
-                        showFlashMessage('Failed to save HR data to server.', 'error');
-                    }
-                } catch (error) {
-                    console.error('Network error sending HR to backend:', error);
-                    showFlashMessage('Network issue: Could not save HR data.', 'error');
-                }
-            },
-
-            handleDisconnect() {
-                if (this.device && this.device.gatt.connected) {
-                    this.characteristic.stopNotifications()
-                        .then(() => {
-                            console.log('Notifications stopped.');
-                            this.device.gatt.disconnect();
-                        })
-                        .catch(error => console.error('Error stopping notifications or disconnecting:', error));
-                }
-                this.device = null;
-                this.characteristic = null;
-                this.isConnected = false;
-                this.updateUI(false);
-                
-                document.getElementById('current-hr').textContent = '--';
-                document.getElementById('current-hr').style.color = 'var(--error-color)';
-                document.getElementById('hr-status').textContent = "Not connected";
-                document.getElementById('hr-status').style.color = "var(--error-color)";
-                document.getElementById('analyze-btn').disabled = true;
-                
-                document.getElementById('heart-rate-button').classList.remove('pulse');
-            },
-
-            updateUI(connected) {
-                document.getElementById('connect-btn').style.display = connected ? 'none' : 'flex';
-                document.getElementById('disconnect-btn').style.display = connected ? 'flex' : 'none';
-            }
-        };
-    </script>
+    };
+</script>
 </body>
 </html>
