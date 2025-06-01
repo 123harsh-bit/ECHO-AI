@@ -1470,8 +1470,8 @@
             .chat-container {
                 width: 100%;
                 /* Height here needs to dynamically adjust to keyboard.
-                   Using flex-grow on chat-box and proper padding on input-container helps.
-                   This is a complex mobile browser issue often requiring JS for perfect fit. */
+                    Using flex-grow on chat-box and proper padding on input-container helps.
+                    This is a complex mobile browser issue often requiring JS for perfect fit. */
                 height: 100%; /* Allow chat-box to scroll within this */
                 position: relative; /* Ensure it respects its parent's height */
             }
@@ -1520,7 +1520,7 @@
             .input-container {
                 padding: 15px;
                 /* Crucial: Add safe area inset to the *bottom* of the input container
-                   so the entire input area is visible above the home indicator/keyboard */
+                    so the entire input area is visible above the home indicator/keyboard */
                 padding-bottom: calc(15px + var(--safe-area-inset-bottom));
                 position: sticky; /* Keep it at the bottom of its scrollable parent */
                 bottom: 0;
@@ -2140,8 +2140,8 @@
                 });
                 if (!response.ok) {
                     if (response.status === 401) {
-                         window.location.href = '/login'; // Redirect to login if unauthorized
-                         return;
+                        window.location.href = '/login'; // Redirect to login if unauthorized
+                        return;
                     }
                     const errorData = await response.json();
                     throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
@@ -2181,8 +2181,8 @@
                 });
                 if (!response.ok) {
                     if (response.status === 401) {
-                         window.location.href = '/login'; // Redirect to login if unauthorized
-                         return;
+                        window.location.href = '/login'; // Redirect to login if unauthorized
+                        return;
                     }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -2293,8 +2293,8 @@
                 });
                 if (!response.ok) {
                     if (response.status === 401) {
-                         window.location.href = '/login';
-                         return;
+                        window.location.href = '/login';
+                        return;
                     }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -2347,8 +2347,8 @@
                 });
                 if (!response.ok) {
                     if (response.status === 401) {
-                         window.location.href = '/login';
-                         return;
+                        window.location.href = '/login';
+                        return;
                     }
                     const errorData = await response.json();
                     throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
@@ -2799,7 +2799,7 @@
                 htmlContent = htmlContent.replace(markdownTable, tableHtml);
                 // Reset regex lastIndex to ensure it continues from the correct position after replacement
                 // This is crucial when using `exec` in a loop with a global regex.
-                tableRegex.lastIndex = 0; 
+                tableRegex.lastIndex = 0;  
             }
             
             // Now apply general formatting to the rest of the text content (which might include converted tables)
@@ -2889,9 +2889,9 @@
 
                 if (!response.ok) {
                     if (data.type === 'auth_required') {
-                         showFlashMessage('Your session has expired. Please log in again.', 'error');
-                         setTimeout(() => window.location.href = '/login', 2000);
-                         return;
+                        window.location.href = '/login';
+                        setTimeout(() => window.location.href = '/login', 2000);
+                        return;
                     }
                     throw new Error(data.message || `Server error: ${response.status}`);
                 } else if (data.status === "error") {
@@ -3108,7 +3108,7 @@
                     rateElement.className = 'hr-history-value';
                     rateElement.textContent = `${item.rate} bpm`;
                     rateElement.style.color = item.rate > 100 ? 'var(--error-color)' : 
-                                                item.rate < 60 ? 'var(--warning-color)' : 'var(--success-color)';
+                                               item.rate < 60 ? 'var(--warning-color)' : 'var(--success-color)';
                     
                     itemElement.appendChild(timeElement);
                     itemElement.appendChild(rateElement);
@@ -3128,9 +3128,9 @@
                         })
                     });
                     if (!response.ok) {
-                         const errorData = await response.json();
-                         console.error('Failed to send HR to backend:', errorData.message);
-                         showFlashMessage('Failed to save HR data to server.', 'error');
+                        const errorData = await response.json();
+                        console.error('Failed to send HR to backend:', errorData.message);
+                        showFlashMessage('Failed to save HR data to server.', 'error');
                     }
                 } catch (error) {
                     console.error('Network error sending HR to backend:', error);
