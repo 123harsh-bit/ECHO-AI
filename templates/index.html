@@ -213,7 +213,7 @@
         }
         /* Profile label text also hidden when collapsed */
         .sidebar.collapsed .profile-label {
-            display: none;
+            display: none; /* Hide the full username/email */
         }
         
         /* Adjustments to visible elements in collapsed state */
@@ -253,48 +253,61 @@
         }
 
         .sidebar.collapsed .profile-label-container {
-            width: auto;
+            width: auto; /* Allow shrink-wrap */
             padding: 0;
             justify-content: center;
             border-radius: 50%;
-            height: 40px;
+            height: 40px; /* Match avatar height */
             margin: 0 auto;
             flex-direction: column;
-            /* Allow profile menu to be directly clickable without expanding sidebar */
-            display: flex; /* Ensure it's visible even when collapsed */
+            display: flex; 
+            position: relative; /* Make it a positioning context for its direct children */
+        }
+        /* Specific sizing for avatar inside collapsed profile label container */
+        .sidebar.collapsed .profile-label-container .profile-avatar {
+            margin: 0;
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
         }
 
-        .sidebar.collapsed .profile-avatar {
-            margin-right: 0;
-        }
 
-        /* Profile menu dropdown needs to break out of the collapsed sidebar's bounds */
         .sidebar.collapsed .profile-menu-dropdown {
-            position: fixed; /* Use fixed to position relative to viewport */
-            /* Calculate dynamic position based on collapsed sidebar */
-            /* For now, just set a general position that breaks out */
-            left: var(--sidebar-collapsed); /* Aligned to the right edge of the collapsed sidebar */
-            transform: translateX(-100%); /* Pull it back over the collapsed sidebar content area */
-            /* This assumes the menu will open to the left of the icon. 
-               If it opens to the right, `left: var(--sidebar-collapsed);` is enough. */
-            /* Let's try right-aligned for simpler fixed positioning */
-            right: calc(100vw - var(--sidebar-collapsed)); /* Aligns right edge of menu to right edge of collapsed sidebar */
-            left: auto;
-            transform: translateX(100%); /* Pushes it to the right outside of collapsed sidebar */
-            z-index: 1050; /* Ensure it's above everything */
-            /* To make it appear *next* to the avatar in the collapsed state,
-               you might need to adjust 'right' and 'left' based on the collapsed sidebar's fixed width. */
-            /* A simpler approach is to align it to the window's edge and manage its X offset. */
-            top: auto; /* Clear any previous top values */
-            bottom: calc(var(--safe-area-inset-bottom) + 15px + 40px + 10px); /* Adjust to appear above the avatar in collapsed state */
-            /* bottom calculation: safe-area-inset-bottom + user-profile-section padding-bottom + avatar height + a small gap */
+            position: fixed; /* Position relative to viewport */
+            /* Calculate `left` relative to the right edge of the collapsed sidebar */
+            left: calc(var(--sidebar-collapsed) + 5px); /* Sidebar width + small gap */
+            top: auto; /* Reset top for bottom alignment */
+            /* Bottom position calculation: 
+               safe-area-inset-bottom (device specific) 
+               + user-profile-section padding-bottom (10px) 
+               + profile-label-container height (40px) 
+               + gap (5px) for the dropdown to sit slightly above the icon. */
+            bottom: calc(var(--safe-area-inset-bottom) + 10px + 40px + 5px); 
             
-            /* Ensure text is visible in collapsed state */
+            /* Remove transform if you want it to appear without extra slide */
+            transform: translateX(0); /* Ensure no extra translation */
+            right: auto; /* Reset right property */
+
+            z-index: 1050; /* Ensure it's above most content */
             width: auto;
-            min-width: 180px;
+            min-width: 180px; /* Keep a readable width */
             max-width: 250px;
         }
 
+        /* Show the three-dots button in the collapsed state */
+        .sidebar.collapsed #profile-options-btn {
+            display: flex !important; /* Override inline style or other rules */
+            position: absolute; /* Position relative to profile-label-container */
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10; /* Ensure it's clickable */
+            opacity: 1; /* Always visible in collapsed state */
+        }
+        /* Hide default profile-label-container span on collapsed state */
+        .sidebar.collapsed .profile-label-container span {
+            display: none;
+        }
 
         .sidebar-header {
             padding: 15px;
@@ -415,17 +428,19 @@
             color: var(--text-light); /* Default text color */
             position: relative; /* For the options menu to position relative to it */
             transition: all 0.2s ease;
-            white-space: nowrap; /* Keep content on single line */
+            /* Remove fixed white-space to allow ellipsis */
+            /* white-space: nowrap; */ 
             overflow: hidden; /* Hide overflow */
-            text-overflow: ellipsis; /* Add ellipsis for long titles */
+            /* text-overflow: ellipsis; Already on span */
         }
 
         .chat-history-item span {
             flex-grow: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            white-space: nowrap; /* Ensure text stays on one line */
+            overflow: hidden; /* Hide overflow */
+            text-overflow: ellipsis; /* Add ellipsis for long titles */
             min-width: 0; /* Crucial: Allows text to shrink */
+            margin-right: 5px; /* Space for the options button */
         }
 
         .chat-history-item:hover {
@@ -473,8 +488,9 @@
             transition: opacity 0.2s, transform 0.2s;
             transform: translateX(5px); /* Slightly off-screen */
             flex-shrink: 0;
-            margin-left: auto; /* Push to the right */
+            /* margin-left: auto; Removed, let parent flex manage */
             position: relative; /* To position its own dropdown */
+            z-index: 5; /* Ensure clickable above parent hover */
         }
 
         .options-btn:hover {
@@ -568,6 +584,7 @@
             border-radius: 8px;
             cursor: pointer;
             transition: background-color 0.2s;
+            position: relative; /* For the three dots button positioning */
         }
 
         .profile-label-container:hover {
@@ -601,9 +618,10 @@
             text-overflow: ellipsis;
         }
 
+        /* Profile menu dropdown general styles (for both expanded and collapsed sidebar) */
         .profile-menu-dropdown {
             display: none;
-            position: absolute; /* Position absolute relative to .user-profile-section */
+            position: absolute; /* Default to absolute for general positioning */
             bottom: calc(100% + 5px); /* Position above the .profile-label-container + small gap */
             left: 0; /* Align to the left edge of the parent (.user-profile-section) */
             
@@ -1568,7 +1586,6 @@
         }
 
         .delete-modal-btn.delete:hover {
-            background: darken(var(--error-color), 10%); /* Requires Sass/Less or calculate manually */
             background: #cc3939; /* A slightly darker red */
         }
 
@@ -1739,12 +1756,14 @@
                 .sidebar.collapsed & { /* This syntax won't work in plain CSS. Requires nesting. */
                                         /* This indicates a fixed position is better if it breaks out. */
                     position: fixed;
-                    left: var(--sidebar-collapsed); /* Aligned to the right edge of the collapsed sidebar */
+                    left: calc(var(--sidebar-collapsed) + 5px); /* Aligned to the right edge of the collapsed sidebar + 5px gap */
                     transform: translateX(0); /* No translation, let 'left' handle it */
                     top: auto;
-                    bottom: calc(var(--safe-area-inset-bottom) + 15px + 40px + 10px); /* Position it above the icon */
-                    /* Re-adjust left to align the menu to the sidebar's right edge for a pop-out effect */
-                    margin-left: 5px; /* Small gap from the sidebar edge */
+                    bottom: calc(var(--safe-area-inset-bottom) + 15px + 40px + 10px); /* Position it above the icon and padding */
+                    /* Ensure text is visible in collapsed state */
+                    width: auto;
+                    min-width: 180px;
+                    max-width: 250px;
                 }
             }
             
@@ -2074,7 +2093,10 @@
             
             // Profile menu button (both profile label and options button)
             document.getElementById('profile-menu-btn').addEventListener('click', toggleProfileMenu);
-            document.getElementById('profile-options-btn').addEventListener('click', toggleProfileMenu);
+            document.getElementById('profile-options-btn').addEventListener('click', (e) => {
+                e.stopPropagation(); // Stop propagation to prevent document click from closing immediately
+                toggleProfileMenu(e); // Pass event to ensure it's handled
+            });
             
             // Profile menu items
             document.getElementById('settings-btn').addEventListener('click', showSettings);
@@ -2118,13 +2140,14 @@
             document.addEventListener('click', (e) => {
                 // Profile menu
                 const profileMenu = document.getElementById('profile-menu-dropdown');
-                const profileBtn = document.getElementById('profile-menu-btn'); // Parent of avatar and label
+                const profileBtnContainer = document.getElementById('profile-menu-btn'); // The full container
                 const profileOptionsBtn = document.getElementById('profile-options-btn'); // The three dots button for collapsed sidebar
                 
+                // If profile menu is open AND the click is outside the menu AND outside both associated buttons
                 if (profileMenu.classList.contains('show') && 
                     !profileMenu.contains(e.target) && 
-                    !profileBtn.contains(e.target) &&
-                    !profileOptionsBtn.contains(e.target)) {
+                    !profileBtnContainer.contains(e.target) &&
+                    (profileOptionsBtn && !profileOptionsBtn.contains(e.target))) { /* Check if profileOptionsBtn exists */
                     profileMenu.classList.remove('show');
                 }
 
@@ -2140,7 +2163,7 @@
             // Delete modal interaction
             document.getElementById('delete-modal-cancel-btn').addEventListener('click', hideDeleteConfirmation);
             document.getElementById('delete-chat-modal-overlay').addEventListener('click', (e) => {
-                if (e.target.id === 'delete-chat-modal-overlay') {
+                if (e.target.id === 'delete-chat-modal-overlay') { /* Only close if clicked on the overlay itself, not the modal content */
                     hideDeleteConfirmation();
                 }
             });
@@ -2185,11 +2208,17 @@
             const profileOptionsBtn = document.getElementById('profile-options-btn');
 
             if (sidebar.classList.contains('collapsed')) {
-                // If sidebar is collapsed, we want the dropdown to appear as a fixed element
-                profileOptionsBtn.style.display = 'flex'; // Ensure the three dots are visible
+                // If sidebar is collapsed, ensure the dropdown appears as a fixed element by CSS
+                // and the specific profile-options-btn is visible and triggers it.
+                profileOptionsBtn.style.display = 'flex'; /* Ensure it's explicitly shown if profile-menu-btn is clicked */
             } else {
-                profileOptionsBtn.style.display = 'none'; // Hide the three dots when sidebar is open
+                // When sidebar is expanded, the normal profile-label-container handles clicks
+                profileOptionsBtn.style.display = 'none';
             }
+            // Close other open menus if any
+            document.querySelectorAll('.rename-delete-menu.show').forEach(menu => {
+                menu.classList.remove('show');
+            });
         }
 
         // Show settings dialog
@@ -2380,14 +2409,17 @@
         function toggleCollapseSidebar() {
             const sidebar = document.getElementById('sidebar');
             const profileOptionsBtn = document.getElementById('profile-options-btn');
+            const profileMenuDropdown = document.getElementById('profile-menu-dropdown'); /* Get dropdown element */
+
             sidebar.classList.toggle('collapsed');
             
             // Show/hide profile options button based on collapsed state
             if (sidebar.classList.contains('collapsed')) {
-                profileOptionsBtn.style.display = 'flex';
+                profileOptionsBtn.style.display = 'flex'; /* Show three dots */
+                profileMenuDropdown.classList.remove('show'); /* Ensure profile menu is closed when collapsing */
             } else {
-                profileOptionsBtn.style.display = 'none';
-                document.getElementById('profile-menu-dropdown').classList.remove('show'); // Hide dropdown when expanding
+                profileOptionsBtn.style.display = 'none'; /* Hide three dots */
+                profileMenuDropdown.classList.remove('show'); /* Ensure profile menu is closed when expanding */
             }
 
             // Save state to localStorage
@@ -2444,10 +2476,9 @@
                 if (window.innerWidth <= 768) {
                     toggleSidebar();
                 }
-                // showFlashMessage("New chat started!", 'info'); // COMMENTED OUT
+                // showFlashMessage("New chat started!", 'info'); // COMMENTED OUT: As per user request
             } catch (error) {
                 console.error('Error creating new chat:', error);
-                // appendMessage('Failed to create new chat. Please try again.', 'error-message'); // This message is already handled by flash
                 showFlashMessage('Failed to create new chat. Please try again.', 'error');
             }
         }
@@ -2537,19 +2568,31 @@
                 iconClass = 'fa-notes-medical';
             }
             
-            sessionElement.innerHTML = `
-                <i class="fas ${iconClass}"></i>
-                <span>${session.title || "New Chat"}</span>
-            `;
-            
-            sessionElement.dataset.id = session.id;
-            
-            // Create options button (three dots)
+            // Text content span
+            const textSpan = document.createElement('span');
+            textSpan.textContent = session.title || "New Chat";
+
+            // Options button (three dots)
             const optionsBtn = document.createElement('button');
             optionsBtn.className = 'options-btn';
             optionsBtn.innerHTML = '<i class="fas fa-ellipsis-h"></i>';
+            
+            // Options menu
+            const menu = document.createElement('div');
+            menu.className = 'rename-delete-menu';
+            menu.innerHTML = `
+                <button class="rename-btn"><i class="fas fa-pencil-alt"></i> Rename</button>
+                <button class="delete-btn"><i class="fas fa-trash-alt"></i> Delete</button>
+            `;
+            
+            // Append icon, text span, options button, and menu
+            sessionElement.appendChild(document.createElement('i')).className = `fas ${iconClass}`;
+            sessionElement.appendChild(textSpan);
+            sessionElement.appendChild(optionsBtn);
+            sessionElement.appendChild(menu);
+
             optionsBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent loading chat when clicking options
+                e.stopPropagation(); // Prevent loading chat when clicking options button
                 // Close any other open menus
                 document.querySelectorAll('.rename-delete-menu.show').forEach(openMenu => {
                     if (openMenu !== menu) { // Don't close self
@@ -2558,15 +2601,6 @@
                 });
                 menu.classList.toggle('show');
             });
-            sessionElement.appendChild(optionsBtn);
-
-            // Create rename/delete menu
-            const menu = document.createElement('div');
-            menu.className = 'rename-delete-menu';
-            menu.innerHTML = `
-                <button class="rename-btn"><i class="fas fa-pencil-alt"></i> Rename</button>
-                <button class="delete-btn"><i class="fas fa-trash-alt"></i> Delete</button>
-            `;
             
             menu.querySelector('.rename-btn').addEventListener('click', async (e) => {
                 e.stopPropagation();
@@ -2585,9 +2619,7 @@
                 showDeleteConfirmation(session.id, session.title);
             });
             
-            sessionElement.appendChild(menu);
-            
-            // Add click handler to load chat
+            // Add click handler to load chat for the main session element
             sessionElement.addEventListener('click', async () => {
                 // Before loading, ensure no menus are open
                 document.querySelectorAll('.rename-delete-menu.show').forEach(openMenu => {
@@ -2645,7 +2677,8 @@
                     await fetchChatSessions(); // Refresh sidebar
                     // If current chat was renamed, update its title in the header if displayed
                     if (currentChatId === sessionId) {
-                        // Logic to update main chat title if it's shown in header (not currently in this template)
+                        // If you have a chat title in the main header, update it here:
+                        // document.getElementById('main-chat-title').textContent = newTitle;
                     }
                 } else {
                     showFlashMessage(`Failed to rename chat: ${data.error}`, 'error');
@@ -2708,11 +2741,15 @@
             
             // Load sidebar collapsed state
             const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            const sidebar = document.getElementById('sidebar');
+            const profileOptionsBtn = document.getElementById('profile-options-btn');
+
             if (isCollapsed && window.innerWidth > 768) {
-                document.getElementById('sidebar').classList.add('collapsed');
-                document.getElementById('profile-options-btn').style.display = 'flex'; // Show three dots
+                sidebar.classList.add('collapsed');
+                profileOptionsBtn.style.display = 'flex'; // Show three dots if desktop & collapsed
             } else {
-                document.getElementById('profile-options-btn').style.display = 'none'; // Hide three dots
+                sidebar.classList.remove('collapsed');
+                profileOptionsBtn.style.display = 'none'; // Hide three dots otherwise
             }
             
             // Always fetch and display chat sessions from backend on load
@@ -2723,18 +2760,14 @@
                 await createNewChat(); // This will create a new chat on backend and set currentChatId
             } else {
                 // If there are sessions and not a "new chat" scenario, load the most recent one
-                // The backend automatically sets Flask session current_chat_id on login to the most recent one.
-                // So, we just need to ensure the frontend loads the *correct* current session.
-                // Re-find the most recent one from the fetched list based on updated_at
                 const mostRecentSession = chatSessions.reduce((latest, session) => {
                     return (new Date(session.updated_at) > new Date(latest.updated_at)) ? session : latest;
-                }, chatSessions[0]); // Start comparison with the first element
+                }, chatSessions[0]); 
                 
                 if (mostRecentSession) {
-                    currentChatId = mostRecentSession.id; // Set global currentChatId
+                    currentChatId = mostRecentSession.id; 
                     await loadChatSession(currentChatId);
                 } else {
-                    // Fallback in case reduce fails or empty array
                     await createNewChat();
                 }
             }
