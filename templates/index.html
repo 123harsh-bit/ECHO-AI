@@ -736,6 +736,8 @@
             min-height: 60px;
             background: var(--bg-darker);
             z-index: 100;
+            /* FIX: Add safe area inset to the right padding for the heart button */
+            padding-right: calc(15px + var(--safe-area-inset-right));
         }
 
         .heart-rate-button {
@@ -970,20 +972,22 @@
         .input-container {
             display: flex;
             flex-direction: column;
-            padding: 15px;
+            /* FIX: Reduced padding to make input area tighter */
+            padding: 10px 15px; /* Reduced top/bottom padding */
             background: var(--bg-darker);
             border-top: 1px solid var(--border-color);
             position: sticky;
             bottom: 0;
             z-index: 50;
             /* Adjust padding-bottom for mobile safe area */
-            padding-bottom: calc(15px + var(--safe-area-inset-bottom));
+            padding-bottom: calc(10px + var(--safe-area-inset-bottom)); /* Reduced bottom padding */
         }
 
         .pre-prompts {
             display: flex;
             gap: 10px;
-            margin-bottom: 15px; /* Ensure space above input */
+            /* FIX: Reduced margin-bottom to make space above input tighter */
+            margin-bottom: 10px; /* Ensure space above input */
             justify-content: center; /* Default for desktop */
             flex-wrap: wrap; /* Default for desktop */
             opacity: 1;
@@ -1028,7 +1032,8 @@
             display: flex;
             align-items: center;
             border: 1px solid var(--border-color);
-            padding: 8px;
+            /* FIX: Reduced padding to make input field tighter around textarea */
+            padding: 6px; /* Reduced from 8px */
             border-radius: 30px;
             background: var(--bg-darkest);
             transition: all 0.3s ease;
@@ -1041,14 +1046,16 @@
 
         textarea { /* Changed from input to textarea */
             flex: 1;
-            padding: 10px 15px;
+            /* FIX: Adjusted padding for better visual fit */
+            padding: 10px 15px; /* Keep this padding for internal text spacing */
             background: transparent;
             border: none;
             outline: none;
             color: var(--text-light);
             font-size: 16px;
             border-radius: 20px; /* Still apply border-radius for visual consistency */
-            min-height: 44px;
+            /* FIX: Calculated min-height for one line of text (font-size * line-height + vertical padding) */
+            min-height: calc(16px * 1.5 + 20px); /* 16px (font-size) * 1.5 (line-height) + 20px (10px top + 10px bottom padding) */
             resize: vertical; /* Allow vertical resizing */
             max-height: 120px; /* Max height for textarea */
             overflow-y: auto; /* Enable scroll if content exceeds max-height */
@@ -1178,15 +1185,21 @@
             font-style: italic;
         }
 
-        /* Professional Table Styling */
+        /* FIX: Professional Table Styling */
         .bot-message table {
-            width: 100%;
+            width: 100%; /* Ensure it tries to take full available width */
             border-collapse: collapse;
             margin: 15px 0;
             border-radius: 8px;
-            overflow: hidden;
+            /* overflow: hidden; Removed from here to allow horizontal scrolling on table itself */
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border: 1px solid var(--border-color); /* Added border for the whole table */
+            border: 1px solid var(--border-color);
+
+            /* CRUCIAL FOR RESPONSIVE TABLES */
+            display: block; /* Makes the table behave like a block element, allowing overflow-x */
+            overflow-x: auto; /* Adds horizontal scroll if content exceeds parent width */
+            -webkit-overflow-scrolling: touch; /* Improves scrolling on iOS */
+            background-color: var(--bg-darkest); /* Subtle background for the table */
         }
         
         .bot-message th {
@@ -1196,12 +1209,15 @@
             padding: 12px 15px;
             text-align: left;
             border: 1px solid var(--table-header-bg); /* Match header background for seamless look */
+            white-space: nowrap; /* Keep header text on one line */
         }
         
         .bot-message td {
             padding: 12px 15px;
             border: 1px solid var(--border-color); /* Cell borders */
             text-align: left;
+            vertical-align: top; /* Align content to the top of the cell */
+            white-space: normal; /* Allow text to wrap naturally within cells */
         }
         
         .bot-message tr:nth-child(even) {
@@ -1602,9 +1618,18 @@
             }
 
             .bot-message table {
+                /* FIX: Ensure mobile tables also scroll */
                 display: block;
                 overflow-x: auto;
-                white-space: nowrap;
+                white-space: normal; /* Allow text wrapping within cells */
+                /* Also ensure table doesn't get wider than message bubble */
+                width: 100%;
+            }
+            /* FIX: Specific to mobile table headers to allow wrapping if too narrow,
+               though white-space: nowrap; on `th` is generally good practice
+               and horizontal scroll handles overflow. */
+            .bot-message th {
+                white-space: normal; /* Allow headers to wrap on small mobile screens if needed */
             }
 
             .welcome-message {
@@ -2846,7 +2871,12 @@
                         formattedLines.push('</ol>');
                         inOrderedList = false;
                     }
-                    formattedLines.push(line); // Add the line as is
+                    // Add the line as is, but handle single newlines for general paragraphs
+                    if (trimmedLine !== '') { // Only add non-empty lines outside of lists
+                         formattedLines.push(line); 
+                    } else { // Preserve empty lines for potential paragraph breaks
+                        formattedLines.push('');
+                    }
                 }
             });
 
@@ -2862,8 +2892,8 @@
                 if (paragraph.match(/^(<h[1-4]>|<ul|<ol|<table|<blockquote)/i)) {
                     return paragraph.trim();
                 }
-                // Otherwise, wrap in a paragraph tag
-                return `<p>${paragraph.trim()}</p>`;
+                // Otherwise, wrap in a paragraph tag, if it's not just whitespace
+                return paragraph.trim() !== '' ? `<p>${paragraph.trim()}</p>` : '';
             }).join('');
 
             // Clean up empty paragraph tags that might occur after splitting
@@ -2891,18 +2921,29 @@
         // Format and display bot response with professional tables
         function formatBotResponse(response, targetElement) {
             // Regex to find Markdown tables (lines starting and ending with '|', with a separator line)
-            // This regex attempts to capture the entire table block.
             const tableRegex = /^\|.*\|(?:\r?\n\|[-: ]+\|)+\r?\n(?:\|.*\|(?:\r?\n|$))*|^\|.*\|(?:\r?\n(?:\|.*\|\r?\n?)*)/gm;
             let htmlContent = response;
 
             // Process tables first
             let tableMatch;
-            // Use a loop with exec to find all matches and replace them
+            const tempDiv = document.createElement('div'); // Use a temp div to process blocks
+
+            // Find all tables and convert them to HTML placeholders
+            const tablesFound = [];
+            let lastIndex = 0;
             while ((tableMatch = tableRegex.exec(htmlContent)) !== null) {
-                const markdownTable = tableMatch[0];
+                tablesFound.push({
+                    markdown: tableMatch[0],
+                    index: tableMatch.index
+                });
+            }
+
+            // Replace markdown tables with placeholders first
+            tablesFound.reverse().forEach(table => {
+                const markdownTable = table.markdown;
                 const lines = markdownTable.split('\n').filter(line => line.trim() !== '');
 
-                if (lines.length < 2) continue; // Need at least header and separator
+                if (lines.length < 2) return; // Need at least header and separator
 
                 let tableHtml = '<table>';
                 let headerProcessed = false;
@@ -2922,15 +2963,16 @@
                             // This is the header row
                             tableHtml += '<thead><tr>';
                             cells.forEach(cell => {
-                                tableHtml += `<th>${formatTextResponse(cell)}</th>`;
+                                // Apply general formatting to cell content, but don't add <p> tags
+                                tableHtml += `<th>${formatTextResponse(cell).replace(/<\/?p>/g, '')}</th>`; 
                             });
                             tableHtml += '</tr></thead><tbody>';
                         } else {
                             // Data rows
                             tableHtml += '<tr>';
                             cells.forEach(cell => {
-                                // Apply general formatting to cell content
-                                tableHtml += `<td>${formatTextResponse(cell)}</td>`;
+                                // Apply general formatting to cell content, but don't add <p> tags
+                                tableHtml += `<td>${formatTextResponse(cell).replace(/<\/?p>/g, '')}</td>`; 
                             });
                             tableHtml += '</tr>';
                         }
@@ -2941,15 +2983,22 @@
                 }
                 tableHtml += '</table>';
 
-                // Replace the markdown table with the generated HTML table in the original string
-                htmlContent = htmlContent.replace(markdownTable, tableHtml);
-                // Reset regex lastIndex to ensure it continues from the correct position after replacement
-                // This is crucial when using `exec` in a loop with a global regex.
-                tableRegex.lastIndex = 0;  
-            }
-            
-            // Now apply general formatting to the rest of the text content (which might include converted tables)
-            targetElement.innerHTML = formatTextResponse(htmlContent);
+                // Replace the markdown table with a unique placeholder
+                // Use a simple replacement, as `exec` on string can be tricky with modifications
+                htmlContent = htmlContent.replace(markdownTable, ``);
+                tempDiv.dataset[`table${table.index}`] = tableHtml; // Store HTML in a data attribute
+            });
+
+            // Now, format the rest of the text, which is free of markdown tables
+            let formattedNonTableContent = formatTextResponse(htmlContent);
+
+            // Re-insert the HTML tables from placeholders
+            tablesFound.forEach(table => {
+                const tableHtml = tempDiv.dataset[`table${table.index}`];
+                formattedNonTableContent = formattedNonTableContent.replace(``, tableHtml);
+            });
+
+            targetElement.innerHTML = formattedNonTableContent;
         }
 
 
