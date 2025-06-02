@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Echo AI - Heart Health Chatbot</title>
+    <title>CardiX - Heart Health Chatbot</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -744,15 +744,15 @@
             color: var(--error-color);
             font-size: 20px;
             cursor: pointer;
-            padding: 5px;
+            padding: 5px; /* Adjust padding to ensure it's not clipped */
             display: flex;
             align-items: center;
-            justify-content: left;
+            justify-content: center; /* Center the icon within the button */
             min-height: 44px;
             min-width: 44px;
             position: relative;
-            /* Ensure the icon itself is centered and fully visible */
-            line-height: 1; 
+            line-height: 1; /* Ensure line height does not add extra space */
+            box-sizing: border-box; /* Include padding in element's total width and height */
         }
 
         .heart-rate-button:hover {
@@ -829,7 +829,7 @@
         .chat-box {
             flex-grow: 1;
             overflow-y: auto;
-            padding: 20px; 
+            padding: 20px;  
             /* Added padding-bottom to ensure last messages are visible above the input area */
             padding-bottom: 100px; /* Adjust as needed to clear input/pre-prompts */
             display: flex;
@@ -872,6 +872,7 @@
             background: var(--user-message-bg);
             color: var(--text-light); /* User messages should have light text on primary-dark background */
             border-radius: 18px 18px 0 18px;
+            max-width: 70%; /* Adjusted max-width for user messages */
         }
 
         .bot-message {
@@ -931,9 +932,9 @@
             align-self: flex-start;
         }
 
-        /* Hide the previous 'Echo AI is typing' text from JS */
+        /* Hide the previous 'CardiX is typing' text from JS */
         .typing-indicator::before {
-            content: 'Echo AI is typing'; /* Keep content as visual text part */
+            content: 'CardiX is typing'; /* Keep content as visual text part */
             margin-right: 8px;
         }
 
@@ -987,8 +988,9 @@
             justify-content: center; /* Default for desktop */
             flex-wrap: wrap; /* Default for desktop */
             opacity: 1;
-            transition: opacity 0.3s ease, height 0.3s ease, margin-bottom 0.3s ease;
-            overflow: hidden; /* Hide content when collapsed */
+            /* Removed height and margin-bottom transition to prevent disappearing */
+            transition: opacity 0.3s ease; 
+            overflow: hidden; /* Keep overflow hidden for layout, but not for transition causing disappearance */
         }
 
         .pre-prompts button {
@@ -1183,8 +1185,10 @@
             border-collapse: collapse;
             margin: 15px 0;
             border-radius: 8px;
-            overflow: hidden;
+            overflow: hidden; /* Ensures rounded corners apply to content */
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background-color: var(--bg-darkest); /* Ensure table background is distinct */
+            border: 1px solid var(--border-color); /* Add a subtle border to the whole table */
         }
         
         .bot-message th {
@@ -1193,11 +1197,12 @@
             font-weight: bold;
             padding: 12px 15px;
             text-align: left;
+            border-bottom: 1px solid var(--border-color); /* Separator for header */
         }
         
         .bot-message td {
             padding: 12px 15px;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-color); /* Cell borders */
             text-align: left;
         }
         
@@ -1571,7 +1576,7 @@
             .chat-container {
                 width: 100%;
                 /* Height here is crucial for mobile. Let chat-box scroll within. */
-                height: 100%; 
+                height: 100%;  
                 position: relative; /* Ensure it respects its parent's height */
             }
             
@@ -1615,6 +1620,9 @@
 
             .message {
                 max-width: 90%;
+            }
+            .user-message {
+                max-width: 85%; /* Adjust user message max-width for mobile as well */
             }
 
             .input-container {
@@ -1806,18 +1814,18 @@
     <div class="main-content">
         <div class="header">
             <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
-            <div>Echo AI</div>
+            <div>CardiX</div>
             <button class="heart-rate-button" id="heart-rate-button" aria-label="Heart rate monitor"><i class="fas fa-heartbeat"></i></button>
         </div>
 
         <div class="main-container">
             <div class="chat-container">
                 <div class="welcome-message" id="welcome-message">
-                    <h1>Echo AI: Your Heart Health Companion</h1>
+                    <h1>CardiX: Your Heart Health Companion</h1>
                     <p>"Your AI-powered heart health assistant - monitor, analyze, and stay informed."</p>
                     <div class="medical-disclaimer">
                         <strong>Important Medical Disclaimer:</strong><br>
-                        Echo AI is an AI assistant and not a medical professional. The information it provides is for educational and informational purposes only, and should not be considered medical advice, diagnosis, or treatment. Always consult with a qualified healthcare professional for any health concerns or before making any decisions related to your health or medical care. In case of a medical emergency, call your local emergency services immediately.
+                        CardiX is an AI assistant and not a medical professional. The information it provides is for educational and informational purposes only, and should not be considered medical advice, diagnosis, or treatment. Always consult with a qualified healthcare professional for any health concerns or before making any decisions related to your health or medical care. In case of a medical emergency, call your local emergency services immediately.
                     </div>
                 </div>
 
@@ -1943,7 +1951,7 @@
             // Profile menu items
             document.getElementById('settings-btn').addEventListener('click', showSettings);
             document.getElementById('contact-btn').addEventListener('click', () => {
-                alert('For support, please contact us at support@echoai.com');
+                alert('For support, please contact us at support@cardix.com');
                 document.getElementById('profile-menu-dropdown').classList.remove('show');
             });
             document.getElementById('logout-btn').addEventListener('click', logout);
@@ -2067,7 +2075,7 @@
                 sidebar.classList.remove('collapsed');
             }
             // Ensure visual viewport listener updates main-content height
-            handleVisualViewport(); 
+            handleVisualViewport();
         }
 
         // Dynamic height adjustment for main-content to compensate for mobile keyboard
@@ -2725,8 +2733,8 @@
                     appendMessage(data.message, 'error-message');
                     showFlashMessage(`Chat error: ${data.message}`, 'error');
                 } else {
-                    appendMessage(data.response, 'bot-message'); 
-                    currentChatId = data.chat_session_id; 
+                    appendMessage(data.response, 'bot-message');  
+                    currentChatId = data.chat_session_id;  
                     await fetchChatSessions();
                     
                     // Add flying animation to paper plane icon
@@ -2975,7 +2983,7 @@
         }
 
         // Check for heart rate alerts
-        function checkHRAlerts(hr) {
+        unction checkHRAlerts(hr) {
             const now = new Date();
             const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
