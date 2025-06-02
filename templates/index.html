@@ -1470,7 +1470,7 @@
 
         /* Mobile responsiveness */
         .sidebar-toggle {
-            display: none;
+            display: none; /* Hidden by default on desktop */
             background: none;
             border: none;
             color: var(--primary-color);
@@ -1509,7 +1509,14 @@
             display: block;
         }
 
+        /* --- Mobile Specific Styles (max-width: 768px) --- */
         @media (max-width: 768px) {
+            body {
+                /* On mobile, the body's main flex direction might need to change if the sidebar slides over it */
+                flex-direction: column; 
+            }
+
+            /* Sidebar Mobile */
             .sidebar {
                 position: fixed;
                 top: 0;
@@ -1529,23 +1536,21 @@
                 transform: translateX(280px); /* Slide in */
             }
 
-            /* When the sidebar is collapsed on mobile, it means it's hidden.
-                The user-profile-section and its dropdown should thus be hidden too.
-                If we are referring to the *visual style* of collapsed on desktop,
-                but the sidebar is open on mobile, then the above .sidebar.open rules apply.
-            */
+            /* When the sidebar is collapsed on mobile, it means it's hidden (desktop collapsed style does not apply) */
             .sidebar.collapsed {
                 width: 280px; /* Keep consistent width for mobile sidebar */
                 left: -280px; /* Hidden position */
+                transform: translateX(0); /* Ensure it's off-screen, not collapsed to a small width */
             }
 
-            .sidebar.collapsed.open {
-                transform: translateX(280px); /* Re-open to full width */
+            /* If we ever wanted a collapsed *visual style* on mobile, it would be a different media query or JS handling */
+            .sidebar.collapsed.open { /* This rule means "sidebar is collapsed, but forced open by mobile toggle" */
+                transform: translateX(280px); /* Re-open to full width (like regular .sidebar.open) */
             }
 
 
             .sidebar-toggle {
-                display: flex;
+                display: flex; /* Show the hamburger icon on mobile */
                 align-items: center;
                 justify-content: center;
             }
@@ -1554,77 +1559,107 @@
                 display: block;
             }
 
-            /* REMOVED .main-container flex-direction column. It is already by default */
-            /* Height of main-content now handled by JS for keyboard compensation */
+            /* Main Content on Mobile:
+             * This must adapt to the keyboard. `height: auto` makes it flexible.
+             * `overflow-y: hidden` here ensures that the `chat-box` inside handles the scrolling.
+             */
             .main-content {
-                height: auto; /* Allow JS to control this directly */
+                height: auto; /* Let JS control this directly for keyboard compensation */
                 overflow-y: hidden; /* Prevent double scrollbar, chat-box scrolls */
-            }
-            
-            .main-container {
-                width: 100%;
-                padding: 10px;
-                padding-bottom: 0; /* No bottom padding here, input-container handles it */
                 flex-grow: 1; /* Allow it to take available space */
             }
             
-            .chat-container {
+            /* Main Container: ensures correct flex behavior for chatbox and input */
+            .main-container {
                 width: 100%;
-                /* Height here is crucial for mobile. Let chat-box scroll within. */
-                height: 100%; 
-                position: relative; /* Ensure it respects its parent's height */
+                padding: 10px; /* Reduced overall padding for mobile */
+                padding-bottom: 0; /* No bottom padding here, input-container handles it */
+                flex-grow: 1; /* Allow it to take available space */
+                height: 100%; /* Fill the main-content's height */
+                display: flex; /* Ensure it's a flex container */
+                flex-direction: column; /* Stack chatbox and input vertically */
             }
             
+            /* Chat Box (the scrolling messages area) */
+            .chat-box {
+                max-width: 100%; /* Important: Restrict max width */
+                width: 100%; /* Take full available width (excluding own padding) */
+                box-sizing: border-box; /* Include padding in width calculation */
+                overflow-x: hidden; /* Prevent horizontal scrolling within chat-box itself */
+                padding: 10px; /* Adjust padding for mobile messages */
+                padding-bottom: 20px; /* Ensure space below messages, but above input-container */
+                flex-grow: 1; /* Make it take all available space */
+                flex-shrink: 1; /* Allow it to shrink if necessary */
+                overflow-y: scroll; /* Explicitly allow chat messages to scroll */
+            }
+
+            .message {
+                max-width: 90%; /* Messages should not take full width, allow some margin */
+                padding: 12px; /* Slightly reduced padding for message bubbles */
+            }
+            
+            .user-message,
+            .bot-message,
+            .error-message {
+                width: fit-content; /* Messages should only be as wide as their content */
+                max-width: 90%; /* But not exceed 90% of the chatbox width */
+                word-break: break-word; /* Ensure long words break onto next line */
+                overflow-wrap: break-word; /* Modern property for same effect */
+            }
+
+
+            /* Pre-prompts on mobile: Make them horizontally scrollable */
             .pre-prompts {
                 flex-direction: row; /* Ensure row direction */
                 flex-wrap: nowrap; /* Prevent wrapping on mobile */
                 justify-content: flex-start; /* Align to start on mobile */
-                overflow-x: auto;
-                padding: 0 15px 15px 15px; /* Added horizontal padding, increased bottom */
+                overflow-x: auto; /* Enable horizontal scrolling */
+                padding: 0 10px 10px 10px; /* Added horizontal padding, increased bottom */
                 margin: 0; /* Remove horizontal margin */
-                scrollbar-width: none;
-                -webkit-overflow-scrolling: touch;
-                scroll-snap-type: x mandatory;
+                scrollbar-width: none; /* Hide scrollbar for Firefox */
+                -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
             }
 
             .pre-prompts::-webkit-scrollbar {
-                display: none;
+                display: none; /* Hide scrollbar for Webkit browsers */
             }
             
             .pre-prompts button {
                 width: auto;
                 white-space: nowrap;
-                flex-shrink: 0;
-                scroll-snap-align: start;
+                flex-shrink: 0; /* Prevent buttons from shrinking */
+                scroll-snap-align: start; /* Optional: for smoother scrolling between items */
+                padding: 10px 12px; /* Adjust padding for smaller buttons */
+                font-size: 13px; /* Slightly smaller font size */
             }
 
-            .bot-message table {
-                display: block;
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-
-            .welcome-message {
-                padding: 30px 15px;
-                font-size: 16px;
-            }
-
-            .welcome-message h1 {
-                font-size: 24px;
-            }
-
-            .message {
-                max-width: 90%;
-            }
-
+            /* Input Container */
             .input-container {
-                padding: 15px;
+                padding: 10px; /* Smaller padding for mobile */
                 /* Crucial: Add safe area inset to the *bottom* of the input container
-                    so the entire input area is visible above the home indicator/keyboard */
-                padding-bottom: calc(15px + var(--safe-area-inset-bottom));
+                   so the entire input area is visible above the home indicator/keyboard */
+                padding-bottom: calc(10px + var(--safe-area-inset-bottom));
                 position: sticky; /* Keep it at the bottom of its scrollable parent */
                 bottom: 0;
                 z-index: 50; /* Ensure it's above chat messages */
+            }
+
+            .input-row {
+                padding: 6px; /* Slightly reduced padding for the input row itself */
+                border-radius: 25px; /* Adjust border-radius slightly */
+            }
+
+            textarea {
+                padding: 8px 12px; /* Adjust textarea padding */
+                font-size: 15px; /* Adjust font size */
+                min-height: 40px; /* Slightly smaller min-height */
+            }
+
+            button.send-btn {
+                padding: 8px 14px; /* Adjust send button padding */
+                min-height: 40px; /* Match textarea min-height */
+                min-width: 40px; /* Match textarea min-height */
+                border-radius: 20px;
             }
 
             /* Profile menu mobile styles */
@@ -1633,6 +1668,8 @@
                 left: 15px; /* Aligned with sidebar padding */
                 right: 15px; /* Aligned with sidebar padding */
                 width: auto; /* Let left/right define width */
+                /* When sidebar is open, it appears on the screen, so the dropdown can also appear */
+                /* No specific `transform` needed here as `bottom` and `left/right` define position */
             }
             
             .profile-menu-item {
@@ -1647,28 +1684,21 @@
 
             /* Heart rate panel mobile styles */
             .heart-rate-panel {
-                position: fixed;
-                top: auto;
-                bottom: calc(15px + var(--safe-area-inset-bottom)); /* Pushed up above input area, more space */
+                position: fixed; /* Keep fixed position */
+                top: auto; /* Remove top positioning */
+                bottom: calc(20px + var(--safe-area-inset-bottom) + 80px); /* Pushed up above input area + pre-prompts. Adjust 80px if needed for full visibility. */
                 right: 15px;
-                left: 15px;
-                width: auto;
-                max-width: 350px;
-                margin: 0 auto;
+                left: 15px; /* Span across most of the screen width */
+                width: auto; /* Let left/right define width */
+                max-width: none; /* Allow it to take full available width */
+                margin: 0 auto; /* Center it if width is less than screen */
+                box-sizing: border-box; /* Ensure padding/border is included in width */
             }
 
             /* Settings dropdown mobile styles */
             .settings-dropdown {
-                width: 95%;
-                max-width: none;
-            }
-
-            /* Fix mobile scrolling - ensuring chat-box can scroll properly */
-            .chat-box {
-                overflow-y: scroll; /* Allow chat messages to scroll */
-                -webkit-overflow-scrolling: touch;
-                padding-bottom: 20px; /* Ensure space below messages, but above input-container */
-                flex-grow: 1; /* Make it take all available space */
+                width: 95%; /* Wider on mobile */
+                max-width: none; /* No max width constraint */
             }
         }
 
@@ -1803,7 +1833,7 @@
         </div>
     </div>
 
-    <div class="main-content">
+    <div class="main-content" id="main-content">
         <div class="header">
             <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
             <div>Echo AI</div>
@@ -2401,7 +2431,7 @@
             textWrapper.style.minWidth = '0'; // Allow text to shrink
 
             const iconElement = document.createElement('i');
-            iconElement.className = `fas ${iconClass}`;
+            iconElement.className = `fas fa-fw ${iconClass}`; /* Added fa-fw for fixed width icons */
             textWrapper.appendChild(iconElement);
 
             const titleSpan = document.createElement('span');
@@ -2725,8 +2755,8 @@
                     appendMessage(data.message, 'error-message');
                     showFlashMessage(`Chat error: ${data.message}`, 'error');
                 } else {
-                    appendMessage(data.response, 'bot-message'); 
-                    currentChatId = data.chat_session_id; 
+                    appendMessage(data.response, 'bot-message');  
+                    currentChatId = data.chat_session_id;  
                     await fetchChatSessions();
                     
                     // Add flying animation to paper plane icon
@@ -3041,8 +3071,8 @@
                     showFlashMessage(`Analysis error: ${data.message}`, 'error');
                 } else {
                     // Handle successful responses
-                    appendMessage(data.response, 'bot-message'); 
-                    currentChatId = data.chat_session_id; 
+                    appendMessage(data.response, 'bot-message');  
+                    currentChatId = data.chat_session_id;  
                     await fetchChatSessions();
                 }
                 
