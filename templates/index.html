@@ -723,38 +723,46 @@
         }
 
         .header {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            font-size: 20px;
-            font-weight: bold;
-            padding: 10px 15px;
-            color: var(--primary-color);
-            justify-content: space-between;
-            position: relative;
-            border-bottom: 1px solid var(--border-color);
-            min-height: 60px;
-            background: var(--bg-darker);
-            z-index: 100;
-            /* FIX: Add safe area inset to the right padding for the heart button */
-            padding-right: calc(15px + var(--safe-area-inset-right));
-        }
+    width: 100%;
+    display: flex;
+    align-items: center;
+    font-size: 20px;
+    font-weight: bold;
+    /* FIX: Adjusted padding, ensure it's not cutting off anything */
+    padding: 10px 20px; /* Increased general horizontal padding from 15px to 20px */
+    color: var(--primary-color);
+    justify-content: space-between;
+    position: relative;
+    border-bottom: 1px solid var(--border-color);
+    min-height: 60px;
+    background: var(--bg-darker);
+    z-index: 100;
+    /* FIX: Explicitly add safe area inset to the *logical* end padding */
+    padding-inline-end: calc(20px + var(--safe-area-inset-right));
+    padding-inline-start: calc(20px + var(--safe-area-inset-left)); /* Also for left side */
+    box-sizing: border-box; /* Ensure padding is included in the element's total width */
+}
 
         .heart-rate-button {
-            background: none;
-            border: none;
-            color: var(--error-color);
-            font-size: 20px;
-            cursor: pointer;
-            padding: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center; /* Centered for better icon visibility */
-            min-height: 44px;
-            min-width: 44px;
-            position: relative;
-            line-height: 1; /* Ensure the icon itself is centered and fully visible */
-        }
+    background: none;
+    border: none;
+    color: var(--error-color);
+    font-size: 20px;
+    cursor: pointer;
+    /* FIX: Keep padding minimal on the button itself if it's causing issues */
+    padding: 0; /* Remove internal padding on button to rely on min-width/height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px; /* Ensure it's a good touch target */
+    position: relative;
+    line-height: 1;
+    flex-shrink: 0; /* Prevent the button from shrinking if space is tight */
+    /* Add a small margin to ensure it doesn't touch the header's edge if padding is tight */
+    margin-right: -5px; /* Pull it slightly to the left, within the padding, for visual alignment */
+}
+
 
         .heart-rate-button:hover {
             color: var(--primary-color);
@@ -1580,6 +1588,18 @@
             .overlay.active {
                 display: block;
             }
+            header {
+        /* On mobile, sidebar-toggle is on the left, heart-rate-button on the right. */
+        /* The header needs to span full viewport width, respecting safe areas. */
+        /* Using 15px here as a base padding, slightly less than desktop's 20px */
+        padding-inline-end: calc(15px + var(--safe-area-inset-right)); /* Adjusted for mobile view */
+        padding-inline-start: calc(15px + var(--safe-area-inset-left));
+        /* For mobile, if the sidebar toggle takes up space, ensure content adjusts */
+    }
+
+    .heart-rate-button {
+        margin-right: 0; /* Reset the negative margin that might be used on desktop */
+    }
 
             /* REMOVED .main-container flex-direction column. It is already by default */
             /* Height of main-content now handled by JS for keyboard compensation */
