@@ -987,18 +987,16 @@
 
         /* Removed .message-timestamp styles entirely as per request */
         .input-container {
-            display: flex;
-            flex-direction: column;
-            /* FIX: Reduced padding to make input area tighter */
-            padding: 10px 15px; /* Reduced top/bottom padding */
-            background: var(--bg-darker);
-            border-top: 1px solid var(--border-color);
-            position: sticky;
-            bottom: 0;
-            z-index: 50;
-            /* Adjust padding-bottom for mobile safe area */
-            padding-bottom: calc(10px + var(--safe-area-inset-bottom)); /* Reduced bottom padding */
-        }
+    display: flex;
+    flex-direction: column;
+    padding: 8px 15px; /* FIX: Reduced top/bottom padding */
+    background: var(--bg-darker);
+    border-top: 1px solid var(--border-color);
+    position: sticky;
+    bottom: 0;
+    z-index: 50;
+    padding-bottom: calc(8px + var(--safe-area-inset-bottom)); /* FIX: Adjusted safe area padding */
+}}
 
         .pre-prompts {
             display: flex;
@@ -1046,15 +1044,14 @@
         }
 
         .input-row {
-            display: flex;
-            align-items: center;
-            border: 1px solid var(--border-color);
-            /* FIX: Reduced padding to make input field tighter around textarea */
-            padding: 6px; /* Reduced from 8px */
-            border-radius: 30px;
-            background: var(--bg-darkest);
-            transition: all 0.3s ease;
-        }
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border-color);
+    padding: 4px; /* FIX: Reduced padding for tighter internal spacing */
+    border-radius: 30px;
+    background: var(--bg-darkest);
+    transition: all 0.3s ease;
+}
 
         .input-row:focus-within {
             border-color: var(--primary-color);
@@ -1062,23 +1059,22 @@
         }
 
         textarea {
-            flex: 1;
-            /* FIX: Adjusted padding for better visual fit, keep min-height for one line */
-            padding: 10px 15px; 
-            background: transparent;
-            border: none;
-            outline: none;
-            color: var(--text-light);
-            font-size: 16px;
-            border-radius: 20px; 
-            /* Calculated min-height for one line of text (font-size * line-height + vertical padding) */
-            min-height: calc(16px * 1.5 + (10px * 2)); /* 16px * 1.5 = 24px line height, 10px top + 10px bottom padding = 20px. So 24+20 = 44px */
-            resize: vertical;
-            max-height: 120px;
-            overflow-y: auto;
-            line-height: 1.5;
-            -webkit-appearance: none;
-        }
+    flex: 1;
+    padding: 10px 15px;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-light);
+    font-size: 16px;
+    border-radius: 20px;
+    min-height: calc(1em * 1.5 + 20px); /* This calculation should be precise now */
+    resize: none; /* FIX: Hide the native resize handle */
+    max-height: 120px;
+    overflow: hidden; /* FIX: Control overflow via JS, hide native scrollbar */
+    line-height: 1.5em; /* FIX: Use em for line-height consistency */
+    -webkit-appearance: none;
+    box-sizing: border-box; /* FIX: Ensure consistent box model */
+}
 
         button.send-btn {
             padding: 10px 16px;
@@ -1600,6 +1596,12 @@
     .heart-rate-button {
         margin-right: 0; /* Reset the negative margin that might be used on desktop */
     }
+            .input-container {
+        /* If you have specific mobile padding, ensure it's compact */
+        padding: 10px 15px; /* Keeping mobile base padding slightly higher for touch targets */
+        padding-bottom: calc(10px + var(--safe-area-inset-bottom));
+    }
+
 
             /* REMOVED .main-container flex-direction column. It is already by default */
             /* Height of main-content now handled by JS for keyboard compensation */
