@@ -25,7 +25,7 @@
             --border-color: #222222; /* Dark Grey - Subtle borders */
 
             --user-message-bg: var(--primary-dark); /* User messages match brand cyan-blue */
-            --bot-message-bg: var(--bg-darkest); /* Bot messages clearly separated from main bg */
+            /* --bot-message-bg: var(--bg-darkest); <= REMOVED, now applied to .bot-message-content */
             --bot-message-border: var(--border-color); /* Bot message border matches general border */
 
             --table-header-bg: var(--primary-dark);
@@ -65,7 +65,7 @@
             --border-color: #CBD5E0; /* Light Blue-Grey - Subtle borders */
 
             --user-message-bg: var(--primary-color);
-            --bot-message-bg: var(--bg-darkest);
+            /* --bot-message-bg: var(--bg-darkest); <= REMOVED, now applied to .bot-message-content */
             --bot-message-border: var(--border-color);
 
             --table-header-bg: var(--primary-dark);
@@ -776,7 +776,6 @@
             flex-direction: column; /* Changed to column for mobile layout */
             width: 100%;
             flex-grow: 1; /* Allow it to fill main-content height */
-            /* Removed fixed height here, let flex grow handle it with its parent */
             padding: 15px; /* General padding, adjusted for chat-box content to be visible */
             overflow: hidden; /* Important for inner scrolling */
         }
@@ -831,7 +830,6 @@
             flex-grow: 1;
             overflow-y: auto;
             padding: 20px; 
-            /* Added padding-bottom to ensure last messages are visible above the input area */
             padding-bottom: 100px; /* Adjust as needed to clear input/pre-prompts */
             display: flex;
             flex-direction: column;
@@ -855,64 +853,74 @@
             border-radius: 3px;
         }
 
+        /* Message base styles */
         .message {
-            padding: 15px; /* Base padding for message content area */
-            border-radius: 18px;
-            max-width: 75%; /* Reduced width for user messages */
-            width: fit-content;
             word-wrap: break-word;
             line-height: 1.5;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             transition: all 0.2s ease;
-            display: flex; /* Use flex for internal layout */
+            display: flex;
             flex-direction: column; /* Default for messages: content + timestamp */
+            padding: 0; /* Remove padding from here, it's now on specific message types */
         }
 
+        /* FIX: User Message Bubble Styles */
         .user-message {
             align-self: flex-end;
             background: var(--user-message-bg);
-            color: var(--text-light); /* User messages should have light text on primary-dark background */
-            border-radius: 18px 18px 0 18px;
-            max-width: 65%; /* Further reduced for user messages */
+            color: var(--text-light);
+            border-radius: 18px 18px 0 18px; /* Bubble shape */
+            padding: 15px; /* Internal padding for the bubble */
+            max-width: 65%; /* Keep user messages from getting too wide */
+            width: fit-content; /* Allow width to shrink to content */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* Add shadow back to user bubble */
         }
 
+        /* FIX: Bot Message (Un-bubbled Block) Styles */
         .bot-message {
             align-self: flex-start;
-            background: var(--bot-message-bg);
+            background: transparent; /* No bubble background on this outer container */
+            border: none; /* No bubble border */
+            border-radius: 0; /* No bubble border-radius */
+            padding: 0; /* No padding on this outer container */
+            margin: 15px 0; /* Margin to space out bot messages from each other */
+
             color: var(--text-light);
-            border: 1px solid var(--bot-message-border);
-            border-radius: 18px 18px 18px 0;
-            display: flex;
-            flex-direction: row; /* Avatar and message content side-by-side */
-            align-items: flex-start;
-            gap: 10px;
-            max-width: 85%;
-            width: fit-content;
-            padding: 10px; /* Adjust padding due to avatar */
+            display: flex; /* Keep flex for avatar alignment */
+            flex-direction: row;
+            align-items: flex-start; /* Align avatar and content at the top */
+            gap: 10px; /* Space between avatar and content block */
+            max-width: 85%; /* Max width for the entire bot message block */
+            width: 100%; /* Allow it to span the full width within its flex container */
+            min-width: 0; /* Allow the flex item to shrink */
         }
 
         .bot-avatar {
             width: 30px;
             height: 30px;
             border-radius: 50%;
-            background: var(--primary-color); /* Bright cyan for avatar background */
+            background: var(--primary-color);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--bg-dark); /* Dark text on bright avatar */
+            color: var(--bg-dark);
             font-size: 14px;
             font-weight: bold;
-            flex-shrink: 0;
-            text-transform: uppercase; /* Ensure AI is capitalized */
+            flex-shrink: 0; /* Prevent shrinking */
+            text-transform: uppercase;
         }
 
-        .bot-message-content {
+        /* This is the inner container that will act as the "content block" for AI responses */
+        .bot-message-content-wrapper { /* NEW CLASS for the content block */
             flex-grow: 1;
-            /* No padding here, it's applied to the .bot-message container */
-            /* Ensure content inside doesn't overflow the message bubble itself */
-            overflow-wrap: break-word; /* Allows long words to break */
-            min-width: 0;
-            padding-right: 5px; /* Small right padding to ensure content doesn't touch the edge */
+            overflow-wrap: break-word;
+            min-width: 0; /* Allow inner content to shrink within this wrapper */
+
+            /* Styles to create the "un-bubbled block" effect */
+            background: var(--bg-darkest); /* Subtle background for the AI response block */
+            border: 1px solid var(--bot-message-border); /* Subtle border matching original bot message border */
+            border-radius: 12px; /* Slightly more rounded corners for the block */
+            padding: 15px 20px; /* Ample internal padding for the text and elements */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* Subtle shadow for depth */
         }
 
         .error-message {
@@ -922,6 +930,7 @@
             border-radius: 18px 18px 18px 0;
             padding: 15px;
             max-width: 85%;
+            width: fit-content; /* Ensure it wraps content */
         }
 
         .typing-indicator {
@@ -1044,23 +1053,23 @@
             box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2); /* Adjust shadow color to primary */
         }
 
-        textarea { /* Changed from input to textarea */
+        textarea {
             flex: 1;
-            /* FIX: Adjusted padding for better visual fit */
-            padding: 10px 15px; /* Keep this padding for internal text spacing */
+            /* FIX: Adjusted padding for better visual fit, keep min-height for one line */
+            padding: 10px 15px; 
             background: transparent;
             border: none;
             outline: none;
             color: var(--text-light);
             font-size: 16px;
-            border-radius: 20px; /* Still apply border-radius for visual consistency */
-            /* FIX: Calculated min-height for one line of text (font-size * line-height + vertical padding) */
-            min-height: calc(16px * 1.5 + 20px); /* 16px (font-size) * 1.5 (line-height) + 20px (10px top + 10px bottom padding) */
-            resize: vertical; /* Allow vertical resizing */
-            max-height: 120px; /* Max height for textarea */
-            overflow-y: auto; /* Enable scroll if content exceeds max-height */
-            line-height: 1.5; /* Improve readability for multi-line text */
-            -webkit-appearance: none; /* Remove default macOS textarea styling */
+            border-radius: 20px; 
+            /* Calculated min-height for one line of text (font-size * line-height + vertical padding) */
+            min-height: calc(16px * 1.5 + (10px * 2)); /* 16px * 1.5 = 24px line height, 10px top + 10px bottom padding = 20px. So 24+20 = 44px */
+            resize: vertical;
+            max-height: 120px;
+            overflow-y: auto;
+            line-height: 1.5;
+            -webkit-appearance: none;
         }
 
         button.send-btn {
@@ -1186,50 +1195,49 @@
         }
 
         /* FIX: Professional Table Styling */
-        .bot-message table {
+        .bot-message table { /* Applied to tables inside .bot-message-content-wrapper */
             width: 100%; /* Ensure it tries to take full available width */
             border-collapse: collapse;
-            margin: 15px 0;
+            margin: 15px 0; /* Margin for tables relative to other content in the block */
             border-radius: 8px;
-            /* overflow: hidden; Removed from here to allow horizontal scrolling on table itself */
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border: 1px solid var(--border-color);
+            box-shadow: none; /* No extra shadow, the wrapper has one */
+            border: 1px solid var(--border-color); /* Subtle border around the whole table */
 
             /* CRUCIAL FOR RESPONSIVE TABLES */
             display: block; /* Makes the table behave like a block element, allowing overflow-x */
             overflow-x: auto; /* Adds horizontal scroll if content exceeds parent width */
             -webkit-overflow-scrolling: touch; /* Improves scrolling on iOS */
-            background-color: var(--bg-darkest); /* Subtle background for the table */
+            background-color: transparent; /* Table content background will be handled by rows */
         }
         
         .bot-message th {
-            background-color: var(--table-header-bg);
-            color: white;
+            background-color: var(--table-header-bg); /* Use brand color for header, like ChatGPT */
+            color: white; /* Ensure text is white on the dark header */
             font-weight: bold;
             padding: 12px 15px;
             text-align: left;
             border: 1px solid var(--table-header-bg); /* Match header background for seamless look */
-            white-space: nowrap; /* Keep header text on one line */
+            white-space: nowrap; /* Keep header text on one line unless forced to wrap by narrow screen */
         }
         
         .bot-message td {
             padding: 12px 15px;
-            border: 1px solid var(--border-color); /* Cell borders */
+            border: 1px solid var(--border-color); /* Subtle cell borders */
             text-align: left;
-            vertical-align: top; /* Align content to the top of the cell */
-            white-space: normal; /* Allow text to wrap naturally within cells */
+            vertical-align: top; /* Align content to the top of the cell, especially for lists */
+            white-space: normal; /* IMPORTANT: Allow text to wrap naturally within cells */
         }
         
         .bot-message tr:nth-child(even) {
-            background-color: var(--table-row-even);
+            background-color: var(--table-row-even); /* Subtle alternating row color */
         }
         
         .bot-message tr:nth-child(odd) {
-            background-color: var(--table-row-odd);
+            background-color: var(--table-row-odd); /* Subtle alternating row color */
         }
         
         .bot-message tr:hover {
-            background-color: var(--table-row-hover);
+            background-color: var(--table-row-hover); /* Subtle hover effect */
         }
         
         .bot-message ul, .bot-message ol {
@@ -1622,8 +1630,7 @@
                 display: block;
                 overflow-x: auto;
                 white-space: normal; /* Allow text wrapping within cells */
-                /* Also ensure table doesn't get wider than message bubble */
-                width: 100%;
+                width: 100%; /* Important for tables inside the new .bot-message-content */
             }
             /* FIX: Specific to mobile table headers to allow wrapping if too narrow,
                though white-space: nowrap; on `th` is generally good practice
@@ -2707,7 +2714,6 @@
             const userInputElement = document.getElementById("user-input");
             const userInput = userInputElement.value.trim();
             const sendBtn = document.getElementById("send-btn");
-            /* const prePrompts = document.getElementById('pre-prompts'); // Removed prePrompts variable as its logic is removed */
 
             if (userInput === "" || isWaitingForResponse) return;
 
@@ -2757,15 +2763,10 @@
                     appendMessage(data.message, 'error-message');
                     showFlashMessage(`Chat error: ${data.message}`, 'error');
                 } else {
+                    // Handle successful responses
                     appendMessage(data.response, 'bot-message'); 
                     currentChatId = data.chat_session_id; 
                     await fetchChatSessions();
-                    
-                    // Add flying animation to paper plane icon
-                    sendBtn.classList.add('clicked');
-                    setTimeout(() => {
-                        sendBtn.classList.remove('clicked');
-                    }, 500);
                 }
                 
             } catch (error) {
@@ -2786,35 +2787,31 @@
             const message = document.createElement("div");
             message.classList.add("message", className);
             
-            const messageBody = document.createElement('div');
-            messageBody.classList.add('message-body');
-            
-            const messageTextContent = document.createElement('div');
-            messageTextContent.classList.add('message-text-content');
-
             if (className === 'bot-message') {
                 const botAvatar = document.createElement('div');
                 botAvatar.classList.add('bot-avatar');
                 botAvatar.textContent = 'AI';  
                 message.appendChild(botAvatar);
+
+                // FIX: Create the new wrapper for bot content
+                const botMessageContentWrapper = document.createElement('div');
+                botMessageContentWrapper.classList.add('bot-message-content-wrapper');
                 
-                messageBody.style.flexGrow = '1';  
-            } else {
-                messageBody.style.alignSelf = 'flex-end';
+                // The actual text content is formatted into this div
+                const messageTextContent = document.createElement('div');
+                // messageTextContent.classList.add('message-text-content'); // No need for this class anymore if we're putting it directly into wrapper
+                formatBotResponse(text, messageTextContent); // Format text into messageTextContent
+                
+                botMessageContentWrapper.appendChild(messageTextContent); // Add formatted text to wrapper
+                message.appendChild(botMessageContentWrapper); // Add wrapper to main message div
+
+            } else { /* This is a user-message or error-message */
+                // For user messages, the original `message` div itself is the bubble
+                const messageTextContent = document.createElement('div');
+                messageTextContent.classList.add('message-text-content'); /* Keep this for user messages */
+                messageTextContent.innerHTML = text; /* Direct text for user message */
+                message.appendChild(messageTextContent);
             }
-
-            formatBotResponse(text, messageTextContent);
-            
-            messageBody.appendChild(messageTextContent);
-
-            // Removed timestamp creation and appending here as per request
-            // const timestamp = document.createElement('div');
-            // timestamp.classList.add('message-timestamp');
-            // const now = new Date();
-            // timestamp.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            // messageBody.appendChild(timestamp);
-
-            message.appendChild(messageBody);
 
             chatBox.appendChild(message);
             chatBox.scrollTop = chatBox.scrollHeight;
@@ -2856,7 +2853,7 @@
                 else if (trimmedLine.match(/^\d+\.\s/)) {
                     if (!inOrderedList) {
                         formattedLines.push('<ol>');
-                        inOrderedList = true;
+                        inOrderedLines = true;
                         inUnorderedList = false; // Close unordered if open
                     }
                     formattedLines.push(`<li>${trimmedLine.substring(trimmedLine.indexOf('.') + 1).trim()}</li>`);
@@ -2924,81 +2921,80 @@
             const tableRegex = /^\|.*\|(?:\r?\n\|[-: ]+\|)+\r?\n(?:\|.*\|(?:\r?\n|$))*|^\|.*\|(?:\r?\n(?:\|.*\|\r?\n?)*)/gm;
             let htmlContent = response;
 
-            // Process tables first
-            let tableMatch;
-            const tempDiv = document.createElement('div'); // Use a temp div to process blocks
-
-            // Find all tables and convert them to HTML placeholders
+            // Process tables first: find, convert, and replace with placeholders
             const tablesFound = [];
-            let lastIndex = 0;
-            while ((tableMatch = tableRegex.exec(htmlContent)) !== null) {
-                tablesFound.push({
-                    markdown: tableMatch[0],
-                    index: tableMatch.index
-                });
+            let match;
+            // Use a temporary div to store HTML of tables, referenced by placeholders
+            const tempTableHolder = document.createElement('div'); 
+
+            // Using while loop with exec for global regex is specific. Reset lastIndex for re-use.
+            let currentIndex = 0;
+            // Re-evaluating with a more robust way to handle multi-pass regex replacements.
+            // Split by tables first, then process each part.
+            const parts = [];
+            let lastMatchEnd = 0;
+            const originalTableRegex = new RegExp(tableRegex.source, 'gm'); // Recreate to reset lastIndex
+            while ((match = originalTableRegex.exec(htmlContent)) !== null) {
+                if (match.index > lastMatchEnd) {
+                    parts.push({ type: 'text', content: htmlContent.substring(lastMatchEnd, match.index) });
+                }
+                parts.push({ type: 'table', content: match[0], index: match.index });
+                lastMatchEnd = originalTableRegex.lastIndex;
+            }
+            if (lastMatchEnd < htmlContent.length) {
+                parts.push({ type: 'text', content: htmlContent.substring(lastMatchEnd) });
             }
 
-            // Replace markdown tables with placeholders first
-            tablesFound.reverse().forEach(table => {
-                const markdownTable = table.markdown;
-                const lines = markdownTable.split('\n').filter(line => line.trim() !== '');
+            let finalHtml = '';
+            parts.forEach(part => {
+                if (part.type === 'table') {
+                    const markdownTable = part.content;
+                    const lines = markdownTable.split('\n').filter(line => line.trim() !== '');
 
-                if (lines.length < 2) return; // Need at least header and separator
-
-                let tableHtml = '<table>';
-                let headerProcessed = false;
-
-                lines.forEach((line, index) => {
-                    const trimmedLine = line.trim();
-                    if (trimmedLine.startsWith('|') && trimmedLine.endsWith('|')) {
-                        const cells = trimmedLine.split('|').slice(1, -1).map(cell => cell.trim());
-
-                        // This is the separator line (e.g., |---|:--:|---)
-                        if (trimmedLine.match(/^\|[-=\s:]+\|$/)) {
-                            headerProcessed = true;
-                            return; // Skip this line
-                        }
-
-                        if (!headerProcessed) {
-                            // This is the header row
-                            tableHtml += '<thead><tr>';
-                            cells.forEach(cell => {
-                                // Apply general formatting to cell content, but don't add <p> tags
-                                tableHtml += `<th>${formatTextResponse(cell).replace(/<\/?p>/g, '')}</th>`; 
-                            });
-                            tableHtml += '</tr></thead><tbody>';
-                        } else {
-                            // Data rows
-                            tableHtml += '<tr>';
-                            cells.forEach(cell => {
-                                // Apply general formatting to cell content, but don't add <p> tags
-                                tableHtml += `<td>${formatTextResponse(cell).replace(/<\/?p>/g, '')}</td>`; 
-                            });
-                            tableHtml += '</tr>';
-                        }
+                    if (lines.length < 2) {
+                        finalHtml += formatTextResponse(markdownTable); // Treat as plain text if not a valid table
+                        return;
                     }
-                });
-                if (headerProcessed) { // Only close tbody if it was opened
-                    tableHtml += '</tbody>';
+
+                    let tableHtml = '<table>';
+                    let headerProcessed = false;
+
+                    lines.forEach((line, index) => {
+                        const trimmedLine = line.trim();
+                        if (trimmedLine.startsWith('|') && trimmedLine.endsWith('|')) {
+                            const cells = trimmedLine.split('|').slice(1, -1).map(cell => cell.trim());
+
+                            if (trimmedLine.match(/^\|[-=\s:]+\|$/)) { // Separator line
+                                headerProcessed = true;
+                                return;
+                            }
+
+                            if (!headerProcessed) { // Header row
+                                tableHtml += '<thead><tr>';
+                                cells.forEach(cell => {
+                                    tableHtml += `<th>${formatTextResponse(cell).replace(/<\/?p>/g, '')}</th>`; 
+                                });
+                                tableHtml += '</tr></thead><tbody>';
+                            } else { // Data rows
+                                tableHtml += '<tr>';
+                                cells.forEach(cell => {
+                                    tableHtml += `<td>${formatTextResponse(cell).replace(/<\/?p>/g, '')}</td>`; 
+                                });
+                                tableHtml += '</tr>';
+                            }
+                        }
+                    });
+                    if (headerProcessed) {
+                        tableHtml += '</tbody>';
+                    }
+                    tableHtml += '</table>';
+                    finalHtml += tableHtml;
+                } else {
+                    finalHtml += formatTextResponse(part.content);
                 }
-                tableHtml += '</table>';
-
-                // Replace the markdown table with a unique placeholder
-                // Use a simple replacement, as `exec` on string can be tricky with modifications
-                htmlContent = htmlContent.replace(markdownTable, ``);
-                tempDiv.dataset[`table${table.index}`] = tableHtml; // Store HTML in a data attribute
             });
 
-            // Now, format the rest of the text, which is free of markdown tables
-            let formattedNonTableContent = formatTextResponse(htmlContent);
-
-            // Re-insert the HTML tables from placeholders
-            tablesFound.forEach(table => {
-                const tableHtml = tempDiv.dataset[`table${table.index}`];
-                formattedNonTableContent = formattedNonTableContent.replace(``, tableHtml);
-            });
-
-            targetElement.innerHTML = formattedNonTableContent;
+            targetElement.innerHTML = finalHtml;
         }
 
 
@@ -3021,7 +3017,7 @@
             bluetoothManager.addToHistory(hr);
             bluetoothManager.sendToBackend(hr);
             hrInput.value = '';
-            appendMessage(`Manual HR submitted: ${hr} BPM`, 'bot-message');
+            appendMessage(`Manual HR submitted: ${hr} BPM`, 'user-message'); /* Changed to user-message for visual consistency */
             
             // Enable analyze button after manual input
             document.getElementById('analyze-btn').disabled = false;
@@ -3054,13 +3050,11 @@
             
             const currentHR = hrHistory[0].rate;
             const sendBtn = document.getElementById("send-btn");
-            /* const prePrompts = document.getElementById('pre-prompts'); // Removed prePrompts variable as its logic is removed */
 
             const typingIndicator = showTypingIndicator();
             isWaitingForResponse = true;
             sendBtn.classList.add('loading');
             sendBtn.disabled = true;
-            /* prePrompts.classList.add('hidden-on-focus'); // Removed as per new logic */
             
             try {
                 // Prepare the prompt for GPT-3.5
