@@ -183,14 +183,17 @@
         }
 
         /* Sidebar styles */
-        .sidebar.collapsed .new-chat-btn {
-            justify-content: center;
-            padding: 0;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            margin: 10px auto;
-            flex-shrink: 0;
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-darker); /* Use darker shade for sidebar background */
+            border-right: 1px solid var(--bg-dark); /* Blend border with main background */
+            display: flex;
+            flex-direction: column;
+            height: 100%; /* Fill remaining viewport height */
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1000;
         }
 
         .sidebar.collapsed {
@@ -1069,9 +1072,9 @@
             font-size: 16px;
             border-radius: 20px; 
             /* Calculated min-height for one line of text (font-size * line-height + vertical padding) */
-            min-height: calc(1px * 1.5 + (10px * 2)); /* 16px * 1.5 = 24px line height, 10px top + 10px bottom padding = 20px. So 24+20 = 44px */
+            min-height: calc(16px * 1.5 + (10px * 2)); /* 16px * 1.5 = 24px line height, 10px top + 10px bottom padding = 20px. So 24+20 = 44px */
             resize: vertical;
-            max-height: 1px;
+            max-height: 120px;
             overflow-y: auto;
             line-height: 1.5;
             -webkit-appearance: none;
@@ -1862,15 +1865,19 @@
     <div class="main-content">
         <div class="header">
             <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
-            <div>cardiX</div>
+            <div>Cardix</div>
             <button class="heart-rate-button" id="heart-rate-button" aria-label="Heart rate monitor"><i class="fas fa-heartbeat"></i></button>
         </div>
 
         <div class="main-container">
             <div class="chat-container">
                 <div class="welcome-message" id="welcome-message">
-                    <h1>cardiX: Your Heart Health Companion</h1>
+                    <h1>Cardix: Your Heart Health Companion</h1>
                     <p>"Your AI-powered heart health assistant - monitor, analyze, and stay informed."</p>
+                    <div class="medical-disclaimer">
+                        <strong>Important Medical Disclaimer:</strong><br>
+                        Cardix is an AI assistant and not a medical professional. The information it provides is for educational and informational purposes only, and should not be considered medical advice, diagnosis, or treatment. Always consult with a qualified healthcare professional for any health concerns or before making any decisions related to your health or medical care. In case of a medical emergency, call your local emergency services immediately.
+                    </div>
                 </div>
 
                 <div class="chat-box" id="chat-box"></div>
