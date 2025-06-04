@@ -183,17 +183,14 @@
         }
 
         /* Sidebar styles */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: var(--bg-darker); /* Use darker shade for sidebar background */
-            border-right: 1px solid var(--bg-dark); /* Blend border with main background */
-            display: flex;
-            flex-direction: column;
-            height: 100%; /* Fill remaining viewport height */
-            overflow: hidden;
-            transition: all 0.3s ease;
-            position: relative;
-            z-index: 1000;
+        .sidebar.collapsed .new-chat-btn {
+            justify-content: center;
+            padding: 0;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            margin: 10px auto;
+            flex-shrink: 0;
         }
 
         .sidebar.collapsed {
