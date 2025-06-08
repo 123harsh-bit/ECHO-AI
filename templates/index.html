@@ -183,7 +183,7 @@
         }
 
         /* Sidebar styles */
-        .sidebar {
+               .sidebar {
   width: var(--sidebar-width);
   background: var(--bg-darker);
   border-right: 1px solid var(--border-color);
@@ -1220,36 +1220,15 @@
             background-color: transparent; /* Table content background will be handled by rows */
         }
         
-       .bot-message {
-    align-self: flex-start;
-    background: transparent; /* No bubble background on this outer container */
-    border: none; /* No bubble border */
-    border-radius: 0; /* No bubble border-radius */
-    padding: 0; /* No padding on this outer container */
-    margin: 15px 0; /* Margin to space out bot messages from each other */
-
-    color: var(--text-light);
-    display: flex; /* Keep flex for avatar alignment */
-    flex-direction: row;
-    align-items: flex-start; /* Align avatar and content at the top */
-    gap: 10px; /* Space between avatar and content block */
-    max-width: 85%; /* Max width for the entire bot message block */
-    width: 100%; /* Allow it to span the full width within its flex container */
-    min-width: 0; /* Allow the flex item to shrink */
-}
-        bot-message-content-wrapper { /* NEW CLASS for the content block */
-    flex-grow: 1;
-    overflow-wrap: break-word;
-    min-width: 0; /* Allow inner content to shrink within this wrapper */
-
-    /* Styles to create the "un-bubbled block" effect */
-    background: var(--bg-darkest); /* Subtle background for the AI response block */
-    border: 1px solid var(--bot-message-border); /* Subtle border matching original bot message border */
-    border-radius: 12px; /* Slightly more rounded corners for the block */
-    padding: 15px 20px; /* Ample internal padding for the text and elements */
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* Subtle shadow for depth */
-}
-
+        .bot-message th {
+            background-color: var(--table-header-bg); /* Use brand color for header, like ChatGPT */
+            color: white; /* Ensure text is white on the dark header */
+            font-weight: bold;
+            padding: 12px 15px;
+            text-align: left;
+            border: 1px solid var(--table-header-bg); /* Match header background for seamless look */
+            white-space: nowrap; /* Keep header text on one line unless forced to wrap by narrow screen */
+        }
         
         .bot-message td {
             padding: 12px 15px;
@@ -2825,40 +2804,40 @@
         }
 
         // Append message to chat box
-        // Append message to chat box
-function appendMessage(text, className) {
-    const chatBox = document.getElementById("chat-box");
-    const message = document.createElement("div");
-    message.classList.add("message", className);
+        function appendMessage(text, className) {
+            const chatBox = document.getElementById("chat-box");
+            const message = document.createElement("div");
+            message.classList.add("message", className);
+            
+            if (className === 'bot-message') {
+                const botAvatar = document.createElement('div');
+                botAvatar.classList.add('bot-avatar');
+                botAvatar.textContent = 'AI';  
+                message.appendChild(botAvatar);
 
-    if (className === 'bot-message') {
-        const botAvatar = document.createElement('div');
-        botAvatar.classList.add('bot-avatar');
-        botAvatar.textContent = 'AI';
-        message.appendChild(botAvatar);
+                // FIX: Create the new wrapper for bot content
+                const botMessageContentWrapper = document.createElement('div');
+                botMessageContentWrapper.classList.add('bot-message-content-wrapper');
+                
+                // The actual text content is formatted into this div
+                const messageTextContent = document.createElement('div');
+                // messageTextContent.classList.add('message-text-content'); // No need for this class anymore if we're putting it directly into wrapper
+                formatBotResponse(text, messageTextContent); // Format text into messageTextContent
+                
+                botMessageContentWrapper.appendChild(messageTextContent); // Add formatted text to wrapper
+                message.appendChild(botMessageContentWrapper); // Add wrapper to main message div
 
-        // FIX: Create the new wrapper for bot content
-        const botMessageContentWrapper = document.createElement('div');
-        botMessageContentWrapper.classList.add('bot-message-content-wrapper');
+            } else { /* This is a user-message or error-message */
+                // For user messages, the original `message` div itself is the bubble
+                const messageTextContent = document.createElement('div');
+                messageTextContent.classList.add('message-text-content'); /* Keep this for user messages */
+                messageTextContent.innerHTML = text; /* Direct text for user message */
+                message.appendChild(messageTextContent);
+            }
 
-        // The actual text content is formatted into this div
-        const messageTextContent = document.createElement('div');
-        formatBotResponse(text, messageTextContent); // Format text into messageTextContent
-
-        botMessageContentWrapper.appendChild(messageTextContent); // Add formatted text to wrapper
-        message.appendChild(botMessageContentWrapper); // Add wrapper to main message div
-
-    } else { /* This is a user-message or error-message */
-        // For user messages, the original `message` div itself is the bubble
-        const messageTextContent = document.createElement('div');
-        messageTextContent.classList.add('message-text-content'); /* Keep this for user messages */
-        messageTextContent.innerHTML = text; /* Direct text for user message */
-        message.appendChild(messageTextContent);
-    }
-
-    chatBox.appendChild(message);
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
+            chatBox.appendChild(message);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
 
         // Format text with headings, bold, lists, etc.
         function formatTextResponse(text) {
