@@ -773,11 +773,11 @@ def chat():
     lower_input = user_input.lower().strip()
     
     if lower_input in ["who are you?", "who are you", "what is your name?", "who is this?", "what is echo ai?", "what is echoai?"]:
-        bot_response = "I am cardiX, your heart health assistant. I provide guidance and insights related to heart health to help you stay informed and make better health decisions."
+        bot_response = "I am Echo AI, your heart health assistant. I provide guidance and insights related to heart health to help you stay informed and make better health decisions."
     elif lower_input in ["hello", "hi", "hey", "greetings"]:
-        bot_response = "Hello! I am cardiX, your heart health assistant. How can I help you today?"
+        bot_response = "Hello! I am Echo AI, your heart health assistant. How can I help you today?"
     elif lower_input in ["who created you?", "who invented you?", "who made you?", "who created you", "who invented you", "who made you", "who created you echo ai", "who created you echoai", "who created you echo ai?"]:
-        bot_response = "I was created by  Harsha . We are working to provide reliable heart health assistance through AI."
+        bot_response = "I was created by a dedicated team of developers: Guru Prasad, Harshavardhan Reddy, Ranjith, and Giri. We are working to provide reliable heart health assistance through AI."
     elif not is_heart_related(user_input):
         bot_response = "I'm specially designed to answer heart health-related questions. Could you please ask me something related to heart health, cardiac care, or general health concerns?"
     else:
